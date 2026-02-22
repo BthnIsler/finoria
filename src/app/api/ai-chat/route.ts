@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     try {
         const { messages, portfolioContext } = await request.json();
 
-        const systemPrompt = `Sen bir Türk finans danışmanısın ve portföy asistanısın. Kullanıcıya portföyü hakkında yardımcı ol.
+        const systemPrompt = `Senin adın Finoria. Sen bir Türk finans danışmanısın ve portföy asistanısın. Kullanıcıya portföyü hakkında samimi ama profesyonel bir şekilde yardımcı ol.
         
 Aşağıda kullanıcının portföy bilgileri verilmiştir:
 

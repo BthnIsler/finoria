@@ -27,6 +27,20 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // Initial greeting from Finoria
+    useEffect(() => {
+        if (messages.length === 0 && isExpanded) {
+            let greeting = 'Merhaba! Ben Finoria, senin kişisel yapay zeka finans asistanın. Bugün nasılsın?';
+            if (totalPL > 0) {
+                greeting = `Merhaba! Ben Finoria. Bugün harika haberlerim var, portföyün ${totalPLPct.toFixed(1)}% kârda görünüyor! 🎉 Nasıl yardımcı olabilirim?`;
+            } else if (totalPL < 0) {
+                greeting = `Merhaba, ben Finoria. Piyasalarda biraz dalgalanma var sanırım, portföyünde yatırım fırsatlarını değerlendirmek ister misin?`;
+            }
+
+            setMessages([{ role: 'assistant', content: greeting }]);
+        }
+    }, [isExpanded, totalPL, totalPLPct, messages.length]);
+
     const buildPortfolioContext = () => {
         const categories: Record<string, { count: number; totalValue: number; items: string[] }> = {};
         for (const a of assets) {
@@ -113,7 +127,7 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                     fontSize: 22, flexShrink: 0,
                 }}>🤖</div>
                 <div>
-                    <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>AI Portföy Asistanı</p>
+                    <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Finoria AI</p>
                     <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Portföyünüz hakkında sorular sorun, analiz isteyin</p>
                 </div>
                 <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: 18 }}>💬</span>
@@ -146,7 +160,7 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                         fontSize: 18,
                     }}>🤖</span>
                     <div>
-                        <p style={{ fontSize: 13, fontWeight: 700 }}>AI Portföy Asistanı</p>
+                        <p style={{ fontSize: 13, fontWeight: 700 }}>Finoria AI</p>
                         <p style={{ fontSize: 10, color: 'var(--text-muted)' }}>Groq · llama-3.3-70b</p>
                     </div>
                 </div>
@@ -162,12 +176,8 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
             <div style={{
                 padding: '16px 20px', minHeight: 160, maxHeight: 360, overflowY: 'auto',
             }}>
-                {messages.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '20px 10px' }}>
-                        <p style={{ fontSize: 28, marginBottom: 8 }}>💬</p>
-                        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
-                            Portföyünüz hakkında bana soru sorun!
-                        </p>
+                {messages.length === 1 && messages[0].role === 'assistant' && (
+                    <div style={{ textAlign: 'center', padding: '10px 10px 20px' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
                             {suggestions.map((s, i) => (
                                 <button key={i} onClick={() => { setInput(s); }}
