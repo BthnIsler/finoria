@@ -236,18 +236,15 @@ export default function Home() {
         <main className={mobilePreview ? 'mobile-preview-content' : ''} style={{ position: 'relative', zIndex: 1, minHeight: '100vh', padding: '28px 20px', maxWidth: mobilePreview ? 390 : 1200, margin: '0 auto' }}>
           {/* Header */}
           <header className="app-header">
-            <div className="header-title-row">
-              <div>
-                <h1 style={{ fontSize: 24, fontWeight: 800 }}>
-                  <span className="gradient-text">Finoria</span>
-                </h1>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Tüm yatırımlarınız, tek bir bakışta</p>
-              </div>
-              <button onClick={() => setShowAddForm(true)} className="btn-primary">＋ Ekle</button>
+            <div className="header-left">
+              <h1 style={{ fontSize: 24, fontWeight: 800 }}>
+                <span className="gradient-text">Finoria</span>
+              </h1>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Tüm yatırımlarınız, tek bir bakışta</p>
             </div>
-            <div className="header-controls">
+            <div className="header-right">
               {lastUpdated && (
-                <span className="live-dot" style={{ fontSize: 11, color: 'var(--text-muted)', marginRight: 4 }}>
+                <span className="live-dot hide-mobile" style={{ fontSize: 11, color: 'var(--text-muted)', marginRight: 4 }}>
                   {lastUpdated}
                 </span>
               )}
@@ -273,7 +270,7 @@ export default function Home() {
               {assets.length > 0 && (
                 <button
                   onClick={() => setIsEditing(!isEditing)}
-                  className="btn-icon"
+                  className="btn-icon hide-mobile"
                   title="Widget Düzenle"
                   style={isEditing ? { borderColor: 'var(--accent-purple)', color: 'var(--accent-purple)' } : {}}
                 >
@@ -285,11 +282,19 @@ export default function Home() {
                 {pricesLoading ? '⏳' : '🔄'}
               </button>
 
+              <button
+                onClick={() => setMobilePreview(!mobilePreview)}
+                className="btn-icon hide-mobile"
+                title="Mobil Önizleme"
+                style={mobilePreview ? { borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' } : {}}
+              >
+                📱
+              </button>
+
               {/* Profile dropdown */}
               <div style={{ position: 'relative' }}>
                 <button
                   onClick={() => setShowProfile(!showProfile)}
-                  className="btn-icon"
                   title="Profil"
                   style={{
                     width: 36, height: 36, borderRadius: '50%',
@@ -324,10 +329,7 @@ export default function Home() {
                           color: 'var(--accent-red)', fontSize: 13, fontWeight: 600,
                           cursor: 'pointer', textAlign: 'left',
                           display: 'flex', alignItems: 'center', gap: 8,
-                          transition: 'background 0.15s',
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,77,106,0.08)'}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                       >
                         🚪 Çıkış Yap
                       </button>
@@ -339,10 +341,7 @@ export default function Home() {
                           color: 'var(--text-muted)', fontSize: 12, fontWeight: 500,
                           cursor: 'pointer', textAlign: 'left',
                           display: 'flex', alignItems: 'center', gap: 8,
-                          transition: 'background 0.15s',
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                       >
                         🗑 Her Şeyi Sıfırla
                       </button>
@@ -350,41 +349,47 @@ export default function Home() {
                   </div>
                 )}
               </div>
+
+              <button onClick={() => setShowAddForm(true)} className="btn-primary">＋ Ekle</button>
             </div>
           </header>
 
+
+
           {/* Widget editing bar */}
-          {isEditing && (
-            <div
-              style={{
-                background: 'var(--bg-elevated)', border: '1px solid var(--border-light)',
-                borderRadius: 14, padding: '12px 16px', marginBottom: 16,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13,
-              }}
-            >
-              <span style={{ color: 'var(--text-secondary)' }}>
-                ⚙️ Widget düzenleme modu — boyut, sıra ve görünürlüğü ayarlayın
-              </span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {hiddenWidgets.length > 0 && (
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {hiddenWidgets.map((w) => (
-                      <button key={w.id} className="chip" style={{ fontSize: 11 }}
-                        onClick={() => updateWidget(w.id, { visible: true })}>
-                        + {w.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: 12 }} onClick={resetLayout}>
-                  Sıfırla
-                </button>
-                <button className="btn-primary" style={{ padding: '6px 14px', fontSize: 12 }} onClick={() => setIsEditing(false)}>
-                  ✓ Bitti
-                </button>
+          {
+            isEditing && (
+              <div
+                style={{
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border-light)',
+                  borderRadius: 14, padding: '12px 16px', marginBottom: 16,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13,
+                }}
+              >
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  ⚙️ Widget düzenleme modu — boyut, sıra ve görünürlüğü ayarlayın
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {hiddenWidgets.length > 0 && (
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {hiddenWidgets.map((w) => (
+                        <button key={w.id} className="chip" style={{ fontSize: 11 }}
+                          onClick={() => updateWidget(w.id, { visible: true })}>
+                          + {w.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: 12 }} onClick={resetLayout}>
+                    Sıfırla
+                  </button>
+                  <button className="btn-primary" style={{ padding: '6px 14px', fontSize: 12 }} onClick={() => setIsEditing(false)}>
+                    ✓ Bitti
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Hero Wealth Card */}
           <div className="wealth-hero wealth-hero-hover" style={{ padding: '36px 32px', marginBottom: 0, textAlign: 'center' }}>
@@ -435,112 +440,123 @@ export default function Home() {
           </div>
 
           {/* Widgets Grid */}
-          {assets.length > 0 ? (
-            <div className="widgets-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40 }}>
-              {sortedWidgets.map((w) => {
-                if (!w.visible) return null;
-                switch (w.id) {
-                  case 'history':
-                    return (
-                      <WidgetWrapper key={w.id} widgetId={w.id}>
-                        <WealthHistoryChart history={history} currentTotal={totalWealth} assets={assets} />
-                      </WidgetWrapper>
-                    );
-                  case 'chart':
-                    return (
-                      <WidgetWrapper key={w.id} widgetId={w.id}>
-                        <WealthChart assets={assets} />
-                      </WidgetWrapper>
-                    );
-                  case 'categories':
-                    return (
-                      <WidgetWrapper key={w.id} widgetId={w.id}>
-                        <CategoryBreakdown assets={assets} onSell={setSellingAsset} />
-                      </WidgetWrapper>
-                    );
-                  case 'assets':
-                    return (
-                      <WidgetWrapper key={w.id} widgetId={w.id}>
-                        <div>
-                          <p className="section-title">Varlıklarım · {assets.length}</p>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
-                            {assets.map((asset) => (
-                              <AssetCard
-                                key={asset.id}
-                                asset={asset}
-                                onDelete={(id) => setAssets((p) => p.filter((a) => a.id !== id))}
-                                onEdit={setEditingAsset}
-                                onSell={setSellingAsset}
-                                onAnalyze={setAnalyzingAsset}
-                              />
-                            ))}
+          {
+            assets.length > 0 ? (
+              <div className="widgets-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40 }}>
+                {sortedWidgets.map((w) => {
+                  if (!w.visible) return null;
+                  switch (w.id) {
+                    case 'history':
+                      return (
+                        <WidgetWrapper key={w.id} widgetId={w.id}>
+                          <WealthHistoryChart history={history} currentTotal={totalWealth} assets={assets} />
+                        </WidgetWrapper>
+                      );
+                    case 'chart':
+                      return (
+                        <WidgetWrapper key={w.id} widgetId={w.id}>
+                          <WealthChart assets={assets} />
+                        </WidgetWrapper>
+                      );
+                    case 'categories':
+                      return (
+                        <WidgetWrapper key={w.id} widgetId={w.id}>
+                          <CategoryBreakdown assets={assets} onSell={setSellingAsset} />
+                        </WidgetWrapper>
+                      );
+                    case 'assets':
+                      return (
+                        <WidgetWrapper key={w.id} widgetId={w.id}>
+                          <div>
+                            <p className="section-title">Varlıklarım · {assets.length}</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
+                              {assets.map((asset) => (
+                                <AssetCard
+                                  key={asset.id}
+                                  asset={asset}
+                                  onDelete={(id) => setAssets((p) => p.filter((a) => a.id !== id))}
+                                  onEdit={setEditingAsset}
+                                  onSell={setSellingAsset}
+                                  onAnalyze={setAnalyzingAsset}
+                                />
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </WidgetWrapper>
-                    );
-                  case 'news':
-                    return (
-                      <WidgetWrapper key={w.id} widgetId={w.id}>
-                        <NewsSection assets={assets} />
-                      </WidgetWrapper>
-                    );
-                  default:
-                    return null;
-                }
-              })}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '50px 20px' }}>
-              <div style={{ fontSize: 56, marginBottom: 16 }}>💎</div>
-              <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Henüz varlık eklenmedi</h3>
-              <p style={{ color: 'var(--text-muted)', maxWidth: 360, margin: '0 auto 24px', fontSize: 13, lineHeight: 1.6 }}>
-                Altın, kripto, döviz, hisse senedi ve diğer tüm yatırımlarınızı ekleyin.
-              </p>
-              <button onClick={() => setShowAddForm(true)} className="btn-primary" style={{ fontSize: 14, padding: '14px 28px' }}>
-                ＋ İlk Varlığınızı Ekleyin
-              </button>
-            </div>
-          )}
-        </main>
-      </div>
+                        </WidgetWrapper>
+                      );
+                    case 'news':
+                      return (
+                        <WidgetWrapper key={w.id} widgetId={w.id}>
+                          <NewsSection assets={assets} />
+                        </WidgetWrapper>
+                      );
+                    default:
+                      return null;
+                  }
+                })}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '50px 20px' }}>
+                <div style={{ fontSize: 56, marginBottom: 16 }}>💎</div>
+                <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Henüz varlık eklenmedi</h3>
+                <p style={{ color: 'var(--text-muted)', maxWidth: 360, margin: '0 auto 24px', fontSize: 13, lineHeight: 1.6 }}>
+                  Altın, kripto, döviz, hisse senedi ve diğer tüm yatırımlarınızı ekleyin.
+                </p>
+                <button onClick={() => setShowAddForm(true)} className="btn-primary" style={{ fontSize: 14, padding: '14px 28px' }}>
+                  ＋ İlk Varlığınızı Ekleyin
+                </button>
+              </div>
+            )
+          }
+        </main >
+      </div >
 
-      {showAddForm && <AssetForm onClose={() => setShowAddForm(false)} onAdd={(a) => setAssets((p) => [...p, a])} />}
+      {showAddForm && <AssetForm onClose={() => setShowAddForm(false)} onAdd={(a) => setAssets((p) => [...p, a])} />
+      }
       {editingAsset && <EditAssetForm asset={editingAsset} onClose={() => setEditingAsset(null)} onUpdate={(u) => setAssets((p) => p.map((a) => (a.id === u.id ? u : a)))} />}
-      {sellingAsset && (
-        <SellAssetForm
-          asset={sellingAsset}
-          onClose={() => setSellingAsset(null)}
-          onSold={(id, updatedAsset) => {
-            if (updatedAsset) {
-              setAssets((p) => p.map((a) => (a.id === id ? updatedAsset : a)));
-            } else {
-              setAssets((p) => p.filter((a) => a.id !== id));
-            }
-          }}
-        />
-      )}
-      {analyzingAsset && (
-        <AiAnalysis
-          asset={analyzingAsset}
-          onClose={() => setAnalyzingAsset(null)}
-        />
-      )}
-      {showResetModal && (
-        <ResetModal
-          onClose={() => setShowResetModal(false)}
-          onReset={() => { setAssets([]); setHistory([]); }}
-        />
-      )}
+      {
+        sellingAsset && (
+          <SellAssetForm
+            asset={sellingAsset}
+            onClose={() => setSellingAsset(null)}
+            onSold={(id, updatedAsset) => {
+              if (updatedAsset) {
+                setAssets((p) => p.map((a) => (a.id === id ? updatedAsset : a)));
+              } else {
+                setAssets((p) => p.filter((a) => a.id !== id));
+              }
+            }}
+          />
+        )
+      }
+      {
+        analyzingAsset && (
+          <AiAnalysis
+            asset={analyzingAsset}
+            onClose={() => setAnalyzingAsset(null)}
+          />
+        )
+      }
+      {
+        showResetModal && (
+          <ResetModal
+            onClose={() => setShowResetModal(false)}
+            onReset={() => { setAssets([]); setHistory([]); }}
+          />
+        )
+      }
       {/* Floating AI Chat Mascot */}
-      {assets.length > 0 && (
-        <AiPortfolioChat
-          assets={assets}
-          totalWealth={totalWealth}
-          totalPL={totalPL}
-          totalPLPct={totalPLPct}
-          fmt={fmt}
-        />
-      )}
+      {
+        assets.length > 0 && (
+          <AiPortfolioChat
+            assets={assets}
+            totalWealth={totalWealth}
+            totalPL={totalPL}
+            totalPLPct={totalPLPct}
+            fmt={fmt}
+          />
+        )
+      }
     </>
   );
 }

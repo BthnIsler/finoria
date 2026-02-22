@@ -1579,31 +1579,49 @@ body {
   }
 }
 
+/* ===== HEADER LAYOUT (Desktop default) ===== */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 12px;
+}
+
+.header-left {
+  flex-shrink: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 /* ===== MOBILE RESPONSIVE (max-width: 640px) ===== */
 @media (max-width: 640px) {
 
   /* Header: stack into two rows */
   .app-header {
-    display: flex !important;
     flex-direction: column !important;
-    gap: 12px !important;
-    margin-bottom: 20px !important;
+    align-items: stretch !important;
   }
 
-  .header-title-row {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    width: 100% !important;
+  .header-left {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  .header-controls {
-    display: flex !important;
-    align-items: center !important;
+  .header-right {
+    justify-content: flex-start !important;
     gap: 6px !important;
-    flex-wrap: wrap !important;
-    width: 100% !important;
-    justify-content: flex-end !important;
+  }
+
+  .hide-mobile {
+    display: none !important;
   }
 
   /* Widget grid: single column */
