@@ -125,7 +125,7 @@ export default function Home() {
   const sortedWidgets = [...widgets].sort((a, b) => a.order - b.order);
   const hiddenWidgets = widgets.filter((w) => !w.visible);
 
-  if (loading || authLoading) {
+  if (authLoading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
@@ -153,6 +153,17 @@ export default function Home() {
           </button>
         </div>
         {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>💎</div>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Portföy yükleniyor...</p>
+        </div>
       </div>
     );
   }
