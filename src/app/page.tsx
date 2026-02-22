@@ -546,17 +546,13 @@ export default function Home() {
         )
       }
       {/* Floating AI Chat Mascot */}
-      {
-        assets.length > 0 && (
-          <AiPortfolioChat
-            assets={assets}
-            totalWealth={totalWealth}
-            totalPL={totalPL}
-            totalPLPct={totalPLPct}
-            fmt={fmt}
-          />
-        )
-      }
+      <AiPortfolioChat
+        assets={assets}
+        totalWealth={totalWealth}
+        totalPL={totalPL}
+        totalPLPct={totalPLPct}
+        fmt={fmt}
+      />
     </>
   );
 }
