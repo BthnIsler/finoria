@@ -20,6 +20,7 @@ import AnimatedNumber from '@/components/AnimatedNumber';
 import AiPortfolioChat from '@/components/AiPortfolioChat';
 import { useAuth } from '@/lib/AuthContext';
 import AuthModal from '@/components/AuthModal';
+import ResetModal from '@/components/ResetModal';
 
 export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -38,6 +39,7 @@ export default function Home() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
 
   const { theme, toggleTheme } = useTheme();
   const { currency, setCurrency, convert, symbol } = useCurrency();
@@ -284,6 +286,21 @@ export default function Home() {
                       >
                         🚪 Çıkış Yap
                       </button>
+                      <button
+                        onClick={() => { setShowProfile(false); setShowResetModal(true); }}
+                        style={{
+                          width: '100%', padding: '10px 12px', borderRadius: 10,
+                          background: 'transparent', border: 'none',
+                          color: 'var(--text-muted)', fontSize: 12, fontWeight: 500,
+                          cursor: 'pointer', textAlign: 'left',
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        🗑 Her Şeyi Sıfırla
+                      </button>
                     </div>
                   </div>
                 )}
@@ -475,6 +492,12 @@ export default function Home() {
         <AiAnalysis
           asset={analyzingAsset}
           onClose={() => setAnalyzingAsset(null)}
+        />
+      )}
+      {showResetModal && (
+        <ResetModal
+          onClose={() => setShowResetModal(false)}
+          onReset={() => { setAssets([]); setHistory([]); }}
         />
       )}
     </>
