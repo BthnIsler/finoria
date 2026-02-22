@@ -235,26 +235,25 @@ export default function Home() {
         )}
         <main className={mobilePreview ? 'mobile-preview-content' : ''} style={{ position: 'relative', zIndex: 1, minHeight: '100vh', padding: '28px 20px', maxWidth: mobilePreview ? 390 : 1200, margin: '0 auto' }}>
           {/* Header */}
-          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-            <div>
-              <h1 style={{ fontSize: 24, fontWeight: 800 }}>
-                <span className="gradient-text">Servet Takip</span>
-              </h1>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Tüm yatırımlarınız, tek bir bakışta</p>
+          <header className="app-header">
+            <div className="header-title-row">
+              <div>
+                <h1 style={{ fontSize: 24, fontWeight: 800 }}>
+                  <span className="gradient-text">Finoria</span>
+                </h1>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Tüm yatırımlarınız, tek bir bakışta</p>
+              </div>
+              <button onClick={() => setShowAddForm(true)} className="btn-primary">＋ Ekle</button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className="header-controls">
               {lastUpdated && (
                 <span className="live-dot" style={{ fontSize: 11, color: 'var(--text-muted)', marginRight: 4 }}>
                   {lastUpdated}
                 </span>
               )}
-
-              {/* Currency selector */}
-              <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
                 {(['TRY', 'USD', 'EUR'] as const).map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setCurrency(c)}
+                  <button key={c} onClick={() => setCurrency(c)}
                     style={{
                       background: currency === c ? 'var(--accent-purple)' : 'transparent',
                       color: currency === c ? 'white' : 'var(--text-muted)',
@@ -267,12 +266,10 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Theme toggle */}
               <button onClick={toggleTheme} className="btn-icon" title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}>
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
 
-              {/* Widget edit toggle */}
               {assets.length > 0 && (
                 <button
                   onClick={() => setIsEditing(!isEditing)}
@@ -353,8 +350,6 @@ export default function Home() {
                   </div>
                 )}
               </div>
-
-              <button onClick={() => setShowAddForm(true)} className="btn-primary">＋ Ekle</button>
             </div>
           </header>
 
@@ -441,7 +436,7 @@ export default function Home() {
 
           {/* Widgets Grid */}
           {assets.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40 }}>
+            <div className="widgets-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40 }}>
               {sortedWidgets.map((w) => {
                 if (!w.visible) return null;
                 switch (w.id) {

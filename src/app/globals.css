@@ -1578,3 +1578,101 @@ body {
     max-height: 220px !important;
   }
 }
+
+/* ===== MOBILE RESPONSIVE (max-width: 640px) ===== */
+@media (max-width: 640px) {
+
+  /* Header: stack into two rows */
+  .app-header {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .header-title-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .header-controls {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    justify-content: flex-end !important;
+  }
+
+  /* Widget grid: single column */
+  .widgets-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Main padding */
+  main {
+    padding: 16px 12px !important;
+  }
+
+  /* Bottom padding for floating AI chat */
+  main {
+    padding-bottom: 100px !important;
+  }
+
+  /* Glass cards */
+  .glass-card {
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Section titles */
+  .section-title {
+    font-size: 14px !important;
+  }
+
+  /* Chip buttons — larger touch targets */
+  .chip {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+  }
+
+  /* Buttons */
+  .btn-icon {
+    min-width: 34px !important;
+    min-height: 34px !important;
+  }
+
+  /* News card touch targets */
+  .news-card {
+    padding: 14px !important;
+  }
+
+  /* Forms and modals */
+  [style*="maxWidth: 520px"],
+  [style*="max-width: 520px"] {
+    max-width: 100% !important;
+    width: 95% !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* ===== VERY SMALL SCREENS (max-width: 380px) ===== */
+@media (max-width: 380px) {
+  .header-controls {
+    gap: 4px !important;
+  }
+
+  .header-controls .btn-icon {
+    min-width: 30px !important;
+    min-height: 30px !important;
+    font-size: 14px !important;
+  }
+
+  .btn-primary {
+    padding: 10px 16px !important;
+    font-size: 12px !important;
+  }
+}
