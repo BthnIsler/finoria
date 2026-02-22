@@ -9,7 +9,7 @@ import {
     POPULAR_FOREX,
     GOLD_TYPES,
 } from '@/lib/types';
-import { updateAsset } from '@/lib/storage';
+import { updateAsset } from '@/lib/db';
 
 interface EditAssetFormProps {
     asset: Asset;
@@ -23,6 +23,7 @@ export default function EditAssetForm({ asset, onClose, onUpdate }: EditAssetFor
     const [manualCurrentPrice, setManualCurrentPrice] = useState(
         String(asset.manualCurrentPrice || '')
     );
+    const [isSaving, setIsSaving] = useState(false);
 
     const catMeta = CATEGORIES.find((c) => c.key === asset.category)!;
     const needsManualPrice =
@@ -31,14 +32,24 @@ export default function EditAssetForm({ asset, onClose, onUpdate }: EditAssetFor
         asset.category === 'savings' ||
         asset.category === 'other';
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const updated = updateAsset(asset.id, {
+        setIsSaving(true);
+        const success = await updateAsset(asset.id, {
             amount: parseFloat(amount) || 0,
             purchasePrice: parseFloat(purchasePrice) || 0,
             manualCurrentPrice: manualCurrentPrice ? parseFloat(manualCurrentPrice) : undefined,
         });
-        if (updated) onUpdate(updated);
+
+        if (success) {
+            onUpdate({
+                ...asset,
+                amount: parseFloat(amount) || 0,
+                purchasePrice: parseFloat(purchasePrice) || 0,
+                manualCurrentPrice: manualCurrentPrice ? parseFloat(manualCurrentPrice) : undefined,
+            });
+        }
+        setIsSaving(false);
         onClose();
     };
 

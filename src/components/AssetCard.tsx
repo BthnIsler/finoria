@@ -3,7 +3,7 @@
 import React from 'react';
 import { Asset, getCategoryMeta, GOLD_TYPES } from '@/lib/types';
 import { formatCurrency, formatPercentage, calculateProfitLoss } from '@/lib/utils';
-import { deleteAsset } from '@/lib/storage';
+import { deleteAsset } from '@/lib/db';
 
 interface AssetCardProps {
     asset: Asset;
@@ -22,9 +22,9 @@ export default function AssetCard({ asset, onDelete, onEdit, onSell, onAnalyze }
         ? calculateProfitLoss(asset.amount, asset.purchasePrice, currentPrice)
         : null;
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (window.confirm(`"${asset.name}" varlığını silmek istediğinize emin misiniz?`)) {
-            deleteAsset(asset.id);
+            await deleteAsset(asset.id);
             onDelete(asset.id);
         }
     };

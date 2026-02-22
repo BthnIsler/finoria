@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { Asset, getCategoryMeta } from '@/lib/types';
-import { sellAsset } from '@/lib/storage';
+import { sellAsset } from '@/lib/db';
+import { useAuth } from '@/lib/AuthContext';
 
 interface SellAssetFormProps {
     asset: Asset;
@@ -15,6 +16,8 @@ export default function SellAssetForm({ asset, onClose, onSold }: SellAssetFormP
     const [sellPrice, setSellPrice] = useState(
         String(asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice ?? '')
     );
+    const [isSaving, setIsSaving] = useState(false);
+    const { user } = useAuth();
 
     const cat = getCategoryMeta(asset.category);
     const currentPrice = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
@@ -26,14 +29,17 @@ export default function SellAssetForm({ asset, onClose, onSold }: SellAssetFormP
         ? (parsedPrice - asset.purchasePrice) * parsedAmount
         : 0;
 
-    const canSubmit = parsedAmount > 0 && parsedAmount <= maxAmount && parsedPrice >= 0;
+    const canSubmit = parsedAmount > 0 && parsedAmount <= maxAmount && parsedPrice >= 0 && !isSaving;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!canSubmit) return;
+        if (!canSubmit || !user) return;
+        setIsSaving(true);
 
-        const { updatedAsset } = sellAsset(asset.id, parsedAmount, parsedPrice);
+        const updatedAsset = await sellAsset(user.id, asset.id, maxAmount, parsedAmount, parsedPrice);
         onSold(asset.id, updatedAsset);
+
+        setIsSaving(false);
         onClose();
     };
 

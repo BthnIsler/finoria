@@ -11,7 +11,8 @@ import {
     PRECIOUS_METALS,
 } from '@/lib/types';
 import { searchStocksLocal, searchStocksAPI, StockItem } from '@/lib/stocks';
-import { addAsset } from '@/lib/storage';
+import { addAsset } from '@/lib/db';
+import { useAuth } from '@/lib/AuthContext';
 
 interface AssetFormProps {
     onClose: () => void;
@@ -27,6 +28,9 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
     const [manualName, setManualName] = useState('');
     const [selectedPreset, setSelectedPreset] = useState('');
     const [selectedName, setSelectedName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
+    const { user } = useAuth();
 
     // Stock-specific state
     const [stockMarket, setStockMarket] = useState<'BIST' | 'NASDAQ'>('BIST');
@@ -98,14 +102,15 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
 
     // Step 1 is complete when a category item is selected
     const step1Done = needsManualName || !!selectedPreset || (category === 'stock' && !!selectedPreset);
-    const canSubmit = currentName && amount;
+    const canSubmit = currentName && amount && !isSaving;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!canSubmit) return;
+        if (!canSubmit || !user) return;
+        setIsSaving(true);
         const goldType = GOLD_TYPES.find((g) => g.id === selectedPreset);
         const effectiveAmount = goldType ? parseFloat(amount) * goldType.grams : parseFloat(amount);
-        const newAsset = addAsset({
+        const newAsset = await addAsset(user.id, {
             name: currentName,
             category,
             amount: effectiveAmount,
@@ -114,7 +119,11 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
             manualCurrentPrice: manualCurrentPrice ? parseFloat(manualCurrentPrice) : undefined,
             apiId: getApiId(),
         });
-        onAdd(newAsset);
+
+        if (newAsset) {
+            onAdd(newAsset);
+        }
+        setIsSaving(false);
         onClose();
     };
 

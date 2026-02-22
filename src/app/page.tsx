@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Asset } from '@/lib/types';
-import { getAssets, saveAssets, getWealthHistory, saveWealthSnapshot, WealthSnapshot } from '@/lib/storage';
+import { WealthSnapshot } from '@/lib/storage';
+import { getAssets, getWealthHistory, saveWealthSnapshot, saveMultipleAssetPrices, migrateLocalDataToSupabase, updateAsset, deleteAsset } from '@/lib/db';
 import { fetchAllPrices } from '@/lib/prices';
 import { useTheme, useCurrency, useWidgetLayout, useDesignTheme } from '@/lib/contexts';
 import AssetForm from '@/components/AssetForm';
@@ -17,6 +18,8 @@ import NewsSection from '@/components/NewsSection';
 import WidgetWrapper from '@/components/WidgetWrapper';
 import AnimatedNumber from '@/components/AnimatedNumber';
 import AiPortfolioChat from '@/components/AiPortfolioChat';
+import { useAuth } from '@/lib/AuthContext';
+import AuthModal from '@/components/AuthModal';
 
 export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -32,16 +35,35 @@ export default function Home() {
   const [tickerOffset, setTickerOffset] = useState(0);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const { user, loading: authLoading, signOut } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const { theme, toggleTheme } = useTheme();
   const { currency, setCurrency, convert, symbol } = useCurrency();
   const { design, setDesign } = useDesignTheme();
   const { widgets, isEditing, setIsEditing, resetLayout, updateWidget } = useWidgetLayout();
 
   useEffect(() => {
-    setAssets(getAssets());
-    setHistory(getWealthHistory());
-    setLoading(false);
-  }, []);
+    if (!user) return;
+    const loadData = async () => {
+      // Check for local migration first
+      const localAssetsStr = localStorage.getItem('wealth_tracker_assets');
+      if (localAssetsStr && JSON.parse(localAssetsStr).length > 0) {
+        if (confirm('Eski cihazınızdaki veya tarayıcınızdaki verileri buluta aktarmak ister misiniz?')) {
+          await migrateLocalDataToSupabase(user.id);
+        } else {
+          localStorage.removeItem('wealth_tracker_assets');
+          localStorage.removeItem('wealth_tracker_history');
+        }
+      }
+
+      const loadedAssets = await getAssets(user.id);
+      setAssets(loadedAssets);
+      setHistory(await getWealthHistory(user.id));
+      setLoading(false);
+    };
+    loadData();
+  }, [user]);
 
   const refreshPrices = useCallback(async () => {
     if (assets.length === 0) return;
@@ -59,9 +81,11 @@ export default function Home() {
           : a
       );
       setAssets(updated);
-      saveAssets(updated);
-      saveWealthSnapshot(updated);
-      setHistory(getWealthHistory()); // Reload history after snapshot
+      if (user) {
+        await saveMultipleAssetPrices(user.id, updated);
+        await saveWealthSnapshot(user.id, updated);
+        setHistory(await getWealthHistory(user.id));
+      }
       setLastUpdated(new Date().toLocaleTimeString('tr-TR'));
     } catch (err) { console.error('Fiyat güncelleme hatası:', err); }
     finally { setPricesLoading(false); }
@@ -101,13 +125,34 @@ export default function Home() {
   const sortedWidgets = [...widgets].sort((a, b) => a.order - b.order);
   const hiddenWidgets = widgets.filter((w) => !w.visible);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>💎</div>
           <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Yükleniyor...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', padding: 20 }}>
+          <div style={{ fontSize: 64, marginBottom: 24 }}>💎</div>
+          <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 16 }}>
+            <span className="gradient-text">Servet Takip</span>
+            <span style={{ color: 'var(--accent-cyan)', marginLeft: 8, fontSize: 18, verticalAlign: 'middle' }}>V2</span>
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 15, maxWidth: 460, margin: '0 auto 40px', lineHeight: 1.6 }}>
+            Altın, Kripto, Döviz ve Hisse yatırımlarınızı <strong>bulut senkronizasyonu</strong> ile tüm cihazlarınızdan güvenle takip edin.
+          </p>
+          <button onClick={() => setShowAuthModal(true)} className="btn-primary" style={{ fontSize: 15, padding: '16px 36px', borderRadius: 100 }}>
+            Giriş Yap / Ücretsiz Kayıt Ol
+          </button>
+        </div>
+        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       </div>
     );
   }
@@ -182,6 +227,10 @@ export default function Home() {
               {/* Theme toggle */}
               <button onClick={toggleTheme} className="btn-icon" title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}>
                 {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
+
+              <button onClick={signOut} className="btn-icon" title="Çıkış Yap" style={{ color: 'var(--accent-red)' }}>
+                🚪
               </button>
 
               {/* Widget edit toggle */}
