@@ -425,7 +425,7 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
                                     />
                                 </div>
                                 <div>
-                                    <label style={s.label}>Alış Fiyatı (₺)</label>
+                                    <label style={s.label}>Alış Fiyatı ({category === 'stock' && stockMarket === 'NASDAQ' ? '$' : '₺'})</label>
                                     <input type="number" style={s.input}
                                         placeholder="Birim fiyat"
                                         value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} step="any" min="0" />
