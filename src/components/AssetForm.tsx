@@ -103,28 +103,39 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
     // Step 1 is complete when a category item is selected
     const step1Done = needsManualName || !!selectedPreset || (category === 'stock' && !!selectedPreset);
     const canSubmit = currentName && amount && !isSaving;
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!canSubmit || !user) return;
         setIsSaving(true);
-        const goldType = GOLD_TYPES.find((g) => g.id === selectedPreset);
-        const effectiveAmount = goldType ? parseFloat(amount) * goldType.grams : parseFloat(amount);
-        const newAsset = await addAsset(user.id, {
-            name: currentName,
-            category,
-            amount: effectiveAmount,
-            purchasePrice: purchasePrice ? parseFloat(purchasePrice) : 0,
-            purchaseCurrency: (category === 'stock' && stockMarket === 'NASDAQ') ? 'USD' : 'TRY',
-            manualCurrentPrice: manualCurrentPrice ? parseFloat(manualCurrentPrice) : undefined,
-            apiId: getApiId(),
-        });
+        setSubmitError(null);
 
-        if (newAsset) {
-            onAdd(newAsset);
+        try {
+            const goldType = GOLD_TYPES.find((g) => g.id === selectedPreset);
+            const effectiveAmount = goldType ? parseFloat(amount) * goldType.grams : parseFloat(amount);
+            const newAsset = await addAsset(user.id, {
+                name: currentName,
+                category,
+                amount: effectiveAmount,
+                purchasePrice: purchasePrice ? parseFloat(purchasePrice) : 0,
+                purchaseCurrency: (category === 'stock' && stockMarket === 'NASDAQ') ? 'USD' : 'TRY',
+                manualCurrentPrice: manualCurrentPrice ? parseFloat(manualCurrentPrice) : undefined,
+                apiId: getApiId(),
+            });
+
+            if (newAsset) {
+                onAdd(newAsset);
+                onClose();
+            } else {
+                setSubmitError('Varlık eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+            }
+        } catch (err: any) {
+            console.error('Asset form submit error:', err);
+            setSubmitError(err?.message || 'Beklenmeyen bir hata oluştu.');
+        } finally {
+            setIsSaving(false);
         }
-        setIsSaving(false);
-        onClose();
     };
 
     const getPresets = () => {
@@ -439,6 +450,17 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
                                     <input type="number" style={s.input}
                                         placeholder="Şu anki birim fiyat"
                                         value={manualCurrentPrice} onChange={(e) => setManualCurrentPrice(e.target.value)} step="any" min="0" />
+                                </div>
+                            )}
+
+                            {/* Error display */}
+                            {submitError && (
+                                <div style={{
+                                    background: 'rgba(255,77,106,0.1)', border: '1px solid rgba(255,77,106,0.3)',
+                                    borderRadius: 12, padding: '12px 16px', marginTop: 12,
+                                    color: 'var(--accent-red)', fontSize: 12, lineHeight: 1.5,
+                                }}>
+                                    ⚠️ {submitError}
                                 </div>
                             )}
 

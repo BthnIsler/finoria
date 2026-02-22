@@ -87,9 +87,13 @@ export async function addAsset(userId: string, asset: Omit<Asset, 'id' | 'create
         .select()
         .single();
 
-    if (error || !data) {
+    if (error) {
         console.error('Add asset error:', error);
-        return null;
+        throw new Error(`Veritabanı hatası: ${error.message} (${error.code})`);
+    }
+
+    if (!data) {
+        throw new Error('Veri döndürülmedi. Lütfen tekrar deneyin.');
     }
 
     return {
