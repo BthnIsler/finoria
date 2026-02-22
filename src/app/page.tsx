@@ -42,7 +42,7 @@ export default function Home() {
   const [showResetModal, setShowResetModal] = useState(false);
 
   const { theme, toggleTheme } = useTheme();
-  const { currency, setCurrency, convert, symbol } = useCurrency();
+  const { currency, setCurrency, convert, symbol, exchangeRates } = useCurrency();
   const { design, setDesign } = useDesignTheme();
   const { widgets, isEditing, setIsEditing, resetLayout, updateWidget } = useWidgetLayout();
 
@@ -118,7 +118,14 @@ export default function Home() {
   const getPrice = (a: Asset) => a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
   const totalWealthBase = assets.reduce((s, a) => s + a.amount * getPrice(a), 0);
   const totalWealth = totalWealthBase * (1 + tickerOffset);
-  const totalCost = assets.reduce((s, a) => s + a.amount * a.purchasePrice, 0);
+
+  // Cost calculation: convert purchase prices to TRY if they were entered in another currency
+  const usdToTry = exchangeRates['USD'] ? (1 / exchangeRates['USD']) : 37; // fallback rate
+  const totalCost = assets.reduce((s, a) => {
+    const costPerUnit = a.purchaseCurrency === 'USD' ? a.purchasePrice * usdToTry : a.purchasePrice;
+    return s + a.amount * costPerUnit;
+  }, 0);
+
   const totalPL = totalWealth - totalCost;
   const totalPLPct = totalCost > 0 ? ((totalWealth - totalCost) / totalCost) * 100 : 0;
 
@@ -391,18 +398,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* AI Portfolio Chat */}
-          {assets.length > 0 && (
-            <AiPortfolioChat
-              assets={assets}
-              totalWealth={totalWealth}
-              totalPL={totalPL}
-              totalPLPct={totalPLPct}
-              fmt={fmt}
-            />
-          )}
-          <div style={{ marginBottom: 24 }} />
-
           {/* Widgets Grid */}
           {assets.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40 }}>
@@ -498,6 +493,16 @@ export default function Home() {
         <ResetModal
           onClose={() => setShowResetModal(false)}
           onReset={() => { setAssets([]); setHistory([]); }}
+        />
+      )}
+      {/* Floating AI Chat Mascot */}
+      {assets.length > 0 && (
+        <AiPortfolioChat
+          assets={assets}
+          totalWealth={totalWealth}
+          totalPL={totalPL}
+          totalPLPct={totalPLPct}
+          fmt={fmt}
         />
       )}
     </>

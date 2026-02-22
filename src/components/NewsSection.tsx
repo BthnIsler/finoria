@@ -14,51 +14,75 @@ interface NewsSectionProps {
     assets: Asset[];
 }
 
+type TimeFilter = '1d' | '1w' | '1m' | 'all';
+
 export default function NewsSection({ assets }: NewsSectionProps) {
     const [articles, setArticles] = useState<NewsArticle[]>([]);
     const [loading, setLoading] = useState(false);
-    const [selectedAsset, setSelectedAsset] = useState<string>('');
+    const [selectedAsset, setSelectedAsset] = useState<string>('__all__');
+    const [timeFilter, setTimeFilter] = useState<TimeFilter>('1w');
 
     // Build unique asset names for the filter chips
     const assetNames = assets.map((a) => a.name).filter((name, i, arr) => arr.indexOf(name) === i);
 
     useEffect(() => {
         if (assets.length === 0) return;
-        // Auto-select the first asset
-        if (!selectedAsset && assetNames.length > 0) {
-            setSelectedAsset(assetNames[0]);
-        }
-    }, [assets, assetNames, selectedAsset]);
-
-    useEffect(() => {
-        if (!selectedAsset) return;
 
         const fetchNews = async () => {
             setLoading(true);
             try {
-                // Find the asset object to get more details if needed
-                const asset = assets.find(a => a.name === selectedAsset);
-                let query = selectedAsset;
+                let query: string;
 
-                // Create a more specific search query
-                if (asset) {
-                    if (asset.category === 'stock' && asset.apiId) {
-                        // For stocks: "AAPL hisse haberleri", "THYAO hisse haberleri"
-                        const symbol = asset.apiId.split(':')[1] || asset.apiId;
-                        query = `${symbol} hisse haberleri ${asset.name}`;
-                    } else if (asset.category === 'crypto' && asset.apiId) {
-                        // For crypto: "Bitcoin haberleri", "BTC haberleri"
-                        query = `${asset.name} kripto haberleri`;
-                    } else if (asset.category === 'forex') {
-                        query = `${asset.name} piyasa haberleri`;
-                    } else {
-                        query = `${asset.name} haberleri`;
+                if (selectedAsset === '__all__') {
+                    // Build a combined query from top asset categories
+                    const categories = [...new Set(assets.map(a => a.category))];
+                    const queryParts: string[] = [];
+                    if (categories.includes('stock')) queryParts.push('borsa hisse');
+                    if (categories.includes('crypto')) queryParts.push('kripto bitcoin');
+                    if (categories.includes('gold') || categories.includes('precious_metals')) queryParts.push('altın');
+                    if (categories.includes('forex')) queryParts.push('döviz');
+                    query = queryParts.length > 0 ? queryParts.join(' OR ') + ' yatırım' : 'yatırım piyasa haberleri';
+                } else {
+                    const asset = assets.find(a => a.name === selectedAsset);
+                    query = selectedAsset;
+                    if (asset) {
+                        if (asset.category === 'stock' && asset.apiId) {
+                            const symbol = asset.apiId.split(':')[1] || asset.apiId;
+                            query = `${symbol} hisse haberleri ${asset.name}`;
+                        } else if (asset.category === 'crypto' && asset.apiId) {
+                            query = `${asset.name} kripto haberleri`;
+                        } else if (asset.category === 'forex') {
+                            query = `${asset.name} piyasa haberleri`;
+                        } else {
+                            query = `${asset.name} haberleri`;
+                        }
                     }
                 }
 
-                const res = await fetch(`/api/news?q=${encodeURIComponent(query)}`);
+                // Add time filter to query
+                const timeParam = timeFilter !== 'all' ? `&period=${timeFilter}` : '';
+                const res = await fetch(`/api/news?q=${encodeURIComponent(query)}${timeParam}`);
                 const data = await res.json();
-                setArticles(data.articles || []);
+
+                let filtered = data.articles || [];
+
+                // Client-side time filtering
+                if (timeFilter !== 'all') {
+                    const now = new Date();
+                    const cutoff = new Date();
+                    if (timeFilter === '1d') cutoff.setDate(now.getDate() - 1);
+                    else if (timeFilter === '1w') cutoff.setDate(now.getDate() - 7);
+                    else if (timeFilter === '1m') cutoff.setMonth(now.getMonth() - 1);
+
+                    filtered = filtered.filter((a: NewsArticle) => {
+                        if (!a.pubDate) return true;
+                        try {
+                            return new Date(a.pubDate) >= cutoff;
+                        } catch { return true; }
+                    });
+                }
+
+                setArticles(filtered);
             } catch {
                 setArticles([]);
             } finally {
@@ -67,7 +91,7 @@ export default function NewsSection({ assets }: NewsSectionProps) {
         };
 
         fetchNews();
-    }, [selectedAsset, assets]);
+    }, [selectedAsset, timeFilter, assets]);
 
     if (assets.length === 0) return null;
 
@@ -86,14 +110,46 @@ export default function NewsSection({ assets }: NewsSectionProps) {
         }
     };
 
+    const TIME_FILTERS: { key: TimeFilter; label: string }[] = [
+        { key: '1d', label: '1 Gün' },
+        { key: '1w', label: '1 Hafta' },
+        { key: '1m', label: '1 Ay' },
+        { key: 'all', label: 'Tümü' },
+    ];
+
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <p className="section-title" style={{ marginBottom: 0 }}>📰 Haberler</p>
+                {/* Time filter */}
+                <div style={{ display: 'flex', gap: 4 }}>
+                    {TIME_FILTERS.map((tf) => (
+                        <button
+                            key={tf.key}
+                            onClick={() => setTimeFilter(tf.key)}
+                            style={{
+                                padding: '4px 10px', borderRadius: 8, fontSize: 10, fontWeight: 600,
+                                background: timeFilter === tf.key ? 'var(--accent-purple)' : 'var(--bg-elevated)',
+                                color: timeFilter === tf.key ? 'white' : 'var(--text-muted)',
+                                border: timeFilter === tf.key ? 'none' : '1px solid var(--border)',
+                                cursor: 'pointer', transition: 'all 0.2s',
+                            }}
+                        >
+                            {tf.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Asset filter chips */}
+            {/* Asset filter chips — "Tüm Haberler" first */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                <button
+                    className={`chip ${selectedAsset === '__all__' ? 'active' : ''}`}
+                    onClick={() => setSelectedAsset('__all__')}
+                    style={{ fontSize: 11 }}
+                >
+                    📊 Tüm Haberler
+                </button>
                 {assetNames.map((name) => (
                     <button
                         key={name}
@@ -168,7 +224,7 @@ export default function NewsSection({ assets }: NewsSectionProps) {
             ) : (
                 <div className="glass-card" style={{ padding: 30, textAlign: 'center' }}>
                     <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-                        {selectedAsset ? `"${selectedAsset}" için haber bulunamadı` : 'Varlık seçerek haberleri görüntüleyin'}
+                        {selectedAsset === '__all__' ? 'Haber bulunamadı' : `"${selectedAsset}" için haber bulunamadı`}
                     </p>
                 </div>
             )}

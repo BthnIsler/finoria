@@ -57,7 +57,7 @@ export async function getAssets(userId: string): Promise<Asset[]> {
         category: d.category,
         amount: parseFloat(d.amount),
         purchasePrice: parseFloat(d.purchase_price),
-        purchaseCurrency: 'TRY', // Default format
+        purchaseCurrency: d.purchase_currency || 'TRY',
         currentPrice: d.current_price ? parseFloat(d.current_price) : undefined,
         manualCurrentPrice: d.manual_current_price ? parseFloat(d.manual_current_price) : undefined,
         apiId: d.api_id, // We need to add api_id to the schema! Wait, I missed it in the SQL.
