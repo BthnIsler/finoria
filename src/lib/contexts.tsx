@@ -63,11 +63,11 @@ export function useDesignTheme() {
 }
 
 export function DesignThemeProvider({ children }: { children: ReactNode }) {
-    const [design, setDesignState] = useState<DesignTheme>('glass');
+    const [design, setDesignState] = useState<DesignTheme>('finans');
 
     useEffect(() => {
-        const saved = localStorage.getItem('wt_design') as DesignTheme | null;
-        if (saved && (saved === 'glass' || saved === 'neo' || saved === 'minimal' || saved === 'finans')) setDesignState(saved);
+        // Default to finans theme — no user selection
+        setDesignState('finans');
     }, []);
 
     useEffect(() => {

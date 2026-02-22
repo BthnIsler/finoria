@@ -67,18 +67,23 @@ export async function getAssets(userId: string): Promise<Asset[]> {
 }
 
 export async function addAsset(userId: string, asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>): Promise<Asset | null> {
+    const insertData: any = {
+        user_id: userId,
+        name: asset.name,
+        category: asset.category,
+        amount: asset.amount,
+        purchase_price: asset.purchasePrice,
+        current_price: asset.currentPrice,
+        manual_current_price: asset.manualCurrentPrice,
+    };
+
+    // Only include optional columns if they have values
+    if (asset.apiId) insertData.api_id = asset.apiId;
+    if (asset.purchaseCurrency) insertData.purchase_currency = asset.purchaseCurrency;
+
     const { data, error } = await supabase
         .from('assets')
-        .insert({
-            user_id: userId,
-            name: asset.name,
-            category: asset.category,
-            amount: asset.amount,
-            purchase_price: asset.purchasePrice,
-            current_price: asset.currentPrice,
-            manual_current_price: asset.manualCurrentPrice,
-            api_id: asset.apiId,
-        })
+        .insert(insertData)
         .select()
         .single();
 

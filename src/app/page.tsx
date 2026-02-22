@@ -37,6 +37,7 @@ export default function Home() {
 
   const { user, loading: authLoading, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const { theme, toggleTheme } = useTheme();
   const { currency, setCurrency, convert, symbol } = useCurrency();
@@ -216,32 +217,9 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Design switcher */}
-              <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-                {(['glass', 'neo', 'minimal', 'finans'] as const).map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setDesign(d)}
-                    style={{
-                      background: design === d ? 'var(--accent-cyan)' : 'transparent',
-                      color: design === d ? 'white' : 'var(--text-muted)',
-                      border: 'none', padding: '7px 10px', fontSize: 10, fontWeight: 600,
-                      cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {d === 'glass' ? '🪟 Cam' : d === 'neo' ? '✨ Neo' : d === 'minimal' ? '🎯 Sade' : '💹 Finans'}
-                  </button>
-                ))}
-              </div>
-
               {/* Theme toggle */}
               <button onClick={toggleTheme} className="btn-icon" title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}>
                 {theme === 'dark' ? '☀️' : '🌙'}
-              </button>
-
-              <button onClick={signOut} className="btn-icon" title="Çıkış Yap" style={{ color: 'var(--accent-red)' }}>
-                🚪
               </button>
 
               {/* Widget edit toggle */}
@@ -259,14 +237,58 @@ export default function Home() {
               <button onClick={refreshPrices} className="btn-icon" disabled={pricesLoading} title="Fiyatları Güncelle">
                 {pricesLoading ? '⏳' : '🔄'}
               </button>
-              <button
-                onClick={() => setMobilePreview(!mobilePreview)}
-                className="btn-icon"
-                title={mobilePreview ? 'Masaüstü Görünüm' : 'Mobil Görünüm'}
-                style={mobilePreview ? { borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' } : {}}
-              >
-                {mobilePreview ? '🖥️' : '📱'}
-              </button>
+
+              {/* Profile dropdown */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowProfile(!showProfile)}
+                  className="btn-icon"
+                  title="Profil"
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))',
+                    color: 'white', fontWeight: 700, fontSize: 14,
+                    border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  {user?.email?.charAt(0).toUpperCase() || '?'}
+                </button>
+                {showProfile && (
+                  <div style={{
+                    position: 'absolute', right: 0, top: '100%', marginTop: 8,
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    borderRadius: 16, padding: 0, minWidth: 240,
+                    boxShadow: '0 16px 48px rgba(0,0,0,0.3)', zIndex: 100,
+                    animation: 'fadeIn 0.2s ease',
+                  }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Hesap</p>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', wordBreak: 'break-all' }}>
+                        {user?.email}
+                      </p>
+                    </div>
+                    <div style={{ padding: 8 }}>
+                      <button
+                        onClick={() => { setShowProfile(false); signOut(); }}
+                        style={{
+                          width: '100%', padding: '10px 12px', borderRadius: 10,
+                          background: 'transparent', border: 'none',
+                          color: 'var(--accent-red)', fontSize: 13, fontWeight: 600,
+                          cursor: 'pointer', textAlign: 'left',
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,77,106,0.08)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        🚪 Çıkış Yap
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button onClick={() => setShowAddForm(true)} className="btn-primary">＋ Ekle</button>
             </div>
           </header>

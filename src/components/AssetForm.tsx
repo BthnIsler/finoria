@@ -115,7 +115,7 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
             category,
             amount: effectiveAmount,
             purchasePrice: purchasePrice ? parseFloat(purchasePrice) : 0,
-            purchaseCurrency: 'TRY',
+            purchaseCurrency: (category === 'stock' && stockMarket === 'NASDAQ') ? 'USD' : 'TRY',
             manualCurrentPrice: manualCurrentPrice ? parseFloat(manualCurrentPrice) : undefined,
             apiId: getApiId(),
         });
