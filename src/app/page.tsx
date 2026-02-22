@@ -36,10 +36,13 @@ export default function Home() {
   const [tickerOffset, setTickerOffset] = useState(0);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, displayName, loading: authLoading, loginWithName, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [loginName, setLoginName] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const { theme, toggleTheme } = useTheme();
   const { currency, setCurrency, convert, symbol, exchangeRates } = useCurrency();
@@ -147,22 +150,60 @@ export default function Home() {
   }
 
   if (!user) {
+    const handleNameLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!loginName.trim()) return;
+      setLoginLoading(true);
+      setLoginError('');
+      try {
+        await loginWithName(loginName.trim());
+      } catch (err: any) {
+        setLoginError(err.message || 'Bir hata oluştu');
+      } finally {
+        setLoginLoading(false);
+      }
+    };
+
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', padding: 20 }}>
           <div style={{ fontSize: 64, marginBottom: 24 }}>💎</div>
           <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 16 }}>
-            <span className="gradient-text">Servet Takip</span>
-            <span style={{ color: 'var(--accent-cyan)', marginLeft: 8, fontSize: 18, verticalAlign: 'middle' }}>V2</span>
+            <span className="gradient-text">Finoria</span>
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 15, maxWidth: 460, margin: '0 auto 40px', lineHeight: 1.6 }}>
-            Altın, Kripto, Döviz ve Hisse yatırımlarınızı <strong>bulut senkronizasyonu</strong> ile tüm cihazlarınızdan güvenle takip edin.
+          <p style={{ color: 'var(--text-muted)', fontSize: 15, maxWidth: 420, margin: '0 auto 32px', lineHeight: 1.6 }}>
+            Kişisel yatırım asistanınız. İsminizi girin ve portföyünüzü yönetmeye başlayın.
           </p>
-          <button onClick={() => setShowAuthModal(true)} className="btn-primary" style={{ fontSize: 15, padding: '16px 36px', borderRadius: 100 }}>
-            Giriş Yap / Ücretsiz Kayıt Ol
-          </button>
+          <form onSubmit={handleNameLogin} style={{ maxWidth: 320, margin: '0 auto' }}>
+            <input
+              type="text"
+              placeholder="İsminiz (ör: Batuhan)"
+              value={loginName}
+              onChange={(e) => setLoginName(e.target.value)}
+              autoFocus
+              style={{
+                width: '100%', padding: '16px 20px', borderRadius: 14,
+                background: 'var(--bg-elevated)', border: '2px solid var(--border)',
+                color: 'var(--text-primary)', fontSize: 16, textAlign: 'center',
+                outline: 'none', marginBottom: 14,
+              }}
+            />
+            {loginError && (
+              <p style={{ color: 'var(--accent-red)', fontSize: 12, marginBottom: 10 }}>{loginError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={!loginName.trim() || loginLoading}
+              className="btn-primary"
+              style={{
+                width: '100%', fontSize: 15, padding: '16px',
+                borderRadius: 100, opacity: loginName.trim() && !loginLoading ? 1 : 0.5,
+              }}
+            >
+              {loginLoading ? '⏳ Giriş yapılıyor...' : '🚀 Başla'}
+            </button>
+          </form>
         </div>
-        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       </div>
     );
   }
@@ -261,7 +302,7 @@ export default function Home() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
-                  {user?.email?.charAt(0).toUpperCase() || '?'}
+                  {displayName?.charAt(0).toUpperCase() || '?'}
                 </button>
                 {showProfile && (
                   <div style={{
@@ -274,7 +315,7 @@ export default function Home() {
                     <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Hesap</p>
                       <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', wordBreak: 'break-all' }}>
-                        {user?.email}
+                        {displayName}
                       </p>
                     </div>
                     <div style={{ padding: 8 }}>

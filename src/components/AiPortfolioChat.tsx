@@ -18,7 +18,7 @@ interface AiPortfolioChatProps {
 }
 
 export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLPct, fmt }: AiPortfolioChatProps) {
-    const { user } = useAuth();
+    const { user, displayName } = useAuth();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -30,35 +30,59 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Extract user's display name from email
-    const getUserName = () => {
-        if (!user?.email) return 'Değerli Müşterimiz';
-        const name = user.email.split('@')[0];
-        // Capitalize first letter
-        return name.charAt(0).toUpperCase() + name.slice(1) + ' Bey/Hanım';
-    };
+    // Use display name from auth context
+    const name = displayName || 'Dostum';
 
     // Generate personalized greeting for the speech bubble
     const getBubbleGreeting = () => {
-        const name = getUserName();
+        const hour = new Date().getHours();
+        const timeGreet = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
+
         if (totalPL > 0) {
-            return `Merhaba ${name}! Bugün portföyünüz ${totalPLPct.toFixed(1)}% kârda 🎉 Sohbet etmek için tıklayabilirsiniz.`;
+            const greetings = [
+                `${timeGreet} ${name}! 🎉 Bugün portföyün %${totalPLPct.toFixed(1)} kârda, harika gidiyorsun! Sohbet edelim mi?`,
+                `Selam ${name}! Bugün işler yolunda, portföyün güzel kazandırıyor 💪 Konuşmak için tıkla!`,
+                `Hey ${name}! Bugünkü performansın bayağı iyi, detaylara bakmak ister misin? 📈`,
+            ];
+            return greetings[Math.floor(Math.random() * greetings.length)];
         } else if (totalPL < 0) {
-            return `Merhaba ${name}! Piyasalarda dalgalanma var, birlikte bakalım mı? Sohbet için tıklayın.`;
+            const greetings = [
+                `${timeGreet} ${name}! Piyasalar biraz sallantıda ama merak etme, birlikte çözeriz 💪 Tıkla konuşalım.`,
+                `Selam ${name}! Bugün biraz düşüş var ama moralini bozma, fırsatlar her zaman vardır 🌟`,
+                `Hey ${name}! Hadi birlikte portföyüne bakalım, her düşüş bir fırsat olabilir 🚀`,
+            ];
+            return greetings[Math.floor(Math.random() * greetings.length)];
         }
-        return `Merhaba ${name}! Portföyünüz hakkında sohbet etmek ister misiniz? Tıklayın.`;
+        const greetings = [
+            `${timeGreet} ${name}! Portföyün hakkında sohbet etmek ister misin? Ben buradayım 😊`,
+            `Selam ${name}! Bugün yatırım planlarını konuşalım mı? Tıkla başlayalım 🎯`,
+        ];
+        return greetings[Math.floor(Math.random() * greetings.length)];
     };
 
     // Initial greeting for chat
     useEffect(() => {
         if (messages.length === 0 && isOpen) {
-            const name = getUserName();
-            let greeting = `Merhaba ${name}! Ben Finoria, senin kişisel yapay zeka finans asistanın. Bugün nasılsın?`;
+            const hour = new Date().getHours();
+            const timeGreet = hour < 12 ? 'Günaydın' : hour < 18 ? 'Merhaba' : 'İyi akşamlar';
+
+            let greeting: string;
             if (totalPL > 0) {
-                greeting = `Merhaba ${name}! Ben Finoria. Bugün harika haberlerim var, portföyün ${totalPLPct.toFixed(1)}% kârda görünüyor! 🎉 Nasıl yardımcı olabilirim?`;
+                const opts = [
+                    `${timeGreet} ${name}! 🎉 Ben Finoria, senin kişisel yatırım asistanın. Bugün portföyün %${totalPLPct.toFixed(1)} kârda, tebrik ederim! Bu ivmeyi nasıl sürdürebileceğini konuşalım mı?`,
+                    `Selam ${name}! Harika bir gün, portföyün kazandırmaya devam ediyor 💪 Sana özel taktiklerim var, ne dersin?`,
+                ];
+                greeting = opts[Math.floor(Math.random() * opts.length)];
             } else if (totalPL < 0) {
-                greeting = `Merhaba ${name}, ben Finoria. Piyasalarda biraz dalgalanma var sanırım, portföyünde yatırım fırsatlarını değerlendirmek ister misin?`;
+                const opts = [
+                    `${timeGreet} ${name}! Ben Finoria, her zaman yanındayım 💪 Piyasalar biraz zor ama birlikte düzeltiriz. Hadi portföyünü analiz edelim, ne dersin?`,
+                    `Selam ${name}! Bugün biraz kaybetmiş olabilirsin ama moralini bozma, bu tür dönemler geçici. Birlikte strateji kuralım mı? 🚀`,
+                ];
+                greeting = opts[Math.floor(Math.random() * opts.length)];
+            } else {
+                greeting = `${timeGreet} ${name}! Ben Finoria, senin kişisel yatırım asistanın 😊 Portföyün hakkında konuşalım mı? Sana en iyi tavsiyeleri vermeye hazırım!`;
             }
+
             setMessages([{ role: 'assistant', content: greeting }]);
         }
     }, [isOpen, totalPL, totalPLPct, messages.length]);
