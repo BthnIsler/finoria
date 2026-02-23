@@ -16,6 +16,14 @@ interface NewsSectionProps {
 }
 
 type NewsTab = 'market' | 'portfolio' | 'asset';
+type TimeFilter = '1d' | '1w' | '1m' | 'all';
+
+const TIME_FILTERS: { key: TimeFilter; label: string }[] = [
+    { key: '1d', label: '1 Gün' },
+    { key: '1w', label: '1 Hafta' },
+    { key: '1m', label: '1 Ay' },
+    { key: 'all', label: 'Tümü' },
+];
 
 const formatDate = (dateStr: string) => {
     try {
@@ -91,6 +99,7 @@ function ArticleList({ articles, loading }: { articles: NewsArticle[]; loading: 
 export default function NewsSection({ assets }: NewsSectionProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<NewsTab>('market');
+    const [timeFilter, setTimeFilter] = useState<TimeFilter>('1w');
     const [articles, setArticles] = useState<NewsArticle[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -102,19 +111,19 @@ export default function NewsSection({ assets }: NewsSectionProps) {
 
     const buildQuery = useCallback((tab: NewsTab) => {
         if (tab === 'market') {
-            return 'borsa ekonomi piyasa haberleri';
+            return 'borsa ekonomi piyasa bist haberleri';
         }
-        // portfolio: combine all asset names 
+        // portfolio: use all asset names as search terms so results are relevant to the user's holdings
+        const names = assets.map(a => a.name).slice(0, 8);
         const categories = [...new Set(assets.map(a => a.category))];
-        const parts: string[] = [];
-        assets.slice(0, 5).forEach(a => parts.push(a.name));
-        if (categories.includes('stock')) parts.push('borsa hisse');
-        if (categories.includes('crypto')) parts.push('kripto');
-        if (categories.includes('gold')) parts.push('altın');
-        return parts.join(' OR ');
+        if (categories.includes('stock')) names.push('hisse borsa');
+        if (categories.includes('crypto')) names.push('kripto');
+        if (categories.includes('gold')) names.push('altın');
+        if (categories.includes('forex')) names.push('döviz kur');
+        return names.join(' OR ');
     }, [assets]);
 
-    // Fetch market/portfolio news whenever tab or open state changes
+    // Fetch market/portfolio news whenever tab, timeFilter or open state changes
     useEffect(() => {
         if (!isOpen || activeTab === 'asset') return;
         if (assets.length === 0 && activeTab === 'portfolio') return;
@@ -123,7 +132,8 @@ export default function NewsSection({ assets }: NewsSectionProps) {
             setLoading(true);
             try {
                 const query = buildQuery(activeTab);
-                const res = await fetch(`/api/news?q=${encodeURIComponent(query)}&period=1w`);
+                const period = timeFilter !== 'all' ? `&period=${timeFilter}` : '';
+                const res = await fetch(`/api/news?q=${encodeURIComponent(query)}${period}`);
                 const data = await res.json();
                 setArticles(data.articles || []);
             } catch {
@@ -134,7 +144,7 @@ export default function NewsSection({ assets }: NewsSectionProps) {
         };
 
         fetchNews();
-    }, [isOpen, activeTab, buildQuery, assets.length]);
+    }, [isOpen, activeTab, timeFilter, buildQuery, assets.length]);
 
     // Fetch news for a specific asset
     const fetchAssetNews = useCallback(async (asset: Asset) => {
@@ -254,6 +264,25 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                             </button>
                         ))}
                     </div>
+                    {activeTab !== 'asset' && (
+                        <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
+                            {TIME_FILTERS.map(tf => (
+                                <button
+                                    key={tf.key}
+                                    onClick={() => setTimeFilter(tf.key)}
+                                    style={{
+                                        padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                                        background: timeFilter === tf.key ? 'var(--accent-purple)' : 'var(--bg-elevated)',
+                                        color: timeFilter === tf.key ? 'white' : 'var(--text-muted)',
+                                        border: timeFilter === tf.key ? 'none' : '1px solid var(--border)',
+                                        cursor: 'pointer', transition: 'all 0.2s',
+                                    }}
+                                >
+                                    {tf.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     {activeTab !== 'asset' ? (
                         <ArticleList articles={articles} loading={loading} />
