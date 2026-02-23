@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { Asset, getCategoryMeta, GOLD_TYPES } from '@/lib/types';
-import { formatCurrency, formatPercentage, calculateProfitLoss } from '@/lib/utils';
+import { formatCurrency, formatPercentage, getAssetCostInTRY } from '@/lib/utils';
 import { deleteAsset } from '@/lib/db';
+import { useCurrency } from '@/lib/contexts';
 
 interface AssetCardProps {
     asset: Asset;
@@ -15,12 +16,28 @@ interface AssetCardProps {
 
 export default function AssetCard({ asset, onDelete, onEdit, onSell, onAnalyze }: AssetCardProps) {
     const cat = getCategoryMeta(asset.category);
-    const currentPrice = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
-    const currentValue = asset.amount * currentPrice;
+    const { currency, convert, symbol, exchangeRates } = useCurrency();
+
+    // The backend provides current prices entirely normalized in TRY
+    const currentPriceTRY = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
+    const currentPriceDisplay = convert(currentPriceTRY);
+
+    const currentValueTRY = asset.amount * currentPriceTRY;
+    const currentValueDisplay = convert(currentValueTRY);
+
     const hasPurchasePrice = asset.purchasePrice > 0;
-    const pl = hasPurchasePrice
-        ? calculateProfitLoss(asset.amount, asset.purchasePrice, currentPrice)
-        : null;
+
+    let pl = null;
+    if (hasPurchasePrice) {
+        // Convert the raw cost (e.g. 100 USD) to true TRY cost, so we compare apples to apples
+        const trueCostTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
+        const plValueTRY = currentValueTRY - trueCostTRY;
+        // P/L value to display is scaled to selected currency
+        const plValueDisplay = convert(plValueTRY);
+        const plPercentage = trueCostTRY > 0 ? (plValueTRY / trueCostTRY) * 100 : 0;
+
+        pl = { value: plValueDisplay, percentage: plPercentage };
+    }
 
     const handleDelete = async () => {
         if (window.confirm(`"${asset.name}" varlığını silmek istediğinize emin misiniz?`)) {
@@ -105,7 +122,7 @@ export default function AssetCard({ asset, onDelete, onEdit, onSell, onAnalyze }
                             Güncel Değer
                         </p>
                         <p className="value-animate" style={{ fontSize: 20, fontWeight: 700 }}>
-                            {formatCurrency(currentValue)}
+                            {formatCurrency(currentValueDisplay, currency)}
                         </p>
                     </div>
 
@@ -143,7 +160,7 @@ export default function AssetCard({ asset, onDelete, onEdit, onSell, onAnalyze }
                         color: 'var(--text-muted)',
                     }}
                 >
-                    <span>₺{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} / birim</span>
+                    <span>{symbol}{currentPriceDisplay.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} / birim</span>
                     {asset.currentPrice && (
                         <span className="live-dot" style={{ fontSize: 10 }}>
                             Canlı

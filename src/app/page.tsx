@@ -5,6 +5,7 @@ import { Asset } from '@/lib/types';
 import { WealthSnapshot } from '@/lib/storage';
 import { getAssets, getWealthHistory, saveWealthSnapshot, saveMultipleAssetPrices, migrateLocalDataToSupabase, updateAsset, deleteAsset } from '@/lib/db';
 import { fetchAllPrices } from '@/lib/prices';
+import { getAssetCostInTRY } from '@/lib/utils';
 import { useTheme, useCurrency, useWidgetLayout, useDesignTheme } from '@/lib/contexts';
 import AssetForm from '@/components/AssetForm';
 import EditAssetForm from '@/components/EditAssetForm';
@@ -127,11 +128,7 @@ export default function Home() {
   const totalWealth = totalWealthBase * (1 + tickerOffset);
 
   // Cost calculation: convert purchase prices to TRY if they were entered in another currency
-  const usdToTry = exchangeRates['USD'] ? (1 / exchangeRates['USD']) : 37; // fallback rate
-  const totalCost = assets.reduce((s, a) => {
-    const costPerUnit = a.purchaseCurrency === 'USD' ? a.purchasePrice * usdToTry : a.purchasePrice;
-    return s + a.amount * costPerUnit;
-  }, 0);
+  const totalCost = assets.reduce((sum, a) => sum + getAssetCostInTRY(a.amount, a.purchasePrice, a.purchaseCurrency, exchangeRates), 0);
 
   const totalPL = totalWealth - totalCost;
   const totalPLPct = totalCost > 0 ? ((totalWealth - totalCost) / totalCost) * 100 : 0;

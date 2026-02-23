@@ -42,3 +42,22 @@ export function getCurrentValue(amount: number, currentPrice: number): number {
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
     return classes.filter(Boolean).join(' ');
 }
+
+export function getAssetCostInTRY(
+    amount: number,
+    purchasePrice: number,
+    purchaseCurrency: string | undefined,
+    exchangeRates: Record<string, number>
+): number {
+    const rawCost = amount * purchasePrice;
+    const currency = purchaseCurrency || 'TRY';
+
+    if (currency === 'TRY') return rawCost;
+
+    // Convert foreign currency to TRY using live exchange rates
+    const rate = exchangeRates[currency]; // This is TRY -> USD rate (e.g. 0.027)
+    if (!rate || rate === 0) return rawCost; // Fallback if API fails
+
+    // If rate is TRY -> USD, then 1 TRY = 0.027 USD. To get TRY from USD: USD / 0.027
+    return rawCost / rate;
+}
