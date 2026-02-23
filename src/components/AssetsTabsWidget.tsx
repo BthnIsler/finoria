@@ -24,7 +24,7 @@ function AssetRow({ asset, onDelete, onEdit, onSell, onAnalyze }: {
     onAnalyze?: (asset: Asset) => void;
 }) {
     const cat = getCategoryMeta(asset.category);
-    const { currency, convert, symbol, exchangeRates } = useCurrency();
+    const { currency, convert, exchangeRates } = useCurrency();
 
     const currentPriceTRY = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
     const currentValueTRY = asset.amount * currentPriceTRY;
@@ -63,7 +63,6 @@ function AssetRow({ asset, onDelete, onEdit, onSell, onAnalyze }: {
                 padding: '10px 14px',
                 borderRadius: 12,
                 transition: 'background 0.15s',
-                cursor: 'default',
             }}
             onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-elevated)')}
             onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -135,6 +134,8 @@ export default function AssetsTabsWidget({
     onSell,
     onAnalyze
 }: AssetsTabsWidgetProps) {
+    // Collapsed by default — keeps homepage clean
+    const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<string>('all');
 
     const categoriesWithAssets = useMemo(() => {
@@ -142,7 +143,7 @@ export default function AssetsTabsWidget({
         assets.forEach(a => counts.set(a.category, (counts.get(a.category) || 0) + 1));
         return CATEGORIES.filter(c => counts.has(c.key)).map(c => ({
             ...c,
-            count: counts.get(c.key) || 0
+            count: counts.get(c.key) || 0,
         }));
     }, [assets]);
 
@@ -154,14 +155,70 @@ export default function AssetsTabsWidget({
     return (
         <WidgetWrapper widgetId={widgetId}>
             <div>
-                {/* Header + tabs in one row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                    <p className="section-title" style={{ marginBottom: 0, flexShrink: 0 }}>Varlıklarım · {assets.length}</p>
+                {/* ──── Clickable header (always visible) ──── */}
+                <button
+                    onClick={() => setIsOpen(o => !o)}
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 8,
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {/* Folder / list icon */}
+                        <div style={{
+                            width: 32, height: 32, borderRadius: 9,
+                            background: 'linear-gradient(135deg, rgba(167,139,250,0.15), rgba(34,211,238,0.1))',
+                            border: '1px solid rgba(167,139,250,0.2)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 16,
+                        }}>
+                            💼
+                        </div>
+                        <div style={{ textAlign: 'left' }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>
+                                Varlıklarım
+                            </span>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                                {assets.length} varlık
+                            </span>
+                        </div>
+                    </div>
 
+                    {/* Chevron indicator */}
+                    <span style={{
+                        fontSize: 18,
+                        color: 'var(--text-muted)',
+                        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        display: 'flex', alignItems: 'center',
+                    }}>
+                        ⌄
+                    </span>
+                </button>
+
+                {/* ──── Collapsible body ──── */}
+                <div style={{
+                    overflow: 'hidden',
+                    maxHeight: isOpen ? '2000px' : '0px',
+                    transition: 'max-height 0.4s cubic-bezier(0.4,0,0.2,1)',
+                    opacity: isOpen ? 1 : 0,
+                    transitionProperty: 'max-height, opacity',
+                }}>
+                    {/* Divider */}
+                    <div style={{ height: 1, background: 'var(--border)', margin: '14px 0 10px' }} />
+
+                    {/* Category tabs */}
                     {categoriesWithAssets.length > 1 && (
                         <div
                             className="hide-scrollbar"
-                            style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, flex: 1 }}
+                            style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 12 }}
                         >
                             <button
                                 onClick={() => setActiveTab('all')}
@@ -174,7 +231,7 @@ export default function AssetsTabsWidget({
                                     cursor: 'pointer', transition: 'all 0.2s',
                                 }}
                             >
-                                Tümü
+                                Tümü ({assets.length})
                             </button>
                             {categoriesWithAssets.map(cat => (
                                 <button
@@ -195,23 +252,20 @@ export default function AssetsTabsWidget({
                             ))}
                         </div>
                     )}
-                </div>
 
-                {/* Divider */}
-                <div style={{ height: 1, background: 'var(--border)', marginBottom: 8 }} />
-
-                {/* Compact rows */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {filteredAssets.map((asset) => (
-                        <AssetRow
-                            key={asset.id}
-                            asset={asset}
-                            onDelete={onDelete}
-                            onEdit={onEdit}
-                            onSell={onSell}
-                            onAnalyze={onAnalyze}
-                        />
-                    ))}
+                    {/* Asset rows */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {filteredAssets.map((asset) => (
+                            <AssetRow
+                                key={asset.id}
+                                asset={asset}
+                                onDelete={onDelete}
+                                onEdit={onEdit}
+                                onSell={onSell}
+                                onAnalyze={onAnalyze}
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
         </WidgetWrapper>
