@@ -2,27 +2,10 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
-
-// Generate a deterministic UUID-like ID from a name string
-function nameToId(name: string): string {
-    const clean = name.toLowerCase().trim();
-    let hash = 0;
-    for (let i = 0; i < clean.length; i++) {
-        const char = clean.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    const hex = Math.abs(hash).toString(16).padStart(8, '0');
-    return `00000000-0000-4000-8000-${hex.padStart(12, '0')}`;
-}
-
-interface SimpleUser {
-    id: string;
-    email: string;
-}
+import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
-    user: SimpleUser | null;
+    user: User | null;
     displayName: string;
     loading: boolean;
     loginWithName: (name: string) => Promise<void>;
@@ -38,30 +21,60 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<SimpleUser | null>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [displayName, setDisplayName] = useState('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check if name is saved in localStorage
         const savedName = localStorage.getItem('finoria_display_name');
-        if (savedName) {
-            const id = nameToId(savedName);
-            setUser({ id, email: `${savedName.toLowerCase()}@finoria.app` });
-            setDisplayName(savedName);
-        }
-        setLoading(false);
+        if (savedName) setDisplayName(savedName);
+
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user ?? null);
+            setLoading(false);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+            if (!session?.user) {
+                setDisplayName('');
+                localStorage.removeItem('finoria_display_name');
+            }
+            setLoading(false);
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const loginWithName = async (name: string) => {
-        const id = nameToId(name);
-        setUser({ id, email: `${name.toLowerCase()}@finoria.app` });
+        const cleanName = name.toLowerCase().replace(/[^a-z0-9]/gi, '').trim() || 'user';
+        const email = `${cleanName}@finoria.test`;
+        const password = `Finoria_${cleanName}_2024!`;
+
+        // Try sign in first
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (signInError) {
+            // Sign in failed — create the account
+            const { error: signUpError } = await supabase.auth.signUp({ email, password });
+
+            if (signUpError) {
+                throw new Error(`Hesap oluşturulamadı: ${signUpError.message}`);
+            }
+
+            // Try signing in after signup
+            const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+            if (loginError) {
+                throw new Error(`Giriş yapılamadı: ${loginError.message}. Lütfen Supabase'de "Confirm email" ayarını kapatın.`);
+            }
+        }
+
         setDisplayName(name);
         localStorage.setItem('finoria_display_name', name);
     };
 
     const signOut = async () => {
-        setUser(null);
+        await supabase.auth.signOut();
         setDisplayName('');
         localStorage.removeItem('finoria_display_name');
     };
