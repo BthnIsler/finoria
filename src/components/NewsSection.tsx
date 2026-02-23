@@ -255,68 +255,100 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                         ))}
                     </div>
 
-                    {/* Tab content */}
                     {activeTab !== 'asset' ? (
                         <ArticleList articles={articles} loading={loading} />
                     ) : (
-                        /* Yatırımlarım: asset list, each expandable to show news */
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {assets.length === 0 ? (
-                                <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 0' }}>Henüz varlık eklenmedi.</p>
-                            ) : assets.map((asset) => {
-                                const cat = getCategoryMeta(asset.category);
-                                const isExpanded = expandedAssets.has(asset.id);
-                                const isSelected = selectedAssetId === asset.id;
-                                return (
-                                    <div key={asset.id} style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                                        {/* Asset row — click to toggle */}
+                        /* Yatırımlarım: left = asset list, right = news panel sliding in */
+                        <div style={{ display: 'flex', gap: 0, minHeight: 240, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)' }}>
+
+                            {/* Left: asset list */}
+                            <div style={{
+                                width: selectedAssetId ? '38%' : '100%',
+                                transition: 'width 0.35s cubic-bezier(0.4,0,0.2,1)',
+                                borderRight: selectedAssetId ? '1px solid var(--border)' : 'none',
+                                overflowY: 'auto',
+                                flexShrink: 0,
+                            }}>
+                                {assets.length === 0 ? (
+                                    <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: 16 }}>Henüz varlık eklenmedi.</p>
+                                ) : assets.map((asset) => {
+                                    const cat = getCategoryMeta(asset.category);
+                                    const isSelected = selectedAssetId === asset.id;
+                                    return (
                                         <button
-                                            onClick={() => toggleAsset(asset)}
-                                            style={{
-                                                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                                                padding: '10px 14px', background: isExpanded ? 'var(--bg-elevated)' : 'transparent',
-                                                border: 'none', cursor: 'pointer', transition: 'background 0.15s',
+                                            key={asset.id}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setSelectedAssetId(null);
+                                                    setAssetArticles([]);
+                                                } else {
+                                                    fetchAssetNews(asset);
+                                                }
                                             }}
-                                            onMouseOver={(e) => { if (!isExpanded) e.currentTarget.style.background = 'var(--bg-elevated)'; }}
-                                            onMouseOut={(e) => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}
+                                            style={{
+                                                width: '100%',
+                                                display: 'flex', alignItems: 'center', gap: 10,
+                                                padding: '12px 14px',
+                                                background: isSelected
+                                                    ? `${cat.color}12`
+                                                    : 'transparent',
+                                                border: 'none',
+                                                borderBottom: '1px solid var(--border)',
+                                                cursor: 'pointer',
+                                                transition: 'background 0.15s',
+                                                textAlign: 'left',
+                                            }}
+                                            onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-elevated)'; }}
+                                            onMouseOut={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                                         >
                                             <div style={{
-                                                width: 30, height: 30, borderRadius: 8,
+                                                width: 28, height: 28, borderRadius: 8,
                                                 background: `${cat.color}18`, border: `1px solid ${cat.color}28`,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: 13, flexShrink: 0,
                                             }}>
                                                 {cat.icon}
                                             </div>
-                                            <div style={{ minWidth: 0, flex: 1, textAlign: 'left' }}>
-                                                <p style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                                            <div style={{ minWidth: 0, flex: 1 }}>
+                                                <p style={{
+                                                    fontSize: 12, fontWeight: 600,
+                                                    color: isSelected ? cat.color : 'var(--text-primary)',
+                                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                                }}>
                                                     {asset.name}
                                                 </p>
-                                                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{cat.labelTR}</p>
+                                                {!selectedAssetId && (
+                                                    <p style={{ fontSize: 10, color: 'var(--text-muted)' }}>{cat.labelTR}</p>
+                                                )}
                                             </div>
+                                            {/* Arrow hint */}
                                             <span style={{
-                                                fontSize: 16, color: 'var(--text-muted)',
-                                                transition: 'transform 0.2s',
-                                                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                            }}>⌄</span>
+                                                fontSize: 12,
+                                                color: isSelected ? cat.color : 'var(--text-muted)',
+                                                transition: 'transform 0.2s, opacity 0.2s',
+                                                opacity: isSelected ? 1 : 0.4,
+                                                transform: isSelected ? 'translateX(0)' : 'translateX(-4px)',
+                                            }}>›</span>
                                         </button>
+                                    );
+                                })}
+                            </div>
 
-                                        {/* News for this asset */}
-                                        <div style={{
-                                            maxHeight: isExpanded ? '800px' : '0px',
-                                            overflow: 'hidden',
-                                            transition: 'max-height 0.35s cubic-bezier(0.4,0,0.2,1)',
-                                            borderTop: isExpanded ? '1px solid var(--border)' : 'none',
-                                        }}>
-                                            <div style={{ padding: '8px 8px 8px' }}>
-                                                <ArticleList
-                                                    articles={isSelected ? assetArticles : []}
-                                                    loading={isSelected ? assetLoading : false}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            {/* Right: news panel — slides in */}
+                            <div style={{
+                                flex: 1,
+                                overflow: 'hidden',
+                                opacity: selectedAssetId ? 1 : 0,
+                                transform: selectedAssetId ? 'translateX(0)' : 'translateX(20px)',
+                                transition: 'opacity 0.3s ease, transform 0.35s cubic-bezier(0.4,0,0.2,1)',
+                                pointerEvents: selectedAssetId ? 'auto' : 'none',
+                            }}>
+                                <div style={{ padding: 12, overflowY: 'auto', height: '100%' }}>
+                                    {selectedAssetId && (
+                                        <ArticleList articles={assetArticles} loading={assetLoading} />
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
