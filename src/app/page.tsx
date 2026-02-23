@@ -36,11 +36,15 @@ export default function Home() {
   const [tickerOffset, setTickerOffset] = useState(0);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { user, displayName, loading: authLoading, loginWithName, signOut } = useAuth();
+  const { user, displayName, loading: authLoading, login, register, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
-  const [loginName, setLoginName] = useState('');
+
+  // Auth Form State
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
 
@@ -150,13 +154,17 @@ export default function Home() {
   }
 
   if (!user) {
-    const handleNameLogin = async (e: React.FormEvent) => {
+    const handleAuth = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!loginName.trim()) return;
+      if (!username.trim() || !password.trim()) return;
       setLoginLoading(true);
       setLoginError('');
       try {
-        await loginWithName(loginName.trim());
+        if (isRegisterMode) {
+          await register(username.trim(), password);
+        } else {
+          await login(username.trim(), password);
+        }
       } catch (err: any) {
         setLoginError(err.message || 'Bir hata oluştu');
       } finally {
@@ -172,37 +180,86 @@ export default function Home() {
             <span className="gradient-text">Finoria</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 15, maxWidth: 420, margin: '0 auto 32px', lineHeight: 1.6 }}>
-            Kişisel yatırım asistanınız. İsminizi girin ve portföyünüzü yönetmeye başlayın.
+            Kişisel yatırım asistanınız. Kayıt olun veya giriş yapın.
           </p>
-          <form onSubmit={handleNameLogin} style={{ maxWidth: 320, margin: '0 auto' }}>
-            <input
-              type="text"
-              placeholder="İsminiz (ör: Batuhan)"
-              value={loginName}
-              onChange={(e) => setLoginName(e.target.value)}
-              autoFocus
-              style={{
-                width: '100%', padding: '16px 20px', borderRadius: 14,
-                background: 'var(--bg-elevated)', border: '2px solid var(--border)',
-                color: 'var(--text-primary)', fontSize: 16, textAlign: 'center',
-                outline: 'none', marginBottom: 14,
-              }}
-            />
-            {loginError && (
-              <p style={{ color: 'var(--accent-red)', fontSize: 12, marginBottom: 10 }}>{loginError}</p>
-            )}
-            <button
-              type="submit"
-              disabled={!loginName.trim() || loginLoading}
-              className="btn-primary"
-              style={{
-                width: '100%', fontSize: 15, padding: '16px',
-                borderRadius: 100, opacity: loginName.trim() && !loginLoading ? 1 : 0.5,
-              }}
-            >
-              {loginLoading ? '⏳ Giriş yapılıyor...' : '🚀 Başla'}
-            </button>
-          </form>
+
+          <div style={{ maxWidth: 320, margin: '0 auto' }}>
+            {/* Mode Toggle */}
+            <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: 12, padding: 4, marginBottom: 24 }}>
+              <button
+                onClick={() => setIsRegisterMode(false)}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: 10, border: 'none',
+                  background: !isRegisterMode ? 'var(--bg-card)' : 'transparent',
+                  color: !isRegisterMode ? 'var(--text-primary)' : 'var(--text-muted)',
+                  fontWeight: !isRegisterMode ? 700 : 500, fontSize: 14, cursor: 'pointer',
+                  boxShadow: !isRegisterMode ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Giriş Yap
+              </button>
+              <button
+                onClick={() => setIsRegisterMode(true)}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: 10, border: 'none',
+                  background: isRegisterMode ? 'var(--bg-card)' : 'transparent',
+                  color: isRegisterMode ? 'var(--text-primary)' : 'var(--text-muted)',
+                  fontWeight: isRegisterMode ? 700 : 500, fontSize: 14, cursor: 'pointer',
+                  boxShadow: isRegisterMode ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Kayıt Ol
+              </button>
+            </div>
+
+            <form onSubmit={handleAuth}>
+              <input
+                type="text"
+                placeholder="Kullanıcı Adı"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoFocus
+                style={{
+                  width: '100%', padding: '14px 18px', borderRadius: 14,
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                  color: 'var(--text-primary)', fontSize: 15, textAlign: 'left',
+                  outline: 'none', marginBottom: 12,
+                }}
+              />
+              <input
+                type="password"
+                placeholder="Şifre"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{
+                  width: '100%', padding: '14px 18px', borderRadius: 14,
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                  color: 'var(--text-primary)', fontSize: 15, textAlign: 'left',
+                  outline: 'none', marginBottom: 16,
+                }}
+              />
+
+              {loginError && (
+                <div style={{ background: 'rgba(255,77,106,0.1)', padding: 12, borderRadius: 10, marginBottom: 16, border: '1px solid rgba(255,77,106,0.2)' }}>
+                  <p style={{ color: 'var(--accent-red)', fontSize: 13 }}>{loginError}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={!username.trim() || !password.trim() || loginLoading}
+                className="btn-primary"
+                style={{
+                  width: '100%', fontSize: 15, padding: '16px',
+                  borderRadius: 14, opacity: (username.trim() && password.trim()) && !loginLoading ? 1 : 0.5,
+                }}
+              >
+                {loginLoading ? '⏳ İşleniyor...' : (isRegisterMode ? '✨ Kayıt Ol' : '🚀 Giriş Yap')}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     );

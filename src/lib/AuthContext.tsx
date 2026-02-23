@@ -8,7 +8,8 @@ interface AuthContextType {
     user: User | null;
     displayName: string;
     loading: boolean;
-    loginWithName: (name: string) => Promise<void>;
+    login: (username: string, password: string) => Promise<void>;
+    register: (username: string, password: string) => Promise<void>;
     signOut: () => Promise<void>;
 }
 
@@ -16,7 +17,8 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     displayName: '',
     loading: true,
-    loginWithName: async () => { },
+    login: async () => { },
+    register: async () => { },
     signOut: async () => { },
 });
 
@@ -46,31 +48,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
-    const loginWithName = async (name: string) => {
-        const cleanName = name.toLowerCase().replace(/[^a-z0-9]/gi, '').trim() || 'user';
-        const email = `${cleanName}@finoria.test`;
-        const password = `Finoria_${cleanName}_2024!`;
+    const login = async (username: string, password: string) => {
+        const cleanName = username.toLowerCase().replace(/[^a-z0-9]/gi, '').trim();
+        if (!cleanName) throw new Error('Geçerli bir kullanıcı adı girin.');
 
-        // Try sign in first
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        const email = `${cleanName}@finoria.app`; // Dummy email for Supabase
 
-        if (signInError) {
-            // Sign in failed — create the account
-            const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-            if (signUpError) {
-                throw new Error(`Hesap oluşturulamadı: ${signUpError.message}`);
-            }
-
-            // Try signing in after signup
-            const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-            if (loginError) {
-                throw new Error(`Giriş yapılamadı: ${loginError.message}. Lütfen Supabase'de "Confirm email" ayarını kapatın.`);
-            }
+        if (error) {
+            throw new Error('Giriş başarısız. Kullanıcı adı veya şifre hatalı.');
         }
 
-        setDisplayName(name);
-        localStorage.setItem('finoria_display_name', name);
+        setDisplayName(username);
+        localStorage.setItem('finoria_display_name', username);
+    };
+
+    const register = async (username: string, password: string) => {
+        const cleanName = username.toLowerCase().replace(/[^a-z0-9]/gi, '').trim();
+        if (!cleanName) throw new Error('Geçerli bir kullanıcı adı girin.');
+        if (password.length < 6) throw new Error('Şifre en az 6 karakter olmalıdır.');
+
+        const email = `${cleanName}@finoria.app`; // Dummy email for Supabase
+
+        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+
+        if (signUpError) {
+            if (signUpError.message.includes('already registered')) {
+                throw new Error('Bu kullanıcı adı zaten alınmış. Lütfen başka bir tane deneyin.');
+            }
+            throw new Error(`Kayıt başarısız: ${signUpError.message}`);
+        }
+
+        // After successful signup, user should be automatically signed in by Supabase
+        setDisplayName(username);
+        localStorage.setItem('finoria_display_name', username);
     };
 
     const signOut = async () => {
@@ -80,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, displayName, loading, loginWithName, signOut }}>
+        <AuthContext.Provider value={{ user, displayName, loading, login, register, signOut }}>
             {children}
         </AuthContext.Provider>
     );
