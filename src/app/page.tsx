@@ -532,11 +532,7 @@ export default function Home() {
                         />
                       );
                     case 'news':
-                      return (
-                        <WidgetWrapper key={w.id} widgetId={w.id}>
-                          <NewsSection assets={assets} />
-                        </WidgetWrapper>
-                      );
+                      return <NewsSection key={w.id} assets={assets} />;
                     default:
                       return null;
                   }
