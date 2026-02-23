@@ -10,6 +10,7 @@ import { useTheme, useCurrency, useWidgetLayout, useDesignTheme } from '@/lib/co
 import AssetForm from '@/components/AssetForm';
 import EditAssetForm from '@/components/EditAssetForm';
 import AssetCard from '@/components/AssetCard';
+import AssetsTabsWidget from '@/components/AssetsTabsWidget';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
 import WealthChart from '@/components/WealthChart';
 import WealthHistoryChart from '@/components/WealthHistoryChart';
@@ -520,23 +521,15 @@ export default function Home() {
                       );
                     case 'assets':
                       return (
-                        <WidgetWrapper key={w.id} widgetId={w.id}>
-                          <div>
-                            <p className="section-title">Varlıklarım · {assets.length}</p>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
-                              {assets.map((asset) => (
-                                <AssetCard
-                                  key={asset.id}
-                                  asset={asset}
-                                  onDelete={(id) => setAssets((p) => p.filter((a) => a.id !== id))}
-                                  onEdit={setEditingAsset}
-                                  onSell={setSellingAsset}
-                                  onAnalyze={setAnalyzingAsset}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </WidgetWrapper>
+                        <AssetsTabsWidget
+                          key={w.id}
+                          widgetId={w.id}
+                          assets={assets}
+                          onDelete={(id) => setAssets((p) => p.filter((a) => a.id !== id))}
+                          onEdit={setEditingAsset}
+                          onSell={setSellingAsset}
+                          onAnalyze={setAnalyzingAsset}
+                        />
                       );
                     case 'news':
                       return (
