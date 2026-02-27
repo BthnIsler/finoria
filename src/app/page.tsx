@@ -504,51 +504,49 @@ export default function Home() {
             </h2>
 
             {assets.length > 0 && totalCost > 0 && (
-              <div style={{ marginTop: 12, textAlign: 'center' }}>
-                {/* P/L Period Toggle */}
-                <div style={{ display: 'inline-flex', gap: 2, background: 'var(--bg-elevated)', borderRadius: 8, padding: 2, marginBottom: 10 }}>
-                  {([{ key: '1d' as const, label: 'Günlük' }, { key: '1w' as const, label: 'Haftalık' }, { key: '1m' as const, label: 'Aylık' }, { key: 'all' as const, label: 'Tümü' }]).map(p => (
-                    <button
-                      key={p.key}
-                      onClick={() => setHeroPLPeriod(p.key)}
-                      style={{
-                        background: heroPLPeriod === p.key
-                          ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))'
-                          : 'transparent',
-                        color: heroPLPeriod === p.key ? '#fff' : 'var(--text-muted)',
-                        border: 'none', padding: '4px 12px', fontSize: 10, fontWeight: 700,
-                        borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s',
-                      }}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 28, marginTop: 16, fontSize: 13 }}>
+                {/* Cost */}
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3, letterSpacing: 0.5 }}>Maliyet</p>
+                  <p style={{ fontWeight: 700, fontSize: 15 }}>
+                    <AnimatedNumber
+                      value={convert(totalCost)}
+                      duration={800}
+                      formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
+                    />
+                  </p>
                 </div>
 
-                {/* Cost + P/L values */}
-                <div style={{ display: 'inline-flex', gap: 20, fontSize: 13, justifyContent: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>Maliyet</p>
-                    <p style={{ fontWeight: 600 }}>
-                      <AnimatedNumber
-                        value={convert(totalCost)}
-                        duration={800}
-                        formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
-                      />
-                    </p>
-                  </div>
-                  <div style={{ width: 1, background: 'var(--border)', margin: '0 2px' }} />
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>{activeHeroPL.label}</p>
-                    <p style={{ fontWeight: 600, color: activeHeroPL.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
-                      {activeHeroPL.pl >= 0 ? '+' : ''}
-                      <AnimatedNumber
-                        value={Math.abs(convert(activeHeroPL.pl))}
-                        duration={800}
-                        formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
-                      />
-                      <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.7 }}>({activeHeroPL.pct >= 0 ? '+' : ''}{activeHeroPL.pct.toFixed(1)}%)</span>
-                    </p>
+                <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch', opacity: 0.5 }} />
+
+                {/* P/L with inline period selector */}
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: activeHeroPL.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', marginBottom: 2 }}>
+                    {activeHeroPL.pl >= 0 ? '▲ ' : '▼ '}
+                    <AnimatedNumber
+                      value={Math.abs(convert(activeHeroPL.pl))}
+                      duration={800}
+                      formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
+                    />
+                    <span style={{ fontSize: 11, marginLeft: 4, opacity: 0.8 }}>({activeHeroPL.pct >= 0 ? '+' : ''}{activeHeroPL.pct.toFixed(1)}%)</span>
+                  </p>
+                  {/* Inline period tabs */}
+                  <div style={{ display: 'flex', gap: 0, justifyContent: 'center' }}>
+                    {([{ key: '1d' as const, label: '1G' }, { key: '1w' as const, label: '1H' }, { key: '1m' as const, label: '1A' }, { key: 'all' as const, label: 'Tümü' }]).map((p, i) => (
+                      <button
+                        key={p.key}
+                        onClick={() => setHeroPLPeriod(p.key)}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          fontSize: 9, fontWeight: heroPLPeriod === p.key ? 800 : 500, letterSpacing: 0.3,
+                          color: heroPLPeriod === p.key ? (activeHeroPL.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') : 'var(--text-muted)',
+                          padding: '2px 6px', transition: 'all 0.2s',
+                          borderBottom: heroPLPeriod === p.key ? `2px solid ${activeHeroPL.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}` : '2px solid transparent',
+                        }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
