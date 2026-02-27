@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Asset } from '@/lib/types';
-import { WealthSnapshot } from '@/lib/storage';
+import { WealthSnapshot, saveAssetPriceSnapshot } from '@/lib/storage';
 import { getAssets, getWealthHistory, saveWealthSnapshot, saveMultipleAssetPrices, migrateLocalDataToSupabase, updateAsset, deleteAsset } from '@/lib/db';
 import { fetchAllPrices } from '@/lib/prices';
 import { getAssetCostInTRY } from '@/lib/utils';
@@ -37,6 +37,7 @@ export default function Home() {
   const [analyzingAsset, setAnalyzingAsset] = useState<Asset | null>(null);
   const [tickerOffset, setTickerOffset] = useState(0);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [heroPLPeriod, setHeroPLPeriod] = useState<'1d' | '1w' | '1m' | 'all'>('all');
 
   const { user, displayName, loading: authLoading, login, register, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -96,6 +97,7 @@ export default function Home() {
       if (user) {
         await saveMultipleAssetPrices(user.id, updated);
         await saveWealthSnapshot(user.id, updated);
+        saveAssetPriceSnapshot(updated); // Save per-asset price history for P/L periods
         setHistory(await getWealthHistory(user.id));
       }
       setLastUpdated(new Date().toLocaleTimeString('tr-TR'));
@@ -133,6 +135,46 @@ export default function Home() {
 
   const totalPL = totalWealth - totalCost;
   const totalPLPct = totalCost > 0 ? ((totalWealth - totalCost) / totalCost) * 100 : 0;
+
+  // Calculate daily and weekly P/L based on history
+  const todayDate = new Date().toISOString().split('T')[0];
+  const lastWeekDate = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+
+  let yesterdayTotal = totalWealth;
+  let lastWeekTotal = totalWealth;
+
+  if (history.length > 0) {
+    const pastHistory = history.filter(h => h.date < todayDate);
+    yesterdayTotal = pastHistory.length > 0 ? pastHistory[pastHistory.length - 1].total : history[0].total;
+
+    const lastWeekHistory = history.filter(h => h.date <= lastWeekDate);
+    lastWeekTotal = lastWeekHistory.length > 0 ? lastWeekHistory[lastWeekHistory.length - 1].total : history[0].total;
+  }
+
+  const dailyPL = totalWealth - yesterdayTotal;
+  const dailyPLPct = yesterdayTotal > 0 ? (dailyPL / yesterdayTotal) * 100 : 0;
+
+  const weeklyPL = totalWealth - lastWeekTotal;
+  const weeklyPLPct = lastWeekTotal > 0 ? (weeklyPL / lastWeekTotal) * 100 : 0;
+
+  // Monthly P/L
+  const lastMonthDate = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+  let lastMonthTotal = totalWealth;
+  if (history.length > 0) {
+    const monthHistory = history.filter(h => h.date <= lastMonthDate);
+    lastMonthTotal = monthHistory.length > 0 ? monthHistory[monthHistory.length - 1].total : history[0].total;
+  }
+  const monthlyPL = totalWealth - lastMonthTotal;
+  const monthlyPLPct = lastMonthTotal > 0 ? (monthlyPL / lastMonthTotal) * 100 : 0;
+
+  // Hero P/L values based on selected period
+  const heroPLValues = {
+    '1d': { pl: dailyPL, pct: dailyPLPct, label: 'Günlük Kar/Zarar' },
+    '1w': { pl: weeklyPL, pct: weeklyPLPct, label: 'Haftalık Kar/Zarar' },
+    '1m': { pl: monthlyPL, pct: monthlyPLPct, label: 'Aylık Kar/Zarar' },
+    'all': { pl: totalPL, pct: totalPLPct, label: 'Toplam Kar/Zarar' },
+  };
+  const activeHeroPL = heroPLValues[heroPLPeriod];
 
   const fmt = (v: number) =>
     new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(convert(v));
@@ -462,29 +504,52 @@ export default function Home() {
             </h2>
 
             {assets.length > 0 && totalCost > 0 && (
-              <div style={{ display: 'inline-flex', gap: 20, marginTop: 12, fontSize: 13 }}>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>Maliyet</p>
-                  <p style={{ fontWeight: 600 }}>
-                    <AnimatedNumber
-                      value={convert(totalCost)}
-                      duration={800}
-                      formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
-                    />
-                  </p>
+              <div style={{ marginTop: 12, textAlign: 'center' }}>
+                {/* P/L Period Toggle */}
+                <div style={{ display: 'inline-flex', gap: 2, background: 'var(--bg-elevated)', borderRadius: 8, padding: 2, marginBottom: 10 }}>
+                  {([{ key: '1d' as const, label: 'Günlük' }, { key: '1w' as const, label: 'Haftalık' }, { key: '1m' as const, label: 'Aylık' }, { key: 'all' as const, label: 'Tümü' }]).map(p => (
+                    <button
+                      key={p.key}
+                      onClick={() => setHeroPLPeriod(p.key)}
+                      style={{
+                        background: heroPLPeriod === p.key
+                          ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))'
+                          : 'transparent',
+                        color: heroPLPeriod === p.key ? '#fff' : 'var(--text-muted)',
+                        border: 'none', padding: '4px 12px', fontSize: 10, fontWeight: 700,
+                        borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s',
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
                 </div>
-                <div style={{ width: 1, background: 'var(--border)', margin: '0 2px' }} />
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>Kar/Zarar</p>
-                  <p style={{ fontWeight: 600, color: totalPL >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
-                    {totalPL >= 0 ? '+' : ''}
-                    <AnimatedNumber
-                      value={convert(totalPL)}
-                      duration={800}
-                      formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
-                    />
-                    <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.7 }}>({totalPLPct >= 0 ? '+' : ''}{totalPLPct.toFixed(1)}%)</span>
-                  </p>
+
+                {/* Cost + P/L values */}
+                <div style={{ display: 'inline-flex', gap: 20, fontSize: 13, justifyContent: 'center' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>Maliyet</p>
+                    <p style={{ fontWeight: 600 }}>
+                      <AnimatedNumber
+                        value={convert(totalCost)}
+                        duration={800}
+                        formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
+                      />
+                    </p>
+                  </div>
+                  <div style={{ width: 1, background: 'var(--border)', margin: '0 2px' }} />
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>{activeHeroPL.label}</p>
+                    <p style={{ fontWeight: 600, color: activeHeroPL.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+                      {activeHeroPL.pl >= 0 ? '+' : ''}
+                      <AnimatedNumber
+                        value={Math.abs(convert(activeHeroPL.pl))}
+                        duration={800}
+                        formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
+                      />
+                      <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.7 }}>({activeHeroPL.pct >= 0 ? '+' : ''}{activeHeroPL.pct.toFixed(1)}%)</span>
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -504,7 +569,7 @@ export default function Home() {
                     case 'history':
                       return (
                         <WidgetWrapper key={w.id} widgetId={w.id}>
-                          <WealthHistoryChart history={history} currentTotal={totalWealth} assets={assets} />
+                          <WealthHistoryChart history={history} currentTotal={totalWealth} assets={assets} totalPLPct={totalPLPct} totalCost={totalCost} />
                         </WidgetWrapper>
                       );
                     case 'chart':

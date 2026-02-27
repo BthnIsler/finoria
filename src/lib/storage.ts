@@ -124,7 +124,6 @@ export function saveWealthSnapshot(assets: Asset[]): void {
 
 // ---- Hourly Snapshots (for 4h/weekly detailed views) ----
 const HOURLY_KEY = 'wealth_tracker_hourly';
-const ASSET_PRICE_KEY = 'wealth_tracker_asset_prices';
 
 export interface HourlySnapshot {
     timestamp: string; // ISO string
@@ -172,55 +171,6 @@ function saveHourlySnapshot(total: number, _breakdown: Record<string, number>, a
     // Keep last 720 entries (~30 days of hourly)
     const trimmed = history.slice(-720);
     localStorage.setItem(HOURLY_KEY, JSON.stringify(trimmed));
-
-    // Save per-asset prices
-    saveAssetPriceSnapshot(assets);
-}
-
-// ---- Per-Asset Price History ----
-export interface AssetPricePoint {
-    timestamp: string;
-    price: number;
-    value: number; // amount * price
-}
-
-export function getAssetPriceHistory(assetId: string): AssetPricePoint[] {
-    if (typeof window === 'undefined') return [];
-    try {
-        const data = localStorage.getItem(`${ASSET_PRICE_KEY}_${assetId}`);
-        return data ? JSON.parse(data) : [];
-    } catch {
-        return [];
-    }
-}
-
-function saveAssetPriceSnapshot(assets: Asset[]): void {
-    if (typeof window === 'undefined') return;
-    const now = new Date();
-    const hourKey = now.toISOString().slice(0, 13);
-
-    for (const a of assets) {
-        const price = a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
-        const value = a.amount * price;
-        const key = `${ASSET_PRICE_KEY}_${a.id}`;
-        const history: AssetPricePoint[] = (() => {
-            try {
-                const d = localStorage.getItem(key);
-                return d ? JSON.parse(d) : [];
-            } catch { return []; }
-        })();
-
-        const lastIdx = history.findIndex((h) => h.timestamp.startsWith(hourKey));
-        if (lastIdx >= 0) {
-            history[lastIdx] = { timestamp: now.toISOString(), price, value };
-        } else {
-            history.push({ timestamp: now.toISOString(), price, value });
-        }
-
-        // Keep last 720
-        const trimmed = history.slice(-720);
-        localStorage.setItem(key, JSON.stringify(trimmed));
-    }
 }
 
 // ---- Transactions (sell/withdraw log) ----
@@ -298,4 +248,68 @@ export function sellAsset(
         saveAssets(assets);
         return { updatedAsset: asset, transaction: tx };
     }
+}
+
+// ---- Per-Asset Price History (for period-based P/L) ----
+const ASSET_PRICE_KEY = 'wealth_tracker_asset_prices';
+
+export interface AssetPricePoint {
+    timestamp: string;  // ISO date string
+    price: number;      // Price per unit at that time
+    value: number;      // Total value (amount * price)
+}
+
+export function getAssetPriceHistory(assetId: string): AssetPricePoint[] {
+    if (typeof window === 'undefined') return [];
+    try {
+        const data = localStorage.getItem(`${ASSET_PRICE_KEY}_${assetId}`);
+        return data ? JSON.parse(data) : [];
+    } catch {
+        return [];
+    }
+}
+
+export function saveAssetPriceSnapshot(assets: Asset[]): void {
+    if (typeof window === 'undefined') return;
+    const now = new Date();
+    const dateKey = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    for (const asset of assets) {
+        const price = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
+        const value = asset.amount * price;
+        const history = getAssetPriceHistory(asset.id);
+
+        // Check if today already has an entry — update it
+        const existingIdx = history.findIndex(h => h.timestamp.startsWith(dateKey));
+        if (existingIdx >= 0) {
+            history[existingIdx] = { timestamp: now.toISOString(), price, value };
+        } else {
+            history.push({ timestamp: now.toISOString(), price, value });
+        }
+
+        // Keep last 365 entries
+        const trimmed = history.slice(-365);
+        localStorage.setItem(`${ASSET_PRICE_KEY}_${asset.id}`, JSON.stringify(trimmed));
+    }
+}
+
+/**
+ * Get the price of an asset at a specific past date.
+ * Returns the closest price point at or before the given date.
+ */
+export function getAssetPriceAtDate(assetId: string, targetDate: Date): number | null {
+    const history = getAssetPriceHistory(assetId);
+    if (history.length === 0) return null;
+
+    const targetTime = targetDate.getTime();
+    let closest: AssetPricePoint | null = null;
+
+    for (const point of history) {
+        const pointTime = new Date(point.timestamp).getTime();
+        if (pointTime <= targetTime) {
+            closest = point;
+        }
+    }
+
+    return closest?.price ?? null;
 }

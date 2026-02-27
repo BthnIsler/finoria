@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Asset, CATEGORIES, getCategoryMeta } from '@/lib/types';
 import { useCurrency } from '@/lib/contexts';
 import { getAssetCostInTRY, formatPercentage } from '@/lib/utils';
 import { deleteAsset } from '@/lib/db';
+import { getAssetPriceAtDate } from '@/lib/storage';
 import WidgetWrapper from '@/components/WidgetWrapper';
+
+type PLPeriod = '1d' | '1w' | '1m' | 'all';
 
 interface AssetsTabsWidgetProps {
     widgetId: string;
@@ -16,8 +19,19 @@ interface AssetsTabsWidgetProps {
     onAnalyze?: (asset: Asset) => void;
 }
 
-function AssetRow({ asset, onDelete, onEdit, onSell, onAnalyze }: {
+function getCutoffDate(period: PLPeriod): Date | null {
+    const now = new Date();
+    switch (period) {
+        case '1d': return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        case '1w': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case '1m': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        case 'all': return null; // Use purchase price
+    }
+}
+
+function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze }: {
     asset: Asset;
+    plPeriod: PLPeriod;
     onDelete: (id: string) => void;
     onEdit: (asset: Asset) => void;
     onSell: (asset: Asset) => void;
@@ -30,14 +44,42 @@ function AssetRow({ asset, onDelete, onEdit, onSell, onAnalyze }: {
     const currentValueTRY = asset.amount * currentPriceTRY;
     const currentValueDisplay = convert(currentValueTRY);
 
+    // Calculate P/L based on selected period
     let plPercentage: number | null = null;
     let plIsPositive = true;
-    if (asset.purchasePrice > 0) {
-        const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
-        if (costTRY > 0) {
-            const plTRY = currentValueTRY - costTRY;
-            plPercentage = (plTRY / costTRY) * 100;
-            plIsPositive = plTRY >= 0;
+    let plLabel = '';
+
+    if (plPeriod === 'all') {
+        // All-time: use purchase price
+        if (asset.purchasePrice > 0) {
+            const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
+            if (costTRY > 0) {
+                const plTRY = currentValueTRY - costTRY;
+                plPercentage = (plTRY / costTRY) * 100;
+                plIsPositive = plTRY >= 0;
+            }
+        }
+    } else {
+        // Period-based: use historical price
+        const cutoff = getCutoffDate(plPeriod);
+        if (cutoff) {
+            const pastPrice = getAssetPriceAtDate(asset.id, cutoff);
+            if (pastPrice !== null && pastPrice > 0) {
+                const change = currentPriceTRY - pastPrice;
+                plPercentage = (change / pastPrice) * 100;
+                plIsPositive = change >= 0;
+            } else {
+                // No historical data for this period — fallback to purchase
+                if (asset.purchasePrice > 0) {
+                    const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
+                    if (costTRY > 0) {
+                        const plTRY = currentValueTRY - costTRY;
+                        plPercentage = (plTRY / costTRY) * 100;
+                        plIsPositive = plTRY >= 0;
+                        plLabel = '∞'; // Indicate not enough data
+                    }
+                }
+            }
         }
     }
 
@@ -95,15 +137,21 @@ function AssetRow({ asset, onDelete, onEdit, onSell, onAnalyze }: {
                 </p>
             </div>
 
-            {/* Value */}
+            {/* Value + P/L */}
             <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 'auto' }}>
                 <p style={{ fontSize: 13, fontWeight: 700 }}>{fmt(currentValueDisplay)}</p>
                 {plPercentage !== null && (
                     <p style={{
                         fontSize: 11, fontWeight: 600, marginTop: 1,
                         color: plIsPositive ? 'var(--accent-green)' : 'var(--accent-red)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3,
                     }}>
                         {plIsPositive ? '▲' : '▼'} {formatPercentage(plPercentage)}
+                        {plLabel && (
+                            <span title="Bu dönem için yeterli veri yok" style={{
+                                fontSize: 9, opacity: 0.6,
+                            }}>({plLabel})</span>
+                        )}
                     </p>
                 )}
             </div>
@@ -126,6 +174,13 @@ function AssetRow({ asset, onDelete, onEdit, onSell, onAnalyze }: {
     );
 }
 
+const PL_PERIODS: { key: PLPeriod; label: string }[] = [
+    { key: '1d', label: 'Günlük' },
+    { key: '1w', label: 'Haftalık' },
+    { key: '1m', label: 'Aylık' },
+    { key: 'all', label: 'Tümü' },
+];
+
 export default function AssetsTabsWidget({
     widgetId,
     assets,
@@ -137,6 +192,7 @@ export default function AssetsTabsWidget({
     // Collapsed by default — keeps homepage clean
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<string>('all');
+    const [plPeriod, setPLPeriod] = useState<PLPeriod>('all');
 
     const categoriesWithAssets = useMemo(() => {
         const counts = new Map<string, number>();
@@ -214,6 +270,43 @@ export default function AssetsTabsWidget({
                     {/* Divider */}
                     <div style={{ height: 1, background: 'var(--border)', margin: '14px 0 10px' }} />
 
+                    {/* ──── P/L Period Filter ──── */}
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
+                    }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            📊 Kâr/Zarar:
+                        </span>
+                        <div style={{
+                            display: 'flex', gap: 2,
+                            background: 'var(--bg-elevated)', borderRadius: 8, padding: 2,
+                            flex: '0 0 auto',
+                        }}>
+                            {PL_PERIODS.map(p => (
+                                <button
+                                    key={p.key}
+                                    onClick={() => setPLPeriod(p.key)}
+                                    style={{
+                                        background: plPeriod === p.key
+                                            ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))'
+                                            : 'transparent',
+                                        color: plPeriod === p.key ? '#fff' : 'var(--text-muted)',
+                                        border: 'none',
+                                        padding: '4px 10px',
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        borderRadius: 6,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Category tabs */}
                     {categoriesWithAssets.length > 1 && (
                         <div
@@ -259,6 +352,7 @@ export default function AssetsTabsWidget({
                             <AssetRow
                                 key={asset.id}
                                 asset={asset}
+                                plPeriod={plPeriod}
                                 onDelete={onDelete}
                                 onEdit={onEdit}
                                 onSell={onSell}
