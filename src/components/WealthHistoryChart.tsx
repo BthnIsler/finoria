@@ -468,7 +468,7 @@ function TvAreaChart({ data, isUp, mainColor, fmt, costLine }: {
                 stroke={mainColor} strokeWidth={1.5}
                 fill={`url(#${gradId})`}
                 dot={false}
-                activeDot={{ r: 4, fill: mainColor, stroke: '#0d1117', strokeWidth: 2, zIndex: 10 }}
+                activeDot={{ r: 4, fill: mainColor, stroke: '#0d1117', strokeWidth: 2 }}
                 isAnimationActive={true} animationDuration={400} animationEasing="ease-out"
             />
         </AreaChart>
