@@ -492,6 +492,19 @@ function TvCandlestickChart({ data, fmt }: { data: ChartPoint[]; fmt: (v: number
     const minV = allVals.length > 0 ? Math.min(...allVals) * 0.985 : 0;
     const maxV = allVals.length > 0 ? Math.max(...allVals) * 1.015 : 100;
 
+    // Check if the data is completely flat (no volatility)
+    const isFlatline = allVals.length > 0 && Math.max(...allVals) === Math.min(...allVals);
+
+    if (isFlatline || data.length < 2) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.3)', padding: 20, textAlign: 'center' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🕯️</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>Mum Grafiği İçin Yetersiz Veri</div>
+                <div style={{ fontSize: 11, lineHeight: 1.5, maxWidth: 280 }}>Anlamlı bir mum grafiği (Açılış/Kapanış/Dalgalanma) çizebilmek için geçmiş veri noktalarının birikmesi bekleniyor.</div>
+            </div>
+        );
+    }
+
     const Tip = ({ active, payload, label }: any) => {
         if (!active || !payload?.length) return null;
         const d = payload[0]?.payload;
