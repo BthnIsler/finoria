@@ -650,11 +650,12 @@ body {
 
 /* ===== MOBILE RESPONSIVE FIXES ===== */
 @media (max-width: 768px) {
+
   /* Fix header actions layout */
   .header-actions {
     gap: 8px !important;
   }
-  
+
   /* Hide non-essential buttons on mobile (e.g. settings icon) */
   .hide-mobile {
     display: none !important;
@@ -671,7 +672,7 @@ body {
   .wealth-hero {
     padding: 24px 16px !important;
   }
-  
+
   .wealth-glow {
     font-size: 32px !important;
   }
@@ -684,7 +685,8 @@ body {
   }
 
   /* Compress padding on standard buttons */
-  .btn-primary, .btn-secondary {
+  .btn-primary,
+  .btn-secondary {
     padding: 10px 14px !important;
     font-size: 12px !important;
   }
@@ -1658,10 +1660,19 @@ body {
 /* ===== MOBILE RESPONSIVE (max-width: 640px) ===== */
 @media (max-width: 640px) {
 
-  /* Header: stack into two rows */
+  /* ── Root sizing safety ── */
+  html,
+  body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* ── Header ── */
   .app-header {
     flex-direction: column !important;
     align-items: stretch !important;
+    gap: 8px !important;
+    margin-bottom: 16px !important;
   }
 
   .header-left {
@@ -1672,81 +1683,151 @@ body {
 
   .header-right {
     justify-content: flex-start !important;
-    gap: 6px !important;
+    gap: 5px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
   }
 
   .hide-mobile {
     display: none !important;
   }
 
-  /* Widget grid: single column */
-  .widgets-grid {
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
-  }
-
-  /* Main padding */
+  /* ── Main padding ── */
   main {
-    padding: 16px 12px !important;
-  }
-
-  /* Bottom padding for floating AI chat */
-  main {
+    padding: 14px 10px !important;
     padding-bottom: 100px !important;
   }
 
-  /* Glass cards */
+  /* ── Widget grid: single column ── */
+  .widgets-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* ── Glass cards ── */
   .glass-card {
-    padding: 16px !important;
-    border-radius: 16px !important;
-  }
-
-  /* Section titles */
-  .section-title {
-    font-size: 14px !important;
-  }
-
-  /* Chip buttons — larger touch targets */
-  .chip {
-    padding: 8px 14px !important;
-    font-size: 12px !important;
-  }
-
-  /* Buttons */
-  .btn-icon {
-    min-width: 34px !important;
-    min-height: 34px !important;
-  }
-
-  /* News card touch targets */
-  .news-card {
     padding: 14px !important;
+    border-radius: 14px !important;
   }
 
-  /* Forms and modals */
+  /* ── Wealth hero text ── */
+  .wealth-glow {
+    font-size: 32px !important;
+    letter-spacing: -1px !important;
+  }
+
+  /* ── Section titles ── */
+  .section-title {
+    font-size: 13px !important;
+  }
+
+  /* ── Chip buttons ── */
+  .chip {
+    padding: 7px 12px !important;
+    font-size: 11px !important;
+  }
+
+  /* ── Icon buttons ── */
+  .btn-icon {
+    min-width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+    padding: 0 6px !important;
+  }
+
+  /* ── News cards ── */
+  .news-card {
+    padding: 12px !important;
+  }
+
+  /* ── Modals ── */
   [style*="maxWidth: 520px"],
   [style*="max-width: 520px"] {
     max-width: 100% !important;
-    width: 95% !important;
+    width: 95vw !important;
     border-radius: 16px !important;
   }
-}
 
-/* ===== VERY SMALL SCREENS (max-width: 380px) ===== */
-@media (max-width: 380px) {
-  .header-controls {
+  /* ── Chart: prevent horizontal overflow ── */
+  .recharts-wrapper,
+  .recharts-responsive-container {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* ── WealthHistoryChart toolbar: wrap period buttons ── */
+  /* The toolbar is a flex row with period buttons + chart type toggle */
+  /* On mobile, we let it wrap and shrink text */
+  [style*="border-top: 1px solid rgba(255,255,255,0.04)"] {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    flex-wrap: wrap !important;
     gap: 4px !important;
   }
 
-  .header-controls .btn-icon {
-    min-width: 30px !important;
-    min-height: 30px !important;
-    font-size: 14px !important;
+  /* ── MarketMovers: collapse 2-col to 1-col ── */
+  /* The grid uses inline style gridTemplateColumns computed from JS */
+  /* Override to always be single column on mobile */
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Remove right border separating gainers/losers when stacked */
+  [style*="border-right: 1px solid rgba(255,255,255,0.04)"] {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  }
+
+  /* ── P/L period selector pills (hero section) ── */
+  [class*="pl-period"] {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+
+  /* ── Select dropdowns (asset selector) ── */
+  select {
+    max-width: 130px !important;
+    font-size: 10px !important;
+  }
+
+  /* ── MarketMovers header: stack on very narrow screens ── */
+  [style*="display: flex"][style*="align-items: center"][style*="justify-content: space-between"] {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+}
+
+/* ===== VERY SMALL SCREENS (max-width: 400px) ===== */
+@media (max-width: 400px) {
+  main {
+    padding: 10px 8px !important;
+  }
+
+  .header-right {
+    gap: 4px !important;
+  }
+
+  .btn-icon {
+    min-width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
   }
 
   .btn-primary {
-    padding: 10px 16px !important;
+    padding: 10px 14px !important;
     font-size: 12px !important;
+  }
+
+  .wealth-glow {
+    font-size: 26px !important;
+  }
+
+  /* Period label tabs in WealthHistoryChart - shrink */
+  /* Buttons with letterSpacing 0.5 are our period pills */
+  button[style*="letterSpacing: 0.5"],
+  button[style*="letter-spacing: 0.5"] {
+    padding: 4px 6px !important;
+    font-size: 9px !important;
   }
 }
 
