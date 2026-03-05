@@ -11,6 +11,7 @@ interface WealthChartProps {
 
 export default function WealthChart({ assets }: WealthChartProps) {
     const [filter, setFilter] = useState<'all' | AssetCategory>('all');
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
     // Build chart data
     const filteredAssets = filter === 'all' ? assets : assets.filter((a) => a.category === filter);
@@ -47,16 +48,29 @@ export default function WealthChart({ assets }: WealthChartProps) {
             const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : '0.0';
             return (
                 <div style={{
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    borderRadius: 10, padding: '10px 14px', fontSize: 13,
+                    background: 'rgba(13,17,23,0.95)', border: `1px solid ${d.color}44`,
+                    borderRadius: 12, padding: '14px 18px', fontSize: 13,
+                    boxShadow: `0 8px 32px ${d.color}33`, backdropFilter: 'blur(10px)',
+                    minWidth: 160
                 }}>
-                    <p style={{ fontWeight: 600, marginBottom: 4 }}>{d.icon} {d.name}</p>
-                    <p style={{ color: 'var(--text-secondary)' }}>{formatCurrency(d.value)} · %{pct}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, boxShadow: `0 0 10px ${d.color}` }} />
+                        <span style={{ fontWeight: 700, color: '#fff', letterSpacing: -0.3 }}>{d.icon} {d.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Değer</span>
+                        <span style={{ fontWeight: 600, color: '#fff' }}>{formatCurrency(d.value)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
+                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Oran</span>
+                        <span style={{ fontWeight: 800, color: d.color, fontSize: 16 }}>%{pct}</span>
+                    </div>
                 </div>
             );
         }
         return null;
     };
+
 
     if (data.length === 0) {
         return (
@@ -100,13 +114,31 @@ export default function WealthChart({ assets }: WealthChartProps) {
                 <PieChart>
                     <Pie
                         data={data} cx="50%" cy="50%"
-                        innerRadius={60} outerRadius={95}
-                        paddingAngle={3} dataKey="value" stroke="none"
+                        innerRadius={65} outerRadius={100}
+                        paddingAngle={4} dataKey="value" stroke="none"
                         animationBegin={0} animationDuration={600}
+                        onMouseEnter={(_, index) => setActiveIndex(index)}
+                        onMouseLeave={() => setActiveIndex(null)}
                     >
-                        {data.map((entry, i) => (
-                            <Cell key={`cell-${i}`} fill={entry.color} />
-                        ))}
+                        {data.map((entry, i) => {
+                            const isHovered = activeIndex === i;
+                            const isDimmed = activeIndex !== null && activeIndex !== i;
+                            return (
+                                <Cell
+                                    key={`cell-${i}`}
+                                    fill={entry.color}
+                                    opacity={isDimmed ? 0.25 : 1}
+                                    style={{
+                                        filter: isHovered ? `drop-shadow(0px 0px 10px ${entry.color}aa)` : 'none',
+                                        transition: 'all 0.3s ease',
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        transform: isHovered ? 'scale(1.03)' : 'scale(1)',
+                                        transformOrigin: 'center'
+                                    }}
+                                />
+                            );
+                        })}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
                 </PieChart>

@@ -11,7 +11,7 @@ import AssetForm from '@/components/AssetForm';
 import EditAssetForm from '@/components/EditAssetForm';
 import AssetCard from '@/components/AssetCard';
 import AssetsTabsWidget from '@/components/AssetsTabsWidget';
-import CategoryBreakdown from '@/components/CategoryBreakdown';
+import PortfolioHeatmap from '@/components/PortfolioHeatmap';
 import WealthChart from '@/components/WealthChart';
 import WealthHistoryChart from '@/components/WealthHistoryChart';
 import MarketMovers from '@/components/MarketMovers';
@@ -583,7 +583,7 @@ export default function Home() {
                     case 'categories':
                       return (
                         <WidgetWrapper key={w.id} widgetId={w.id}>
-                          <CategoryBreakdown assets={assets} onSell={setSellingAsset} />
+                          <PortfolioHeatmap assets={assets} />
                         </WidgetWrapper>
                       );
                     case 'assets':
