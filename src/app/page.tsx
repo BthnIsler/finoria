@@ -14,6 +14,7 @@ import AssetsTabsWidget from '@/components/AssetsTabsWidget';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
 import WealthChart from '@/components/WealthChart';
 import WealthHistoryChart from '@/components/WealthHistoryChart';
+import MarketMovers from '@/components/MarketMovers';
 import SellAssetForm from '@/components/SellAssetForm';
 import AiAnalysis from '@/components/AiAnalysis';
 import NewsSection from '@/components/NewsSection';
@@ -568,6 +569,9 @@ export default function Home() {
                       return (
                         <WidgetWrapper key={w.id} widgetId={w.id}>
                           <WealthHistoryChart history={history} currentTotal={totalWealth} assets={assets} totalPLPct={totalPLPct} totalCost={totalCost} />
+                          <div style={{ marginTop: 16 }}>
+                            <MarketMovers assets={assets} />
+                          </div>
                         </WidgetWrapper>
                       );
                     case 'chart':
