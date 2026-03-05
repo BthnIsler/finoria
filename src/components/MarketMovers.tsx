@@ -79,13 +79,14 @@ export default function MarketMovers({ assets }: { assets: Asset[] }) {
                         const oldest = sliced[0];
                         const latest = sliced[sliced.length - 1];
 
-                        const pricePast = oldest.close ?? oldest.value ?? 0;
-                        const priceNow = latest.close ?? latest.value ?? asset.currentPrice ?? 0;
+                        const pricePastRaw = oldest.close ?? oldest.value ?? 0;
+                        const priceNowRaw = latest.close ?? latest.value ?? 0;
 
-                        if (!pricePast || !priceNow) return null;
+                        if (!pricePastRaw || !priceNowRaw) return null;
 
-                        const pct = ((priceNow - pricePast) / pricePast) * 100;
-                        return { asset, pct, pricePast, priceNow } as MoverResult;
+                        // P/L calculation based purely on the asset's price change over that period (independent of currency, since it's a ratio)
+                        const pct = ((priceNowRaw - pricePastRaw) / pricePastRaw) * 100;
+                        return { asset, pct, pricePast: pricePastRaw, priceNow: priceNowRaw } as MoverResult;
                     })
                 );
 

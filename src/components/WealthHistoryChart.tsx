@@ -9,7 +9,6 @@ import { WealthSnapshot, getHourlyHistory, HourlySnapshot } from '@/lib/storage'
 import { Asset } from '@/lib/types';
 import { useCurrency } from '@/lib/contexts';
 
-type ChartView = 'area' | 'candle';
 type TimePeriod = '4h' | '1w' | '1m' | '1y' | 'all';
 type ChartMode = 'wealth' | 'whatif';
 
@@ -116,7 +115,6 @@ export default function WealthHistoryChart({
 }: WealthHistoryChartProps) {
     const { currency, convert } = useCurrency();
     const [chartMode, setChartMode] = useState<ChartMode>('wealth');
-    const [view, setView] = useState<ChartView>('area');
     const [period, setPeriod] = useState<TimePeriod>('all');
     const [selectedAssetId, setSelectedAssetId] = useState('');
     const [hourly, setHourly] = useState<HourlySnapshot[]>([]);
@@ -332,24 +330,6 @@ export default function WealthHistoryChart({
                         })}
 
                         <div style={{ flex: 1 }} />
-
-                        {/* Chart Type Toggle */}
-                        <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 7, padding: 3 }}>
-                            <button onClick={() => setView('area')} style={{
-                                padding: '4px 10px', border: 'none', borderRadius: 5, cursor: 'pointer',
-                                fontSize: 10, fontWeight: 600, background: view === 'area' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                color: view === 'area' ? '#fff' : 'rgba(255,255,255,0.35)', transition: 'all 0.15s',
-                            }}>
-                                Alan
-                            </button>
-                            <button onClick={() => setView('candle')} style={{
-                                padding: '4px 10px', border: 'none', borderRadius: 5, cursor: 'pointer',
-                                fontSize: 10, fontWeight: 600, background: view === 'candle' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                color: view === 'candle' ? '#fff' : 'rgba(255,255,255,0.35)', transition: 'all 0.15s',
-                            }}>
-                                Mum
-                            </button>
-                        </div>
                     </div>
 
                     {/* Loading overlay */}
@@ -363,10 +343,7 @@ export default function WealthHistoryChart({
                     {!isApiLoading && (
                         <div style={{ position: 'relative' }}>
                             <ResponsiveContainer width="100%" height={280}>
-                                {view === 'candle'
-                                    ? <TvCandlestickChart data={displayData} fmt={fmt} />
-                                    : <TvAreaChart data={displayData} isUp={isUp} mainColor={mainColor} fmt={fmt} costLine={!selectedAssetId && totalCost > 0 ? convert(totalCost) : undefined} />
-                                }
+                                <TvAreaChart data={displayData} isUp={isUp} mainColor={mainColor} fmt={fmt} costLine={!selectedAssetId && totalCost > 0 ? convert(totalCost) : undefined} />
                             </ResponsiveContainer>
                         </div>
                     )}
@@ -472,98 +449,6 @@ function TvAreaChart({ data, isUp, mainColor, fmt, costLine }: {
                 isAnimationActive={true} animationDuration={400} animationEasing="ease-out"
             />
         </AreaChart>
-    );
-}
-
-// ─── TradingView Candlestick Chart ────────────────────────────────────────────
-
-function TvCandlestickChart({ data, fmt }: { data: ChartPoint[]; fmt: (v: number) => string }) {
-    const processed = data.map(d => {
-        const o = d.open ?? d.close ?? 0;
-        const c = d.close ?? 0;
-        const h = d.high ?? Math.max(o, c);
-        const l = d.low ?? Math.min(o, c);
-        const bull = c >= o;
-        const bodyH = Math.max(Math.abs(c - o), 0.0001);
-        return { ...d, open: o, close: c, high: h, low: l, bull, bodyBottom: bull ? o : c, bodyHeight: bodyH };
-    });
-
-    const allVals = data.flatMap(d => [d.open ?? 0, d.close ?? 0, d.high ?? 0, d.low ?? 0]).filter(Boolean);
-    const minV = allVals.length > 0 ? Math.min(...allVals) * 0.985 : 0;
-    const maxV = allVals.length > 0 ? Math.max(...allVals) * 1.015 : 100;
-
-    // Check if the data is completely flat (no volatility)
-    const isFlatline = allVals.length > 0 && Math.max(...allVals) === Math.min(...allVals);
-
-    if (isFlatline || data.length < 2) {
-        return (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.3)', padding: 20, textAlign: 'center' }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>🕯️</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>Mum Grafiği İçin Yetersiz Veri</div>
-                <div style={{ fontSize: 11, lineHeight: 1.5, maxWidth: 280 }}>Anlamlı bir mum grafiği (Açılış/Kapanış/Dalgalanma) çizebilmek için geçmiş veri noktalarının birikmesi bekleniyor.</div>
-            </div>
-        );
-    }
-
-    const Tip = ({ active, payload, label }: any) => {
-        if (!active || !payload?.length) return null;
-        const d = payload[0]?.payload;
-        if (!d) return null;
-        const bull = d.bull;
-        return (
-            <div style={{
-                background: 'rgba(13,17,23,0.96)', border: `1px solid ${bull ? '#26a69a33' : '#ef535033'}`,
-                borderRadius: 8, padding: '10px 14px', minWidth: 155,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)', backdropFilter: 'blur(12px)',
-            }}>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 8, letterSpacing: 0.5 }}>{label}</div>
-                {[
-                    { k: 'Aç', v: d.open, c: '#fff' },
-                    { k: 'Kap', v: d.close, c: bull ? '#26a69a' : '#ef5350' },
-                    { k: 'Yük', v: d.high, c: '#26a69a' },
-                    { k: 'Düş', v: d.low, c: '#ef5350' },
-                ].map(row => (
-                    <div key={row.k} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 2 }}>
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{row.k}</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: row.c }}>{fmt(row.v)}</span>
-                    </div>
-                ))}
-            </div>
-        );
-    };
-
-    return (
-        <ComposedChart data={processed} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} vertical={false} />
-            <XAxis
-                dataKey="label"
-                tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 9, fontFamily: 'Inter' }}
-                axisLine={false} tickLine={false}
-                interval="preserveStartEnd" minTickGap={40}
-                padding={{ left: 8, right: 8 }}
-            />
-            <YAxis
-                orientation="right"
-                tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 9, fontFamily: 'Inter' }}
-                axisLine={false} tickLine={false}
-                tickFormatter={fmtY} width={52}
-                domain={[minV, maxV]}
-            />
-            <Tooltip content={<Tip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} isAnimationActive={false} />
-
-            {/* Invisible transparent bar to anchor Y position at bodyBottom */}
-            <Bar dataKey="bodyBottom" stackId="candle" fill="transparent" barSize={8} isAnimationActive={false} />
-            {/* Visible candle body */}
-            <Bar dataKey="bodyHeight" stackId="candle" barSize={8} isAnimationActive={false}>
-                {processed.map((entry, i) => (
-                    <Cell key={i} fill={entry.bull ? '#26a69a' : '#ef5350'} stroke={entry.bull ? '#26a69a' : '#ef5350'} />
-                ))}
-            </Bar>
-
-            {/* Wicks via monotone lines (dashed to visually look like wicks) */}
-            <Line type="monotone" dataKey="high" stroke="rgba(255,255,255,0.2)" strokeWidth={1} dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey="low" stroke="rgba(255,255,255,0.2)" strokeWidth={1} dot={false} isAnimationActive={false} />
-        </ComposedChart>
     );
 }
 
