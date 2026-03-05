@@ -33,8 +33,8 @@ export default function PortfolioHeatmap({ assets }: PortfolioHeatmapProps) {
             const fallbackData = assets.map(a => {
                 const val = a.amount * (a.currentPrice ?? a.purchasePrice);
                 return {
-                    name: a.name,
-                    symbol: a.name.substring(0, 5).toUpperCase(),
+                    name: a.name || 'Bilinmeyen Varlık',
+                    symbol: (a.name || 'X').substring(0, 5).toUpperCase(),
                     value: val,
                     pctChange: 0,
                     color: '#657180', // neutral gray
@@ -108,8 +108,8 @@ export default function PortfolioHeatmap({ assets }: PortfolioHeatmapProps) {
                 }
 
                 return {
-                    name: a.name,
-                    symbol: a.apiId ? a.apiId.split(':')[a.apiId.split(':').length - 1] : a.name.substring(0, 6).toUpperCase(),
+                    name: a.name || 'Bilinmeyen Varlık',
+                    symbol: a.apiId ? a.apiId.split(':')[a.apiId.split(':').length - 1] : (a.name || 'X').substring(0, 6).toUpperCase(),
                     value: valTRY,
                     pctChange: pct,
                     color,
@@ -149,14 +149,20 @@ export default function PortfolioHeatmap({ assets }: PortfolioHeatmapProps) {
 
     // Custom shape for Treemap cells
     const CustomizedContent = (props: any) => {
-        const { root, depth, x, y, width, height, index, name, color, pctChange, symbol } = props;
+        const { root, depth, x, y, width, height, index, name, color, pctChange, symbol, payload } = props;
 
         // Skip root
         if (depth === 1) {
-            const isHovered = hoveredNode === name;
+            const actualName = name || payload?.name || '';
+            const isHovered = hoveredNode === actualName;
+
+            const safeColor = color || payload?.color || '#374151';
+            const safeSymbol = symbol || payload?.symbol || actualName.substring(0, 5).toUpperCase() || '';
+            const safePctChange = (pctChange !== undefined ? pctChange : payload?.pctChange) || 0;
+
             return (
                 <g
-                    onMouseEnter={() => setHoveredNode(name)}
+                    onMouseEnter={() => setHoveredNode(actualName)}
                     onMouseLeave={() => setHoveredNode(null)}
                     style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
                 >
@@ -167,21 +173,21 @@ export default function PortfolioHeatmap({ assets }: PortfolioHeatmapProps) {
                         height={Math.max(height - 4, 0)}
                         rx={6}
                         ry={6}
-                        fill={color}
+                        fill={safeColor}
                         stroke="rgba(0,0,0,0.3)"
                         strokeWidth={2}
                         opacity={isHovered ? 0.8 : 1}
                         style={{
-                            filter: isHovered ? `drop-shadow(0 4px 12px ${color}66)` : 'none'
+                            filter: isHovered ? `drop-shadow(0 4px 12px ${safeColor}66)` : 'none'
                         }}
                     />
                     {width > 50 && height > 40 && (
                         <>
                             <text x={x + width / 2} y={y + height / 2 - 4} textAnchor="middle" fill="#fff" fontSize={width > 80 ? 14 : 11} fontWeight={700} fontFamily="Inter" style={{ pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-                                {symbol}
+                                {safeSymbol}
                             </text>
                             <text x={x + width / 2} y={y + height / 2 + 12} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize={width > 80 ? 11 : 9} fontWeight={600} fontFamily="Inter" style={{ pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-                                {pctChange > 0 ? '+' : ''}{pctChange.toFixed(2)}%
+                                {safePctChange > 0 ? '+' : ''}{safePctChange.toFixed(2)}%
                             </text>
                         </>
                     )}
@@ -196,11 +202,14 @@ export default function PortfolioHeatmap({ assets }: PortfolioHeatmapProps) {
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
             const data = payload[0].payload;
+            const safePctChange = (data.pctChange !== undefined ? data.pctChange : data.payload?.pctChange) || 0;
+            const safeColor = data.color || data.payload?.color || '#374151';
+
             return (
                 <div style={{
-                    background: 'rgba(13,17,23,0.95)', border: `1px solid ${data.color}55`,
+                    background: 'rgba(13,17,23,0.95)', border: `1px solid ${safeColor}55`,
                     borderRadius: 12, padding: '12px 16px', fontSize: 13,
-                    boxShadow: `0 8px 32px ${data.color}33`, backdropFilter: 'blur(10px)',
+                    boxShadow: `0 8px 32px ${safeColor}33`, backdropFilter: 'blur(10px)',
                     zIndex: 100
                 }}>
                     <div style={{ fontWeight: 700, color: '#fff', marginBottom: 4, fontSize: 14 }}>{data.name}</div>
@@ -210,8 +219,8 @@ export default function PortfolioHeatmap({ assets }: PortfolioHeatmapProps) {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 24 }}>
                         <span style={{ color: 'rgba(255,255,255,0.5)' }}>Kâr/Zarar</span>
-                        <span style={{ fontWeight: 800, color: data.pctChange >= 0 ? '#10b981' : '#ef4444' }}>
-                            {data.pctChange > 0 ? '+' : ''}{data.pctChange.toFixed(2)}%
+                        <span style={{ fontWeight: 800, color: safePctChange >= 0 ? '#10b981' : '#ef4444' }}>
+                            {safePctChange > 0 ? '+' : ''}{safePctChange.toFixed(2)}%
                         </span>
                     </div>
                 </div>
