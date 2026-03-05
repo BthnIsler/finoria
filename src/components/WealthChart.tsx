@@ -1,21 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Asset, CATEGORIES, AssetCategory } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
-import { useCurrency } from '@/lib/contexts';
 
 interface WealthChartProps {
     assets: Asset[];
 }
 
 export default function WealthChart({ assets }: WealthChartProps) {
-    const { convert, currency, symbol } = useCurrency();
     const [filter, setFilter] = useState<'all' | AssetCategory>('all');
-    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-
-    const fmt = (v: number) =>
-        new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
 
     // Build chart data
     const filteredAssets = filter === 'all' ? assets : assets.filter((a) => a.category === filter);
@@ -28,133 +23,104 @@ export default function WealthChart({ assets }: WealthChartProps) {
                 const p = a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
                 return sum + a.amount * p;
             }, 0);
-            return { id: cat.key, name: cat.labelTR, value: convert(total), color: cat.color, icon: cat.icon };
-        }).filter((d) => d.value > 0).sort((a, b) => b.value - a.value)
+            return { name: cat.labelTR, value: total, color: cat.color, icon: cat.icon };
+        }).filter((d) => d.value > 0)
         : // Single category — group by individual asset
         filteredAssets.map((a, i) => {
             const p = a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
             const colors = ['#a78bfa', '#22d3ee', '#00e68a', '#f472b6', '#60a5fa', '#ffb347', '#ff4d6a', '#06b6d4'];
             return {
-                id: a.id,
                 name: a.name,
-                value: convert(a.amount * p),
+                value: a.amount * p,
                 color: colors[i % colors.length],
                 icon: '',
             };
-        }).filter((d) => d.value > 0).sort((a, b) => b.value - a.value);
+        }).filter((d) => d.value > 0);
 
     // Categories that have assets (for filter chips)
     const activeCats = CATEGORIES.filter((c) => assets.some((a) => a.category === c.key));
-    const totalValue = data.reduce((sum, d) => sum + d.value, 0);
+
+    const CustomTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+            const d = payload[0].payload;
+            const total = data.reduce((s, x) => s + x.value, 0);
+            const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : '0.0';
+            return (
+                <div style={{
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    borderRadius: 10, padding: '10px 14px', fontSize: 13,
+                }}>
+                    <p style={{ fontWeight: 600, marginBottom: 4 }}>{d.icon} {d.name}</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>{formatCurrency(d.value)} · %{pct}</p>
+                </div>
+            );
+        }
+        return null;
+    };
 
     if (data.length === 0) {
         return (
-            <div style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 40, textAlign: 'center' }}>
-                <p style={{ fontSize: 40, marginBottom: 12 }}>📊</p>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Varlık ekledikçe dağılım burada görünecek</p>
+            <div className="glass-card" style={{ padding: 40, textAlign: 'center' }}>
+                <p style={{ fontSize: 48, marginBottom: 12 }}>📊</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Varlık ekledikçe grafikler burada görünecek</p>
             </div>
         );
     }
 
     return (
-        <div style={{
-            background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: 16, padding: 20, fontFamily: "'Inter', sans-serif"
-        }}>
-            {/* Header & Chips */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <h3 style={{ fontSize: 13, fontWeight: 700, color: '#fff', letterSpacing: -0.2 }}>
+        <div className="glass-card" style={{ padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>
                     {filter === 'all' ? 'Portföy Dağılımı' : `${CATEGORIES.find((c) => c.key === filter)?.icon} ${CATEGORIES.find((c) => c.key === filter)?.labelTR}`}
                 </h3>
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 24 }}>
+            {/* Category filter chips */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
                 <button
+                    className={`chip ${filter === 'all' ? 'active' : ''}`}
                     onClick={() => setFilter('all')}
-                    style={{
-                        padding: '6px 12px', border: filter === 'all' ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.05)',
-                        borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                        background: filter === 'all' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                        color: filter === 'all' ? '#fff' : 'rgba(255,255,255,0.4)', transition: 'all 0.2s',
-                    }}
+                    style={{ fontSize: 11, padding: '5px 12px' }}
                 >
                     Tümü
                 </button>
                 {activeCats.map((cat) => (
                     <button
                         key={cat.key}
+                        className={`chip ${filter === cat.key ? 'active' : ''}`}
                         onClick={() => setFilter(filter === cat.key ? 'all' : cat.key)}
-                        style={{
-                            padding: '6px 12px', border: filter === cat.key ? `1px solid ${cat.color}55` : '1px solid rgba(255,255,255,0.05)',
-                            borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                            background: filter === cat.key ? `${cat.color}15` : 'transparent',
-                            color: filter === cat.key ? cat.color : 'rgba(255,255,255,0.4)', transition: 'all 0.2s',
-                        }}
+                        style={{ fontSize: 11, padding: '5px 12px' }}
                     >
                         {cat.icon} {cat.labelTR}
                     </button>
                 ))}
             </div>
 
-            {/* Linear Progress Bar */}
-            <div style={{
-                height: 24, width: '100%', display: 'flex', borderRadius: 6, overflow: 'hidden', gap: 2,
-                background: 'rgba(255,255,255,0.02)', marginBottom: 24,
-            }}>
-                {data.map((d, i) => {
-                    const pct = (d.value / totalValue) * 100;
-                    return (
-                        <div
-                            key={d.id}
-                            onMouseEnter={() => setHoveredIndex(i)}
-                            onMouseLeave={() => setHoveredIndex(null)}
-                            style={{
-                                width: `${pct}%`, height: '100%', background: d.color,
-                                opacity: hoveredIndex === null || hoveredIndex === i ? 1 : 0.3,
-                                transition: 'opacity 0.2s, width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                                cursor: 'pointer', position: 'relative',
-                            }}
-                        />
-                    );
-                })}
-            </div>
+            <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                    <Pie
+                        data={data} cx="50%" cy="50%"
+                        innerRadius={60} outerRadius={95}
+                        paddingAngle={3} dataKey="value" stroke="none"
+                        animationBegin={0} animationDuration={600}
+                    >
+                        {data.map((entry, i) => (
+                            <Cell key={`cell-${i}`} fill={entry.color} />
+                        ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+            </ResponsiveContainer>
 
-            {/* Legend / Details List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {data.map((d, i) => {
-                    const pct = (d.value / totalValue) * 100;
-                    const isHovered = hoveredIndex === i;
-                    return (
-                        <div
-                            key={d.id}
-                            onMouseEnter={() => setHoveredIndex(i)}
-                            onMouseLeave={() => setHoveredIndex(null)}
-                            style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '8px 12px', borderRadius: 8,
-                                background: isHovered ? 'rgba(255,255,255,0.03)' : 'transparent',
-                                transition: 'background 0.2s', cursor: 'default',
-                            }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 10, height: 10, borderRadius: 3, background: d.color }} />
-                                <span style={{ fontSize: 13, fontWeight: 600, color: isHovered ? '#fff' : 'rgba(255,255,255,0.7)', transition: 'color 0.2s' }}>
-                                    {d.icon} {d.name}
-                                </span>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>
-                                    {fmt(d.value)}
-                                </div>
-                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                                    %{pct.toFixed(1)}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+            {/* Legend */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 8 }}>
+                {data.map((d) => (
+                    <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color }} />
+                        <span style={{ color: 'var(--text-secondary)' }}>{d.icon} {d.name}</span>
+                    </div>
+                ))}
             </div>
         </div>
     );
 }
-
