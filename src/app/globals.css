@@ -629,9 +629,10 @@ body {
   margin-bottom: 16px;
 }
 
-/* ===== SCROLLBAR ===== */
+/* ===== SCROLLBAR STYLING ===== */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -639,13 +640,67 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
+  background: var(--border-light);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* ===== MOBILE RESPONSIVE FIXES ===== */
+@media (max-width: 768px) {
+  /* Fix header actions layout */
+  .header-actions {
+    gap: 8px !important;
+  }
+  
+  /* Hide non-essential buttons on mobile (e.g. settings icon) */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Force the widgets grid into a single column */
+  .widgets-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    margin-bottom: 24px !important;
+  }
+
+  /* Shrink enormous fonts in the hero section */
+  .wealth-hero {
+    padding: 24px 16px !important;
+  }
+  
+  .wealth-glow {
+    font-size: 32px !important;
+  }
+
+  /* Shrink modal sizes to fit screen */
+  .glass-card {
+    padding: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Compress padding on standard buttons */
+  .btn-primary, .btn-secondary {
+    padding: 10px 14px !important;
+    font-size: 12px !important;
+  }
+
+  /* Fix profile text breaking */
+  .profile-name {
+    display: none !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .wealth-glow {
+    font-size: 28px !important;
+  }
+}
+
 
 /* ===== ANIMATIONS ===== */
 @keyframes valueIn {

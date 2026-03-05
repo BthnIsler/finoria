@@ -90,11 +90,11 @@ export default function WealthHistoryChart({ history, currentTotal, assets = [],
                 let pts: ChartPoint[] = data.points.map((p: any) => ({
                     label: formatDateShort(p.date),
                     date: p.date,
-                    value: p.value, // UNIT PRICE in TRY
-                    open: p.value,
-                    close: p.value,
-                    high: p.value * 1.001,
-                    low: p.value * 0.999,
+                    value: p.close ?? p.value,
+                    open: p.open ?? p.value,
+                    close: p.close ?? p.value,
+                    high: p.high ?? p.value * 1.001,
+                    low: p.low ?? p.value * 0.999,
                 }));
 
                 // Slice for shorter periods
@@ -191,7 +191,21 @@ export default function WealthHistoryChart({ history, currentTotal, assets = [],
 
     // Apply currency conversion to display data
     const displayData = useMemo(() => {
-        return activeData.map(d => ({
+        // Pad data if less than 2 points to avoid empty chart error
+        let baseData = activeData;
+        if (baseData.length === 0) {
+            baseData = [
+                { label: 'Geçmiş', value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal },
+                { label: 'Şimdi', value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal }
+            ];
+        } else if (baseData.length === 1) {
+            baseData = [
+                { ...baseData[0], label: 'Geçmiş' },
+                { ...baseData[0], label: 'Şimdi' }
+            ];
+        }
+
+        return baseData.map(d => ({
             ...d,
             value: d.value !== undefined ? convert(d.value) : undefined,
             open: d.open !== undefined ? convert(d.open) : undefined,
@@ -201,24 +215,10 @@ export default function WealthHistoryChart({ history, currentTotal, assets = [],
             pastValue: d.pastValue !== undefined ? convert(d.pastValue) : undefined,
             currentValue: d.currentValue !== undefined ? convert(d.currentValue) : undefined,
         }));
-    }, [activeData, convert]);
+    }, [activeData, convert, currentTotal]);
 
     // Display formatter
     const fmt = (v: number) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
-
-    if (chartMode === 'wealth' && chartData.length < 2 && !selectedAssetId) {
-        return (
-            <div className="glass-card" style={{ padding: 30, textAlign: 'center' }}>
-                <p style={{ fontSize: 36, marginBottom: 10 }}>📈</p>
-                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Servet Geçmişi</h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.6 }}>
-                    Grafiğin oluşması için en az 2 veri noktası gerekiyor.
-                    <br />
-                    Fiyatlar güncellendikçe anlık görüntüler kaydediliyor.
-                </p>
-            </div>
-        );
-    }
 
     const firstVal = displayData[0]?.close ?? displayData[0]?.value ?? 0;
     const lastVal = displayData[displayData.length - 1]?.close ?? displayData[displayData.length - 1]?.value ?? 0;
@@ -617,50 +617,77 @@ function WhatIfView({ data, currentTotal, history, assets, fmt }: {
 
 function AreaChartView({ data, isUp, isAsset, fmt, costLine }: { data: ChartPoint[]; isUp: boolean; isAsset: boolean; fmt: (v: number) => string; costLine?: number }) {
     const dataKey = isAsset ? 'value' : 'close';
-    const gradientId = `areaGrad_${isUp ? 'up' : 'down'}`;
+    const mainColor = isUp ? '#00e68a' : '#ff4d6a';
+    const gradientId = `tvGrad_${isUp ? 'up' : 'down'}`;
 
-    const CustomTooltip = ({ active, payload, label }: any) => {
+    const TradingTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
+            const val = payload[0].value;
+            const firstVal = data[0]?.[dataKey as keyof ChartPoint] as number ?? 0;
+            const changePct = firstVal > 0 ? ((val - firstVal) / firstVal) * 100 : 0;
             return (
                 <div style={{
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    borderRadius: 10, padding: '10px 14px', fontSize: 12,
+                    background: 'rgba(17, 17, 30, 0.95)', backdropFilter: 'blur(12px)',
+                    border: `1px solid ${mainColor}33`, borderRadius: 8,
+                    padding: '10px 14px', fontSize: 11, minWidth: 130,
+                    boxShadow: `0 4px 20px rgba(0,0,0,0.4), 0 0 15px ${mainColor}15`,
                 }}>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: 4 }}>{label}</p>
-                    <p style={{ fontWeight: 700, fontSize: 14 }}>{fmt(payload[0].value)}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, marginBottom: 6, letterSpacing: 0.5 }}>{label}</p>
+                    <p style={{ fontWeight: 800, fontSize: 16, color: '#fff', marginBottom: 3 }}>{fmt(val)}</p>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: mainColor }}>
+                        {changePct >= 0 ? '▲' : '▼'} {changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%
+                    </p>
                 </div>
             );
         }
         return null;
     };
 
+    const formatYAxis = (v: number) => {
+        if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+        if (v >= 1_000) return `${(v / 1_000).toFixed(v >= 10_000 ? 0 : 1)}K`;
+        return v.toFixed(0);
+    };
+
     return (
-        <AreaChart data={data}>
+        <AreaChart data={data} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
             <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={isUp ? '#00e68a' : '#ff4d6a'} stopOpacity={0.25} />
-                    <stop offset="95%" stopColor={isUp ? '#00e68a' : '#ff4d6a'} stopOpacity={0} />
+                    <stop offset="0%" stopColor={mainColor} stopOpacity={0.35} />
+                    <stop offset="40%" stopColor={mainColor} stopOpacity={0.12} />
+                    <stop offset="100%" stopColor={mainColor} stopOpacity={0} />
                 </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} axisLine={false} tickLine={false} />
-            <YAxis hide={true} domain={['auto', 'auto']} />
-            <Tooltip content={<CustomTooltip />} />
+            <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} vertical={false} />
+            <XAxis
+                dataKey="label"
+                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 500 }}
+                axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+                tickLine={false}
+                interval="preserveStartEnd"
+            />
+            <YAxis
+                tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: 500 }}
+                axisLine={false} tickLine={false}
+                tickFormatter={formatYAxis}
+                width={48} domain={['auto', 'auto']}
+            />
+            <Tooltip
+                content={<TradingTooltip />}
+                cursor={{ stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1, strokeDasharray: '4 3' }}
+            />
             {costLine !== undefined && (
-                <ReferenceLine
-                    y={costLine}
-                    stroke="#a78bfa"
-                    strokeDasharray="6 3"
-                    strokeWidth={1.5}
-                    label={{ value: 'Maliyet', position: 'insideTopRight', fill: '#a78bfa', fontSize: 10, fontWeight: 600 }}
+                <ReferenceLine y={costLine} stroke="#a78bfa" strokeDasharray="6 3" strokeWidth={1}
+                    label={{ value: 'Maliyet', position: 'insideTopRight', fill: '#a78bfa', fontSize: 9, fontWeight: 600 }}
                 />
             )}
             <Area
                 type="monotone" dataKey={dataKey}
-                stroke={isUp ? '#00e68a' : '#ff4d6a'} strokeWidth={2}
+                stroke={mainColor} strokeWidth={2}
                 fill={`url(#${gradientId})`}
-                dot={false} activeDot={{ r: 4, fill: isUp ? '#00e68a' : '#ff4d6a' }}
-                animationDuration={400}
+                dot={false}
+                activeDot={{ r: 4, fill: mainColor, stroke: '#0d0d1a', strokeWidth: 2 }}
+                animationDuration={500} animationEasing="ease-out"
             />
         </AreaChart>
     );
@@ -674,19 +701,24 @@ function CandlestickChart({ data, isUp: _isUp, fmt }: { data: ChartPoint[]; isUp
             if (!d) return null;
             return (
                 <div style={{
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    borderRadius: 10, padding: '10px 14px', fontSize: 11,
+                    background: 'rgba(17, 17, 30, 0.95)', backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8,
+                    padding: '10px 14px', fontSize: 11, minWidth: 150,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
                 }}>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 }}>{label}</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Açılış:</span>
-                        <span style={{ fontWeight: 600 }}>{fmt(d.open)}</span>
-                        <span style={{ color: 'var(--text-muted)' }}>Kapanış:</span>
-                        <span style={{ fontWeight: 600 }}>{fmt(d.close)}</span>
-                        <span style={{ color: 'var(--text-muted)' }}>Yüksek:</span>
-                        <span style={{ fontWeight: 600, color: 'var(--accent-green)' }}>{fmt(d.high)}</span>
-                        <span style={{ color: 'var(--text-muted)' }}>Düşük:</span>
-                        <span style={{ fontWeight: 600, color: 'var(--accent-red)' }}>{fmt(d.low)}</span>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 8, fontWeight: 600, fontSize: 10, letterSpacing: 0.5 }}>{label}</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'min-content 1fr', gap: '4px 12px', alignItems: 'center' }}>
+                        <span style={{ color: 'rgba(255,255,255,0.4)' }}>A :</span>
+                        <span style={{ fontWeight: 600, color: '#fff', textAlign: 'right' }}>{fmt(d.open)}</span>
+
+                        <span style={{ color: 'rgba(255,255,255,0.4)' }}>K :</span>
+                        <span style={{ fontWeight: 600, color: '#fff', textAlign: 'right' }}>{fmt(d.close)}</span>
+
+                        <span style={{ color: 'rgba(255,255,255,0.4)' }}>Y :</span>
+                        <span style={{ fontWeight: 600, color: 'var(--accent-green)', textAlign: 'right' }}>{fmt(d.high)}</span>
+
+                        <span style={{ color: 'rgba(255,255,255,0.4)' }}>D :</span>
+                        <span style={{ fontWeight: 600, color: 'var(--accent-red)', textAlign: 'right' }}>{fmt(d.low)}</span>
                     </div>
                 </div>
             );
@@ -696,34 +728,60 @@ function CandlestickChart({ data, isUp: _isUp, fmt }: { data: ChartPoint[]; isUp
 
     // Prepare candlestick bars: body = open-close, wick = low-high
     const chartDataWithCandle = data.map((d) => {
-        const bullish = (d.close ?? 0) >= (d.open ?? 0);
+        const o = d.open ?? d.close ?? 0;
+        const c = d.close ?? 0;
+        const h = d.high ?? Math.max(o, c);
+        const l = d.low ?? Math.min(o, c);
+        const bullish = c >= o;
         return {
             ...d,
-            bodyBottom: bullish ? d.open : d.close,
-            bodyTop: bullish ? d.close : d.open,
-            bodyHeight: Math.abs((d.close ?? 0) - (d.open ?? 0)),
+            open: o, close: c, high: h, low: l,
+            bodyBottom: bullish ? o : c,
+            bodyTop: bullish ? c : o,
+            bodyHeight: Math.max(Math.abs(c - o), 0.001), // avoid 0 height which causes recharts to hide the bar
             bullish,
         };
     });
 
+    const formatYAxis = (v: number) => {
+        if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+        if (v >= 1_000) return `${(v / 1_000).toFixed(v >= 10_000 ? 0 : 1)}K`;
+        return v.toFixed(0);
+    };
+
     const allValues = data.flatMap((d) => [d.open ?? 0, d.close ?? 0, d.high ?? 0, d.low ?? 0]).filter(Boolean);
-    const minVal = Math.min(...allValues) * 0.999;
-    const maxVal = Math.max(...allValues) * 1.001;
+    const minVal = allValues.length > 0 ? Math.min(...allValues) * 0.99 : 0;
+    const maxVal = allValues.length > 0 ? Math.max(...allValues) * 1.01 : 100;
 
     return (
-        <ComposedChart data={chartDataWithCandle}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} axisLine={false} tickLine={false} />
-            <YAxis hide domain={[minVal, maxVal]} />
-            <Tooltip content={<CustomTooltip />} />
+        <ComposedChart data={chartDataWithCandle} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} vertical={false} />
+            <XAxis
+                dataKey="label"
+                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 500 }}
+                axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+                tickLine={false}
+                minTickGap={20}
+            />
+            <YAxis
+                tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: 500 }}
+                axisLine={false} tickLine={false}
+                tickFormatter={formatYAxis}
+                width={48} domain={[minVal, maxVal]}
+                orientation="right"
+            />
+            <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+            />
 
             {/* Wick line (high-low) - drawn as thin bars */}
-            <Bar dataKey="high" fill="transparent" barSize={1} stackId="wick" />
-            <Bar dataKey="low" fill="transparent" barSize={1} stackId="wick" />
+            <Bar dataKey="high" fill="transparent" barSize={1} stackId="wick" isAnimationActive={false} />
+            <Bar dataKey="low" fill="transparent" barSize={1} stackId="wick" isAnimationActive={false} />
 
             {/* Candle body - using open/close as stacked bars */}
-            <Bar dataKey="bodyBottom" stackId="body" fill="transparent" barSize={14} />
-            <Bar dataKey="bodyHeight" stackId="body" barSize={14}>
+            <Bar dataKey="bodyBottom" stackId="body" fill="transparent" barSize={6} isAnimationActive={false} />
+            <Bar dataKey="bodyHeight" stackId="body" barSize={6} isAnimationActive={false}>
                 {chartDataWithCandle.map((entry, i) => (
                     <Cell
                         key={`cell-${i}`}
@@ -734,8 +792,8 @@ function CandlestickChart({ data, isUp: _isUp, fmt }: { data: ChartPoint[]; isUp
             </Bar>
 
             {/* High-Low wicks as lines */}
-            <Line type="monotone" dataKey="high" stroke="var(--text-muted)" strokeWidth={1} dot={false} strokeDasharray="2 2" />
-            <Line type="monotone" dataKey="low" stroke="var(--text-muted)" strokeWidth={1} dot={false} strokeDasharray="2 2" />
+            <Line type="monotone" dataKey="high" stroke="var(--text-muted)" strokeWidth={1} dot={false} strokeDasharray="1 3" isAnimationActive={false} />
+            <Line type="monotone" dataKey="low" stroke="var(--text-muted)" strokeWidth={1} dot={false} strokeDasharray="1 3" isAnimationActive={false} />
         </ComposedChart>
     );
 }
