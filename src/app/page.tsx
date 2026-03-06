@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Asset } from '@/lib/types';
+import { Asset, POPULAR_CRYPTOS, POPULAR_FOREX, GOLD_TYPES, PRECIOUS_METALS } from '@/lib/types';
 import { WealthSnapshot, saveAssetPriceSnapshot } from '@/lib/storage';
 import { getAssets, getWealthHistory, saveWealthSnapshot, saveMultipleAssetPrices, migrateLocalDataToSupabase, updateAsset, deleteAsset } from '@/lib/db';
 import { fetchAllPrices } from '@/lib/prices';
@@ -11,7 +11,7 @@ import AssetForm from '@/components/AssetForm';
 import EditAssetForm from '@/components/EditAssetForm';
 import AssetCard from '@/components/AssetCard';
 import AssetsTabsWidget from '@/components/AssetsTabsWidget';
-import PortfolioHeatmap from '@/components/PortfolioHeatmap';
+import GlobalHeadlines from '@/components/GlobalHeadlines';
 import WealthChart from '@/components/WealthChart';
 import WealthHistoryChart from '@/components/WealthHistoryChart';
 import MarketMovers from '@/components/MarketMovers';
@@ -21,6 +21,7 @@ import NewsSection from '@/components/NewsSection';
 import WidgetWrapper from '@/components/WidgetWrapper';
 import AnimatedNumber from '@/components/AnimatedNumber';
 import AiPortfolioChat from '@/components/AiPortfolioChat';
+import PortfolioShareModal from '@/components/PortfolioShareModal';
 import { useAuth } from '@/lib/AuthContext';
 import AuthModal from '@/components/AuthModal';
 import ResetModal from '@/components/ResetModal';
@@ -44,6 +45,7 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   // Auth Form State
   const [isRegisterMode, setIsRegisterMode] = useState(false);
@@ -78,6 +80,50 @@ export default function Home() {
     };
     loadData();
   }, [user]);
+
+  // Heal assets that somehow lost their apiId
+  useEffect(() => {
+    if (!user || assets.length === 0) return;
+    const API_CATEGORIES = new Set(['crypto', 'stock', 'forex', 'gold', 'precious_metals']);
+    const needsHeal = assets.filter(a => API_CATEGORIES.has(a.category) && !a.apiId);
+    if (needsHeal.length === 0) return;
+
+    const healed: Asset[] = [];
+    for (const a of needsHeal) {
+      let apiId: string | undefined;
+      const nameLower = a.name.toLowerCase();
+
+      if (a.category === 'crypto') {
+        const match = POPULAR_CRYPTOS.find(c => c.name.toLowerCase() === nameLower || c.symbol.toLowerCase() === nameLower);
+        if (match) apiId = match.id;
+      } else if (a.category === 'forex') {
+        const match = POPULAR_FOREX.find(f => f.name.toLowerCase() === nameLower || f.id.toLowerCase() === nameLower);
+        if (match) apiId = match.id;
+      } else if (a.category === 'gold') {
+        const match = GOLD_TYPES.find(g => g.name.toLowerCase() === nameLower);
+        if (match) apiId = 'gold_gram';
+      } else if (a.category === 'precious_metals') {
+        const match = PRECIOUS_METALS.find(m => m.name.toLowerCase() === nameLower);
+        if (match) apiId = match.id;
+      }
+      // Stocks can't be auto-healed easily (too many symbols); skip them
+
+      if (apiId) {
+        healed.push({ ...a, apiId });
+      }
+    }
+
+    if (healed.length > 0) {
+      // Update state and DB
+      setAssets(prev => prev.map(a => {
+        const fix = healed.find(h => h.id === a.id);
+        return fix || a;
+      }));
+      healed.forEach(a => updateAsset(user.id, a));
+      console.log(`[Heal] Fixed apiId for ${healed.length} assets`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assets.length, user]);
 
   const refreshPrices = useCallback(async () => {
     if (assets.length === 0) return;
@@ -490,7 +536,24 @@ export default function Home() {
           }
 
           {/* Hero Wealth Card */}
-          <div className="wealth-hero wealth-hero-hover" style={{ padding: '36px 32px', marginBottom: 0, textAlign: 'center' }}>
+          <div className="wealth-hero wealth-hero-hover" style={{ padding: '36px 32px', marginBottom: 0, textAlign: 'center', position: 'relative' }}>
+            {assets.length > 0 && (
+              <button
+                onClick={() => setShowShare(true)}
+                title="Portföyünü Paylaş"
+                style={{
+                  position: 'absolute', top: 14, right: 14,
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
+                  fontSize: 12, color: 'rgba(255,255,255,0.5)', transition: 'all 0.15s',
+                  fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
+                }}
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+              >
+                📤 Paylaş
+              </button>
+            )}
             <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 10 }}>
               Toplam Servet
             </p>
@@ -583,7 +646,7 @@ export default function Home() {
                     case 'categories':
                       return (
                         <WidgetWrapper key={w.id} widgetId={w.id}>
-                          <PortfolioHeatmap assets={assets} />
+                          <GlobalHeadlines />
                         </WidgetWrapper>
                       );
                     case 'assets':
@@ -663,6 +726,17 @@ export default function Home() {
         totalPLPct={totalPLPct}
         fmt={fmt}
       />
+      {/* Portfolio Share Modal */}
+      {showShare && (
+        <PortfolioShareModal
+          isOpen={showShare}
+          onClose={() => setShowShare(false)}
+          assets={assets}
+          totalWealth={totalWealth}
+          totalPLPct={totalPLPct}
+          totalCost={totalCost}
+        />
+      )}
     </>
   );
 }

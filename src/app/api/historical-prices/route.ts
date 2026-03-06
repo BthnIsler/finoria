@@ -39,7 +39,7 @@ async function fetchYahooSeries(yahooSymbol: string, range: string): Promise<OHL
         const timestamps: number[] = result?.timestamp ?? [];
         const quote = result?.indicators?.quote?.[0];
         if (!quote) return [];
-        
+
         return timestamps.map((ts, i) => ({
             date: new Date(ts * 1000).toISOString().split('T')[0],
             open: quote.open?.[i] ?? quote.close?.[i] ?? 0,
@@ -60,7 +60,7 @@ async function fetchCoinGeckoSeries(coinId: string, days: number): Promise<OHLCS
         if (!res.ok) return [];
         const data = await res.json();
         const prices: [number, number][] = data?.prices ?? [];
-        
+
         let prevClose = 0;
         return prices.map(([ts, price]) => {
             const open = prevClose > 0 ? prevClose : price;
@@ -75,6 +75,27 @@ async function fetchCoinGeckoSeries(coinId: string, days: number): Promise<OHLCS
     }
 }
 
+// Helper: find the closest available rate within ±7 days
+function getClosestRate(rateMap: Map<string, number>, targetDate: string): number {
+    const direct = rateMap.get(targetDate);
+    if (direct != null) return direct;
+    // Fallback: search ±1..7 days
+    const base = new Date(targetDate);
+    for (let offset = 1; offset <= 7; offset++) {
+        for (const dir of [-1, 1]) {
+            const d = new Date(base);
+            d.setDate(d.getDate() + dir * offset);
+            const key = d.toISOString().split('T')[0];
+            const rate = rateMap.get(key);
+            if (rate != null) return rate;
+        }
+    }
+    // Ultimate fallback: use the last known rate in the map
+    let lastRate = 0;
+    for (const v of rateMap.values()) lastRate = v;
+    return lastRate || 36; // hardcoded fallback only if map is completely empty
+}
+
 export async function POST(request: NextRequest) {
     const { assets, period }: { assets: AssetInput[]; period: string } = await request.json();
 
@@ -84,8 +105,8 @@ export async function POST(request: NextRequest) {
     if (!assets || assets.length === 0) return NextResponse.json({ points: [] });
 
     // Step 1: fetch USD→TRY series for conversions
-    const needsUsdConversion = assets.some(a => 
-        (a.category === 'stock' && !a.apiId.startsWith('BIST:')) || 
+    const needsUsdConversion = assets.some(a =>
+        (a.category === 'stock' && !a.apiId.startsWith('BIST:')) ||
         a.category === 'precious_metals'
     );
     const usdTryMap = needsUsdConversion ? await fetchUsdTrySeries(range) : new Map<string, number>();
@@ -100,8 +121,8 @@ export async function POST(request: NextRequest) {
             const cgSeries = await fetchCoinGeckoSeries('tether-gold', days);
             // Convert per ounce to per gram
             series = cgSeries.map(p => ({
-                date: p.date, 
-                open: p.open / 31.1035, high: p.high / 31.1035, 
+                date: p.date,
+                open: p.open / 31.1035, high: p.high / 31.1035,
                 low: p.low / 31.1035, close: p.close / 31.1035
             }));
         } else if (asset.category === 'precious_metals') {
@@ -111,7 +132,7 @@ export async function POST(request: NextRequest) {
             if (yahooSymbol) {
                 const rawSeries = await fetchYahooSeries(yahooSymbol, range);
                 series = rawSeries.map(p => {
-                    const rate = usdTryMap.get(p.date) ?? 1;
+                    const rate = getClosestRate(usdTryMap, p.date);
                     return {
                         date: p.date,
                         open: (p.open * rate) / 31.1035, high: (p.high * rate) / 31.1035,
@@ -128,7 +149,7 @@ export async function POST(request: NextRequest) {
             series = await fetchYahooSeries(yahooSymbol, range);
             if (!isBist) {
                 series = series.map(p => {
-                    const rate = usdTryMap.get(p.date) ?? 1; // fallback is tricky, better to have rate
+                    const rate = getClosestRate(usdTryMap, p.date);
                     return {
                         date: p.date,
                         open: p.open * rate, high: p.high * rate, low: p.low * rate, close: p.close * rate

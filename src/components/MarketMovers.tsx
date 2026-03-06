@@ -92,7 +92,8 @@ export default function MarketMovers({ assets }: { assets: Asset[] }) {
 
                 const movers: MoverResult[] = results
                     .filter((r): r is PromiseFulfilledResult<MoverResult | null> => r.status === 'fulfilled' && r.value !== null)
-                    .map(r => r.value as MoverResult);
+                    .map(r => r.value as MoverResult)
+                    .filter(m => isFinite(m.pct) && !isNaN(m.pct));
 
                 movers.sort((a, b) => b.pct - a.pct);
 
