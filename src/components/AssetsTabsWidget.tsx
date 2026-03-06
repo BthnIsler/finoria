@@ -40,10 +40,9 @@ interface SmartTag {
     title: string;
 }
 
-function getSmartTags(asset: Asset): SmartTag[] {
+function getSmartTags(asset: Asset, exchangeRates: Record<string, number>): SmartTag[] {
     const tags: SmartTag[] = [];
-    const currentPrice = asset.currentPrice ?? asset.manualCurrentPrice ?? 0;
-    const purchasePrice = asset.purchasePrice ?? 0;
+    const currentPriceTRY = asset.currentPrice ?? asset.manualCurrentPrice ?? 0;
 
     // Diamond Hands: held for > 1 year
     const ageMs = Date.now() - new Date(asset.createdAt).getTime();
@@ -55,20 +54,23 @@ function getSmartTags(asset: Asset): SmartTag[] {
         });
     }
 
-    // Check P/L magnitude for volatility approximation
-    if (currentPrice > 0 && purchasePrice > 0) {
-        const pctChange = ((currentPrice - purchasePrice) / purchasePrice) * 100;
-        if (pctChange > 100) {
-            tags.push({
-                label: 'Rekor', icon: '🔥', color: '#f59e0b',
-                bg: 'rgba(245,158,11,0.1)', title: 'Alış fiyatından %100+ yukarıda',
-            });
-        }
-        if (pctChange < -30) {
-            tags.push({
-                label: 'Dip', icon: '📉', color: '#ef4444',
-                bg: 'rgba(239,68,68,0.1)', title: 'Alış fiyatından %30+ aşağıda',
-            });
+    // Use normalized TRY cost to compare properly (handles USD/EUR purchase currencies)
+    if (currentPriceTRY > 0 && asset.purchasePrice > 0) {
+        const unitCostTRY = getAssetCostInTRY(1, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
+        if (unitCostTRY > 0) {
+            const pctChange = ((currentPriceTRY - unitCostTRY) / unitCostTRY) * 100;
+            if (pctChange > 100) {
+                tags.push({
+                    label: 'Rekor', icon: '🔥', color: '#f59e0b',
+                    bg: 'rgba(245,158,11,0.1)', title: 'Alış fiyatından %100+ yukarıda',
+                });
+            }
+            if (pctChange < -30) {
+                tags.push({
+                    label: 'Dip', icon: '📉', color: '#ef4444',
+                    bg: 'rgba(239,68,68,0.1)', title: 'Alış fiyatından %30+ aşağıda',
+                });
+            }
         }
     }
 
@@ -136,7 +138,7 @@ function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expand
     const currentValueDisplay = convert(currentValueTRY);
 
     const pl = computePL(asset, plPeriod, exchangeRates, convert);
-    const tags = getSmartTags(asset);
+    const tags = getSmartTags(asset, exchangeRates);
 
     const fmt = (n: number) =>
         new Intl.NumberFormat('tr-TR', {
@@ -362,7 +364,7 @@ export default function AssetsTabsWidget({
     const [sortKey, setSortKey] = useState<SortKey>('value');
     const [sortDir, setSortDir] = useState<SortDir>('desc');
     const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
-    const { convert, exchangeRates } = useCurrency();
+    const { convert, exchangeRates, currency } = useCurrency();
 
     const categoriesWithAssets = useMemo(() => {
         const counts = new Map<string, number>();
@@ -622,6 +624,53 @@ export default function AssetsTabsWidget({
                             ))}
                         </div>
                     )}
+
+                    {/* ── Category Summary Strip ── */}
+                    {filteredAndSortedAssets.length > 0 && (() => {
+                        const catAssets = filteredAndSortedAssets;
+                        const totalVal = catAssets.reduce((s, a) => {
+                            const p = a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
+                            return s + convert(a.amount * p);
+                        }, 0);
+                        const totalCostVal = catAssets.reduce((s, a) => {
+                            if (a.purchasePrice <= 0) return s;
+                            const costTRY = getAssetCostInTRY(a.amount, a.purchasePrice, a.purchaseCurrency, exchangeRates);
+                            return s + convert(costTRY);
+                        }, 0);
+                        const plVal = totalVal - totalCostVal;
+                        const plPctVal = totalCostVal > 0 ? ((totalVal - totalCostVal) / totalCostVal) * 100 : 0;
+                        const isUp = plVal >= 0;
+                        const catLabel = activeTab === 'all' ? 'Toplam Portföy' : getCategoryMeta(activeTab as any)?.labelTR || '';
+
+                        return (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '10px 14px', marginBottom: 8,
+                                background: 'var(--bg-elevated)',
+                                borderRadius: 10, border: '1px solid var(--border)',
+                            }}>
+                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+                                    {catLabel} Değeri
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                                        {new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(totalVal)}
+                                    </span>
+                                    {totalCostVal > 0 && (
+                                        <span style={{
+                                            fontSize: 11, fontWeight: 700,
+                                            color: isUp ? 'var(--accent-green)' : 'var(--accent-red)',
+                                            background: isUp ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                                            padding: '2px 8px', borderRadius: 6,
+                                        }}>
+                                            {isUp ? '▲' : '▼'} {plPctVal >= 0 ? '+' : ''}{plPctVal.toFixed(1)}%
+                                            ({isUp ? '+' : ''}{new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(plVal)})
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {/* Asset rows */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
