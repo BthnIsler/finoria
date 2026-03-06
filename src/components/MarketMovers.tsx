@@ -32,6 +32,7 @@ const FETCHABLE_CATEGORIES = new Set(['crypto', 'stock', 'forex', 'precious_meta
 export default function MarketMovers({ assets }: { assets: Asset[] }) {
     const { convert, symbol } = useCurrency();
     const [activePeriod, setActivePeriod] = useState<Period>('1d');
+    const [isOpen, setIsOpen] = useState(false);
     const [periodData, setPeriodData] = useState<Record<Period, PeriodData>>({
         '1d': { gainers: [], losers: [], loading: false, fetched: false },
         '1w': { gainers: [], losers: [], loading: false, fetched: false },
@@ -133,11 +134,16 @@ export default function MarketMovers({ assets }: { assets: Asset[] }) {
             marginTop: 0,
         }}>
             {/* ── Header ── */}
-            <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '14px 20px',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-            }}>
+            <div
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '14px 20px',
+                    borderBottom: isOpen ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    cursor: 'pointer', userSelect: 'none',
+                    transition: 'border-bottom 0.2s',
+                }}
+            >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
                         width: 32, height: 32, borderRadius: 10,
@@ -151,65 +157,84 @@ export default function MarketMovers({ assets }: { assets: Asset[] }) {
                             Portföy Nabzı
                         </div>
                         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 0.5 }}>
-                            EN ÇOK KAZANDIRANLAR & KAYBETTİRENLER
+                            EN ÇOK KAZANDIRANLAR & KAYB ETTİRENLER
                         </div>
                     </div>
                 </div>
 
-                {/* Period tabs */}
-                <div style={{
-                    display: 'flex', gap: 2,
-                    background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 3,
-                }}>
-                    {PERIOD_CONFIG.map(p => (
-                        <button key={p.key} onClick={() => setActivePeriod(p.key)} style={{
-                            padding: '5px 12px', border: 'none', borderRadius: 6,
-                            fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                            background: activePeriod === p.key ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            color: activePeriod === p.key ? '#fff' : 'rgba(255,255,255,0.35)',
-                            transition: 'all 0.15s', letterSpacing: 0.3,
-                        }}>
-                            {p.label}
-                        </button>
-                    ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {/* Period tabs (only when open) */}
+                    {isOpen && (
+                        <div
+                            onClick={e => e.stopPropagation()}
+                            style={{
+                                display: 'flex', gap: 2,
+                                background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 3,
+                            }}
+                        >
+                            {PERIOD_CONFIG.map(p => (
+                                <button key={p.key} onClick={() => setActivePeriod(p.key)} style={{
+                                    padding: '5px 12px', border: 'none', borderRadius: 6,
+                                    fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                                    background: activePeriod === p.key ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                    color: activePeriod === p.key ? '#fff' : 'rgba(255,255,255,0.35)',
+                                    transition: 'all 0.15s', letterSpacing: 0.3,
+                                }}>
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                    {/* Chevron */}
+                    <span style={{
+                        color: 'rgba(255,255,255,0.3)', fontSize: 14, fontWeight: 700,
+                        transition: 'transform 0.2s',
+                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}>
+                        ▼
+                    </span>
                 </div>
             </div>
 
-            {/* ── Body ── */}
-            {current.loading ? (
-                <LoadingState />
-            ) : (current.gainers.length === 0 && current.losers.length === 0) ? (
-                <EmptyState />
-            ) : (
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: current.losers.length > 0 ? '1fr 1fr' : '1fr',
-                    gap: 0,
-                }}>
-                    {/* Gainers */}
-                    {current.gainers.length > 0 && (
-                        <div style={{ padding: '16px 20px', borderRight: current.losers.length > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                            <SectionHeader label="Kazandıranlar" color="#26a69a" icon="▲" />
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
-                                {current.gainers.map((m, i) => (
-                                    <MoverCard key={m.asset.id} mover={m} rank={i + 1} isGain />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+            {/* ── Body (collapsible) ── */}
+            {isOpen && (
+                <>
+                    {current.loading ? (
+                        <LoadingState />
+                    ) : (current.gainers.length === 0 && current.losers.length === 0) ? (
+                        <EmptyState />
+                    ) : (
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: current.losers.length > 0 ? '1fr 1fr' : '1fr',
+                            gap: 0,
+                        }}>
+                            {/* Gainers */}
+                            {current.gainers.length > 0 && (
+                                <div style={{ padding: '16px 20px', borderRight: current.losers.length > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                                    <SectionHeader label="Kazandıranlar" color="#26a69a" icon="▲" />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                                        {current.gainers.map((m, i) => (
+                                            <MoverCard key={m.asset.id} mover={m} rank={i + 1} isGain />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
-                    {/* Losers */}
-                    {current.losers.length > 0 && (
-                        <div style={{ padding: '16px 20px' }}>
-                            <SectionHeader label="Kaybettirenler" color="#ef5350" icon="▼" />
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
-                                {current.losers.map((m, i) => (
-                                    <MoverCard key={m.asset.id} mover={m} rank={i + 1} isGain={false} />
-                                ))}
-                            </div>
+                            {/* Losers */}
+                            {current.losers.length > 0 && (
+                                <div style={{ padding: '16px 20px' }}>
+                                    <SectionHeader label="Kaybettirenler" color="#ef5350" icon="▼" />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                                        {current.losers.map((m, i) => (
+                                            <MoverCard key={m.asset.id} mover={m} rank={i + 1} isGain={false} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
-                </div>
+                </>
             )}
         </div>
     );
