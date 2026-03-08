@@ -476,11 +476,15 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Market Movers + Headlines + UpcomingEvents */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 40 }}>
+                  {/* Market data + Upcoming Events */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                     <MarketMovers assets={assets} />
-                    <GlobalHeadlines />
                     <UpcomingEvents />
+                  </div>
+
+                  {/* Global Headlines - full width at bottom */}
+                  <div style={{ marginBottom: 40 }}>
+                    <GlobalHeadlines />
                   </div>
                 </>
               )}

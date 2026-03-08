@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Asset, CATEGORIES, getCategoryMeta } from '@/lib/types';
 import { useCurrency } from '@/lib/contexts';
 import { getAssetCostInTRY, formatPercentage } from '@/lib/utils';
 import { deleteAsset } from '@/lib/db';
 import { getAssetPriceAtDate } from '@/lib/storage';
-import WidgetWrapper from '@/components/WidgetWrapper';
 
 type PLPeriod = '1d' | '1w' | '1m' | 'all';
 type SortKey = 'value' | 'plPct' | 'plVal' | 'name' | 'date';
@@ -31,7 +30,6 @@ function getCutoffDate(period: PLPeriod): Date | null {
     }
 }
 
-// ── Smart Tag Logic ──
 interface SmartTag {
     label: string;
     icon: string;
@@ -44,40 +42,23 @@ function getSmartTags(asset: Asset, exchangeRates: Record<string, number>): Smar
     const tags: SmartTag[] = [];
     const currentPriceTRY = asset.currentPrice ?? asset.manualCurrentPrice ?? 0;
 
-    // Diamond Hands: held for > 1 year
     const ageMs = Date.now() - new Date(asset.createdAt).getTime();
     const ageDays = ageMs / (1000 * 60 * 60 * 24);
     if (ageDays > 365) {
-        tags.push({
-            label: 'Elmas', icon: '💎', color: '#22d3ee',
-            bg: 'rgba(34,211,238,0.1)', title: '1 yıldan uzun süredir portföyde',
-        });
+        tags.push({ label: 'Elmas', icon: '💎', color: '#22d3ee', bg: 'rgba(34,211,238,0.1)', title: '1 yıldan uzun süredir portföyde' });
     }
 
-    // Use normalized TRY cost to compare properly (handles USD/EUR purchase currencies)
     if (currentPriceTRY > 0 && asset.purchasePrice > 0) {
         const unitCostTRY = getAssetCostInTRY(1, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
         if (unitCostTRY > 0) {
             const pctChange = ((currentPriceTRY - unitCostTRY) / unitCostTRY) * 100;
-            if (pctChange > 100) {
-                tags.push({
-                    label: 'Rekor', icon: '🔥', color: '#f59e0b',
-                    bg: 'rgba(245,158,11,0.1)', title: 'Alış fiyatından %100+ yukarıda',
-                });
-            }
-            if (pctChange < -30) {
-                tags.push({
-                    label: 'Dip', icon: '📉', color: '#ef4444',
-                    bg: 'rgba(239,68,68,0.1)', title: 'Alış fiyatından %30+ aşağıda',
-                });
-            }
+            if (pctChange > 100) tags.push({ label: 'Rekor', icon: '🔥', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', title: 'Alış fiyatından %100+ yukarıda' });
+            if (pctChange < -30) tags.push({ label: 'Dip', icon: '📉', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', title: 'Alış fiyatından %30+ aşağıda' });
         }
     }
-
     return tags;
 }
 
-// ── Compute P/L for an asset ──
 function computePL(
     asset: Asset,
     plPeriod: PLPeriod,
@@ -130,7 +111,7 @@ function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expand
     onToggle: () => void;
 }) {
     const cat = getCategoryMeta(asset.category);
-    const { currency, convert, exchangeRates, symbol } = useCurrency();
+    const { currency, convert, exchangeRates } = useCurrency();
     const [hovered, setHovered] = useState(false);
 
     const currentPriceTRY = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
@@ -162,34 +143,28 @@ function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expand
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
                 style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 14px 10px 0',
-                    borderRadius: 12,
-                    transition: 'background 0.15s',
-                    background: hovered ? 'var(--bg-elevated)' : 'transparent',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    overflow: 'hidden',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 14px 12px 0',
+                    borderRadius: 12, transition: 'background 0.15s',
+                    background: hovered ? 'rgba(255,255,255,0.035)' : 'transparent',
+                    cursor: 'pointer', position: 'relative', overflow: 'hidden',
                 }}
             >
                 {/* Category color stripe */}
                 <div style={{
-                    position: 'absolute', left: 0, top: 0, bottom: 0,
+                    position: 'absolute', left: 0, top: 8, bottom: 8,
                     width: 3, borderRadius: '3px 0 0 3px',
                     background: cat.color,
-                    opacity: hovered ? 1 : 0.4,
+                    opacity: hovered ? 1 : 0.5,
                     transition: 'opacity 0.2s',
                 }} />
 
                 {/* Icon */}
                 <div style={{
-                    width: 34, height: 34, borderRadius: 9,
-                    background: `${cat.color}18`,
-                    border: `1px solid ${cat.color}28`,
+                    width: 38, height: 38, borderRadius: 10,
+                    background: `${cat.color}18`, border: `1px solid ${cat.color}28`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 16, flexShrink: 0, marginLeft: 10,
+                    fontSize: 17, flexShrink: 0, marginLeft: 12,
                 }}>
                     {cat.icon}
                 </div>
@@ -197,10 +172,9 @@ function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expand
                 {/* Name + amount + smart tags */}
                 <div style={{ minWidth: 0, flex: '1 1 120px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0, color: 'var(--text-primary)' }}>
                             {asset.name}
                         </p>
-                        {/* Smart Tags */}
                         {tags.map((tag, i) => (
                             <span key={i} title={tag.title} style={{
                                 fontSize: 9, fontWeight: 700, padding: '1px 5px',
@@ -211,21 +185,20 @@ function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expand
                             </span>
                         ))}
                     </div>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1, margin: 0 }}>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, margin: 0 }}>
                         {asset.amount} adet
                         {asset.currentPrice && (
                             <span style={{
                                 marginLeft: 6, fontSize: 10, color: 'var(--accent-cyan)',
-                                background: 'rgba(34,211,238,0.08)',
-                                padding: '1px 6px', borderRadius: 6,
+                                background: 'rgba(34,211,238,0.08)', padding: '1px 6px', borderRadius: 6,
                             }}>● canlı</span>
                         )}
                     </p>
                 </div>
 
-                {/* Value + P/L (both % and ₺) */}
+                {/* Value + P/L */}
                 <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 'auto' }}>
-                    <p style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>{fmt(currentValueDisplay)}</p>
+                    <p style={{ fontSize: 13, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>{fmt(currentValueDisplay)}</p>
                     {pl !== null && (
                         <div style={{ marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
                             <span style={{
@@ -236,16 +209,10 @@ function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expand
                             </span>
                             <span style={{
                                 fontSize: 10, fontWeight: 600,
-                                color: pl.isPositive ? 'var(--accent-green)' : 'var(--accent-red)',
-                                opacity: 0.7,
+                                color: pl.isPositive ? 'var(--accent-green)' : 'var(--accent-red)', opacity: 0.7,
                             }}>
                                 ({pl.isPositive ? '+' : ''}{fmt(pl.valDisplay)})
                             </span>
-                            {pl.label && (
-                                <span title="Bu dönem için yeterli veri yok" style={{ fontSize: 9, opacity: 0.5 }}>
-                                    ({pl.label})
-                                </span>
-                            )}
                         </div>
                     )}
                 </div>
@@ -272,32 +239,21 @@ function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expand
                 }}>▼</span>
             </div>
 
-            {/* ── Expandable Detail ── */}
+            {/* Expandable Detail */}
             {expanded && (
                 <div style={{
-                    margin: '0 14px 8px 47px',
-                    padding: '12px 16px',
-                    background: 'var(--bg-elevated)',
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                    fontSize: 12,
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
-                    gap: '10px 20px',
-                    animation: 'fadeSlideIn 0.2s ease',
+                    margin: '0 14px 8px 57px', padding: '12px 16px',
+                    background: 'var(--bg-elevated)', borderRadius: 10,
+                    border: '1px solid var(--border)', fontSize: 12,
+                    display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+                    gap: '10px 20px', animation: 'fadeSlideIn 0.2s ease',
                 }}>
                     <DetailItem label="Alış Fiyatı" value={fmt(convert(asset.purchasePrice))} />
                     <DetailItem label="Güncel Fiyat" value={fmt(convert(currentPriceTRY))} accent />
-                    <DetailItem label="Birim Kâr/Zarar" value={
-                        asset.purchasePrice > 0
-                            ? fmt(convert(currentPriceTRY - asset.purchasePrice))
-                            : '—'
-                    } isPositive={currentPriceTRY >= asset.purchasePrice} />
+                    <DetailItem label="Birim K/Z" value={asset.purchasePrice > 0 ? fmt(convert(currentPriceTRY - asset.purchasePrice)) : '—'} isPositive={currentPriceTRY >= asset.purchasePrice} />
                     <DetailItem label="Toplam Maliyet" value={fmt(convert(costTRY))} />
                     <DetailItem label="Güncel Toplam" value={fmt(currentValueDisplay)} accent />
-                    <DetailItem label="Toplam Kâr/Zarar" value={
-                        pl ? `${pl.isPositive ? '+' : ''}${fmt(pl.valDisplay)}` : '—'
-                    } isPositive={pl?.isPositive ?? true} />
+                    <DetailItem label="Toplam K/Z" value={pl ? `${pl.isPositive ? '+' : ''}${fmt(pl.valDisplay)}` : '—'} isPositive={pl?.isPositive ?? true} />
                     <DetailItem label="Alış Tarihi" value={new Date(asset.createdAt).toLocaleDateString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric' })} />
                     <DetailItem label="Para Birimi" value={asset.purchaseCurrency || 'TRY'} />
                     <DetailItem label="Kategori" value={`${cat.icon} ${cat.labelTR}`} />
@@ -319,20 +275,14 @@ function DetailItem({ label, value, accent, isPositive }: { label: string; value
     if (isPositive === true) color = 'var(--accent-green)';
     if (isPositive === false) color = 'var(--accent-red)';
     if (accent) color = 'var(--accent-cyan)';
-
     return (
         <div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 0.3, marginBottom: 2 }}>
-                {label}
-            </div>
-            <div style={{ fontSize: 12, fontWeight: 700, color }}>
-                {value}
-            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 0.3, marginBottom: 2 }}>{label}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color }}>{value}</div>
         </div>
     );
 }
 
-// ── Sort Configs ──
 const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
     { key: 'value', label: 'Değer', icon: '💰' },
     { key: 'plPct', label: 'K/Z %', icon: '📊' },
@@ -348,16 +298,7 @@ const PL_PERIODS: { key: PLPeriod; label: string }[] = [
     { key: 'all', label: 'Tümü' },
 ];
 
-// ── Main Widget ──
-export default function AssetsTabsWidget({
-    widgetId,
-    assets,
-    onDelete,
-    onEdit,
-    onSell,
-    onAnalyze
-}: AssetsTabsWidgetProps) {
-    const [isOpen, setIsOpen] = useState(false);
+export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, onSell, onAnalyze }: AssetsTabsWidgetProps) {
     const [activeTab, setActiveTab] = useState<string>('all');
     const [plPeriod, setPLPeriod] = useState<PLPeriod>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -369,352 +310,220 @@ export default function AssetsTabsWidget({
     const categoriesWithAssets = useMemo(() => {
         const counts = new Map<string, number>();
         assets.forEach(a => counts.set(a.category, (counts.get(a.category) || 0) + 1));
-        return CATEGORIES.filter(c => counts.has(c.key)).map(c => ({
-            ...c,
-            count: counts.get(c.key) || 0,
-        }));
+        return CATEGORIES.filter(c => counts.has(c.key)).map(c => ({ ...c, count: counts.get(c.key) || 0 }));
     }, [assets]);
 
     const filteredAndSortedAssets = useMemo(() => {
         let list = assets;
-
-        // Filter by category
-        if (activeTab !== 'all') {
-            list = list.filter(a => a.category === activeTab);
-        }
-
-        // Filter by search
+        if (activeTab !== 'all') list = list.filter(a => a.category === activeTab);
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim();
-            list = list.filter(a =>
-                a.name.toLowerCase().includes(q) ||
-                getCategoryMeta(a.category).labelTR.toLowerCase().includes(q)
-            );
+            list = list.filter(a => a.name.toLowerCase().includes(q) || getCategoryMeta(a.category).labelTR.toLowerCase().includes(q));
         }
-
-        // Sort
         const sorted = [...list].sort((a, b) => {
             let cmp = 0;
             const priceA = a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
             const priceB = b.currentPrice ?? b.manualCurrentPrice ?? b.purchasePrice;
             const valA = a.amount * priceA;
             const valB = b.amount * priceB;
-
             switch (sortKey) {
-                case 'value':
-                    cmp = valA - valB;
-                    break;
+                case 'value': cmp = valB - valA; break;
                 case 'plPct': {
                     const plA = computePL(a, plPeriod, exchangeRates, convert);
                     const plB = computePL(b, plPeriod, exchangeRates, convert);
-                    cmp = (plA?.pct ?? 0) - (plB?.pct ?? 0);
+                    cmp = (plB?.pct ?? -Infinity) - (plA?.pct ?? -Infinity);
                     break;
                 }
                 case 'plVal': {
                     const plA = computePL(a, plPeriod, exchangeRates, convert);
                     const plB = computePL(b, plPeriod, exchangeRates, convert);
-                    cmp = (plA?.valDisplay ?? 0) - (plB?.valDisplay ?? 0);
+                    cmp = (plB?.valDisplay ?? -Infinity) - (plA?.valDisplay ?? -Infinity);
                     break;
                 }
-                case 'name':
-                    cmp = a.name.localeCompare(b.name, 'tr');
-                    break;
-                case 'date':
-                    cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-                    break;
+                case 'name': cmp = a.name.localeCompare(b.name, 'tr'); break;
+                case 'date': cmp = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); break;
             }
-            return sortDir === 'desc' ? -cmp : cmp;
+            return sortDir === 'desc' ? cmp : -cmp;
         });
-
         return sorted;
     }, [assets, activeTab, searchQuery, sortKey, sortDir, plPeriod, exchangeRates, convert]);
 
     const handleSortClick = (key: SortKey) => {
-        if (sortKey === key) {
-            setSortDir(d => d === 'desc' ? 'asc' : 'desc');
-        } else {
-            setSortKey(key);
-            setSortDir('desc');
-        }
+        if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+        else { setSortKey(key); setSortDir('desc'); }
     };
 
+    const fmtCurrency = (n: number) =>
+        new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+
     return (
-        <WidgetWrapper widgetId={widgetId}>
-            <div>
-                {/* ──── Clickable header (always visible) ──── */}
-                <button
-                    onClick={() => setIsOpen(o => !o)}
-                    style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 8,
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 0,
-                    }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{
-                            width: 32, height: 32, borderRadius: 9,
-                            background: 'linear-gradient(135deg, rgba(167,139,250,0.15), rgba(34,211,238,0.1))',
-                            border: '1px solid rgba(167,139,250,0.2)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 16,
-                        }}>
-                            💼
-                        </div>
-                        <div style={{ textAlign: 'left' }}>
-                            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>
-                                Varlıklarım
-                            </span>
-                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                                {assets.length} varlık
-                            </span>
-                        </div>
-                    </div>
+        <div>
+            {/* ── Page Header ── */}
+            <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginBottom: 20, flexWrap: 'wrap', gap: 12,
+            }}>
+                <div>
+                    <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-primary)', marginBottom: 3, letterSpacing: -0.5 }}>
+                        💼 Varlıklarım
+                    </h2>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        {assets.length} varlık · {categoriesWithAssets.length} kategori
+                    </p>
+                </div>
 
+                {/* Search */}
+                <div style={{ position: 'relative', minWidth: 220 }}>
                     <span style={{
-                        fontSize: 18,
-                        color: 'var(--text-muted)',
-                        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
-                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        display: 'flex', alignItems: 'center',
-                    }}>
-                        ⌄
-                    </span>
-                </button>
-
-                {/* ──── Collapsible body ──── */}
-                <div style={{
-                    overflow: 'hidden',
-                    maxHeight: isOpen ? '4000px' : '0px',
-                    transition: 'max-height 0.4s cubic-bezier(0.4,0,0.2,1)',
-                    opacity: isOpen ? 1 : 0,
-                    transitionProperty: 'max-height, opacity',
-                }}>
-                    <div style={{ height: 1, background: 'var(--border)', margin: '14px 0 10px' }} />
-
-                    {/* ── Search Bar ── */}
-                    <div style={{ marginBottom: 10 }}>
-                        <input
-                            type="text"
-                            placeholder="🔍 Varlık ara..."
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            style={{
-                                width: '100%', padding: '8px 14px',
-                                borderRadius: 10, border: '1px solid var(--border)',
-                                background: 'var(--bg-elevated)', color: 'var(--text-primary)',
-                                fontSize: 12, outline: 'none',
-                                transition: 'border-color 0.2s',
-                            }}
-                            onFocus={e => e.target.style.borderColor = 'var(--accent-purple)'}
-                            onBlur={e => e.target.style.borderColor = 'var(--border)'}
-                        />
-                    </div>
-
-                    {/* ── Controls Row: P/L Period + Sort ── */}
-                    <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        gap: 8, marginBottom: 10, flexWrap: 'wrap',
-                    }}>
-                        {/* P/L Period */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                📊 K/Z:
-                            </span>
-                            <div style={{
-                                display: 'flex', gap: 2,
-                                background: 'var(--bg-elevated)', borderRadius: 8, padding: 2,
-                            }}>
-                                {PL_PERIODS.map(p => (
-                                    <button
-                                        key={p.key}
-                                        onClick={() => setPLPeriod(p.key)}
-                                        style={{
-                                            background: plPeriod === p.key
-                                                ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))'
-                                                : 'transparent',
-                                            color: plPeriod === p.key ? '#fff' : 'var(--text-muted)',
-                                            border: 'none', padding: '4px 10px', fontSize: 10,
-                                            fontWeight: 700, borderRadius: 6, cursor: 'pointer',
-                                            transition: 'all 0.2s', whiteSpace: 'nowrap',
-                                        }}
-                                    >
-                                        {p.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Sort */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                Sırala:
-                            </span>
-                            <div style={{
-                                display: 'flex', gap: 2,
-                                background: 'var(--bg-elevated)', borderRadius: 8, padding: 2,
-                            }}>
-                                {SORT_OPTIONS.map(s => (
-                                    <button
-                                        key={s.key}
-                                        onClick={() => handleSortClick(s.key)}
-                                        title={s.label}
-                                        style={{
-                                            background: sortKey === s.key
-                                                ? 'rgba(255,255,255,0.12)'
-                                                : 'transparent',
-                                            color: sortKey === s.key ? '#fff' : 'var(--text-muted)',
-                                            border: 'none', padding: '4px 8px', fontSize: 10,
-                                            fontWeight: 700, borderRadius: 6, cursor: 'pointer',
-                                            transition: 'all 0.15s', whiteSpace: 'nowrap',
-                                        }}
-                                    >
-                                        {s.icon} {s.label}
-                                        {sortKey === s.key && (
-                                            <span style={{ marginLeft: 2, fontSize: 8 }}>
-                                                {sortDir === 'desc' ? '↓' : '↑'}
-                                            </span>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Category tabs — prominent version */}
-                    {categoriesWithAssets.length > 1 && (
-                        <div
-                            className="hide-scrollbar"
-                            style={{
-                                display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 12,
-                                background: 'var(--bg-elevated)', borderRadius: 12, padding: '6px',
-                                border: '1px solid rgba(255,255,255,0.06)',
-                            }}
-                        >
-                            <button
-                                onClick={() => setActiveTab('all')}
-                                style={{
-                                    padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700,
-                                    whiteSpace: 'nowrap',
-                                    background: activeTab === 'all' ? 'rgba(255,255,255,0.12)' : 'transparent',
-                                    color: activeTab === 'all' ? '#fff' : 'rgba(255,255,255,0.4)',
-                                    border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                                }}
-                            >
-                                Tümü <span style={{ opacity: 0.6, fontSize: 11 }}>({assets.length})</span>
-                            </button>
-                            {categoriesWithAssets.map(cat => (
-                                <button
-                                    key={cat.key}
-                                    onClick={() => setActiveTab(cat.key)}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: 6,
-                                        padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700,
-                                        whiteSpace: 'nowrap',
-                                        background: activeTab === cat.key ? `${cat.color}22` : 'transparent',
-                                        color: activeTab === cat.key ? cat.color : 'rgba(255,255,255,0.4)',
-                                        border: activeTab === cat.key ? `1px solid ${cat.color}55` : '1px solid transparent',
-                                        cursor: 'pointer', transition: 'all 0.15s',
-                                    }}
-                                >
-                                    <span>{cat.icon}</span>
-                                    <span>{cat.labelTR}</span>
-                                    <span style={{ opacity: 0.6, fontSize: 11 }}>({cat.count})</span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* ── Category Summary Strip ── */}
-                    {filteredAndSortedAssets.length > 0 && (() => {
-                        const catAssets = filteredAndSortedAssets;
-                        const totalVal = catAssets.reduce((s, a) => {
-                            const p = a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
-                            return s + convert(a.amount * p);
-                        }, 0);
-                        const totalCostVal = catAssets.reduce((s, a) => {
-                            if (a.purchasePrice <= 0) return s;
-                            const costTRY = getAssetCostInTRY(a.amount, a.purchasePrice, a.purchaseCurrency, exchangeRates);
-                            return s + convert(costTRY);
-                        }, 0);
-                        const plVal = totalVal - totalCostVal;
-                        const plPctVal = totalCostVal > 0 ? ((totalVal - totalCostVal) / totalCostVal) * 100 : 0;
-                        const isUp = plVal >= 0;
-                        const catLabel = activeTab === 'all' ? 'Toplam Portföy' : getCategoryMeta(activeTab as any)?.labelTR || '';
-
-                        return (
-                            <div style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '10px 14px', marginBottom: 8,
-                                background: 'var(--bg-elevated)',
-                                borderRadius: 10, border: '1px solid var(--border)',
-                            }}>
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
-                                    {catLabel} Değeri
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                                        {new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(totalVal)}
-                                    </span>
-                                    {totalCostVal > 0 && (
-                                        <span style={{
-                                            fontSize: 11, fontWeight: 700,
-                                            color: isUp ? 'var(--accent-green)' : 'var(--accent-red)',
-                                            background: isUp ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                                            padding: '2px 8px', borderRadius: 6,
-                                        }}>
-                                            {isUp ? '▲' : '▼'} {plPctVal >= 0 ? '+' : ''}{plPctVal.toFixed(1)}%
-                                            ({isUp ? '+' : ''}{new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(plVal)})
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })()}
-
-                    {/* Asset rows */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {filteredAndSortedAssets.length === 0 ? (
-                            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                                {searchQuery ? `"${searchQuery}" ile eşleşen varlık bulunamadı.` : 'Henüz varlık yok.'}
-                            </div>
-                        ) : (
-                            filteredAndSortedAssets.map((asset) => (
-                                <AssetRow
-                                    key={asset.id}
-                                    asset={asset}
-                                    plPeriod={plPeriod}
-                                    onDelete={onDelete}
-                                    onEdit={onEdit}
-                                    onSell={onSell}
-                                    onAnalyze={onAnalyze}
-                                    expanded={expandedAssetId === asset.id}
-                                    onToggle={() => setExpandedAssetId(prev => prev === asset.id ? null : asset.id)}
-                                />
-                            ))
-                        )}
-                    </div>
-
-                    {/* Summary footer */}
-                    {filteredAndSortedAssets.length > 0 && (
-                        <div style={{
-                            marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)',
-                            display: 'flex', justifyContent: 'space-between', fontSize: 11,
-                            color: 'var(--text-muted)',
-                        }}>
-                            <span>{filteredAndSortedAssets.length} varlık gösteriliyor</span>
-                            <span style={{ fontWeight: 600 }}>
-                                Sıralama: {SORT_OPTIONS.find(s => s.key === sortKey)?.label} {sortDir === 'desc' ? '↓' : '↑'}
-                            </span>
-                        </div>
-                    )}
+                        position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+                        fontSize: 13, color: 'rgba(255,255,255,0.3)', pointerEvents: 'none',
+                    }}>🔍</span>
+                    <input
+                        type="text" placeholder="Varlık ara..."
+                        value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                        style={{
+                            width: '100%', padding: '9px 14px 9px 34px',
+                            borderRadius: 10, border: '1px solid var(--border)',
+                            background: 'var(--bg-elevated)', color: 'var(--text-primary)',
+                            fontSize: 12, outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box',
+                        }}
+                        onFocus={e => e.target.style.borderColor = 'var(--accent-purple)'}
+                        onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                    />
                 </div>
             </div>
-        </WidgetWrapper>
+
+            {/* ── Category Tabs ── */}
+            {categoriesWithAssets.length > 1 && (
+                <div className="hide-scrollbar" style={{
+                    display: 'flex', gap: 4, overflowX: 'auto', marginBottom: 16,
+                    background: 'var(--bg-elevated)', borderRadius: 12, padding: '5px',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                }}>
+                    <button onClick={() => setActiveTab('all')} style={{
+                        padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                        whiteSpace: 'nowrap', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                        background: activeTab === 'all' ? 'rgba(255,255,255,0.12)' : 'transparent',
+                        color: activeTab === 'all' ? '#fff' : 'rgba(255,255,255,0.4)',
+                    }}>
+                        Tümü <span style={{ opacity: 0.6, fontSize: 11 }}>({assets.length})</span>
+                    </button>
+                    {categoriesWithAssets.map(cat => (
+                        <button key={cat.key} onClick={() => setActiveTab(cat.key)} style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                            whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.15s',
+                            background: activeTab === cat.key ? `${cat.color}22` : 'transparent',
+                            color: activeTab === cat.key ? cat.color : 'rgba(255,255,255,0.4)',
+                            border: activeTab === cat.key ? `1px solid ${cat.color}55` : '1px solid transparent',
+                        }}>
+                            {cat.icon} {cat.labelTR} <span style={{ opacity: 0.6, fontSize: 11 }}>({cat.count})</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* ── Controls Row ── */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>K/Z Dönemi:</span>
+                    <div style={{ display: 'flex', gap: 2, background: 'var(--bg-elevated)', borderRadius: 8, padding: 2 }}>
+                        {PL_PERIODS.map(p => (
+                            <button key={p.key} onClick={() => setPLPeriod(p.key)} style={{
+                                background: plPeriod === p.key ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))' : 'transparent',
+                                color: plPeriod === p.key ? '#fff' : 'var(--text-muted)',
+                                border: 'none', padding: '4px 10px', fontSize: 10,
+                                fontWeight: 700, borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s',
+                            }}>{p.label}</button>
+                        ))}
+                    </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>Sırala:</span>
+                    <div style={{ display: 'flex', gap: 2, background: 'var(--bg-elevated)', borderRadius: 8, padding: 2 }}>
+                        {SORT_OPTIONS.map(s => (
+                            <button key={s.key} onClick={() => handleSortClick(s.key)} title={s.label} style={{
+                                background: sortKey === s.key ? 'rgba(255,255,255,0.12)' : 'transparent',
+                                color: sortKey === s.key ? '#fff' : 'var(--text-muted)',
+                                border: 'none', padding: '4px 8px', fontSize: 10,
+                                fontWeight: 700, borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+                            }}>
+                                {s.icon} {s.label}{sortKey === s.key && <span style={{ marginLeft: 2, fontSize: 8 }}>{sortDir === 'desc' ? '↓' : '↑'}</span>}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Category Summary Bar ── */}
+            {filteredAndSortedAssets.length > 0 && (() => {
+                const totalVal = filteredAndSortedAssets.reduce((s, a) => {
+                    const p = a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
+                    return s + convert(a.amount * p);
+                }, 0);
+                const totalCostVal = filteredAndSortedAssets.reduce((s, a) => {
+                    if (a.purchasePrice <= 0) return s;
+                    return s + convert(getAssetCostInTRY(a.amount, a.purchasePrice, a.purchaseCurrency, exchangeRates));
+                }, 0);
+                const plVal = totalVal - totalCostVal;
+                const plPctVal = totalCostVal > 0 ? ((totalVal - totalCostVal) / totalCostVal) * 100 : 0;
+                const isUp = plVal >= 0;
+                const catLabel = activeTab === 'all' ? 'Toplam Portföy' : categoriesWithAssets.find(c => c.key === activeTab)?.labelTR || '';
+                return (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 16px', marginBottom: 12,
+                        background: isUp ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)',
+                        borderRadius: 12, border: `1px solid ${isUp ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}`,
+                    }}>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
+                            {catLabel}
+                            <span style={{ color: 'var(--text-primary)', marginLeft: 8, fontWeight: 700 }}>{fmtCurrency(totalVal)}</span>
+                        </div>
+                        {totalCostVal > 0 && (
+                            <span style={{
+                                fontSize: 12, fontWeight: 800,
+                                color: isUp ? '#10b981' : '#ef4444',
+                                background: isUp ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                                padding: '3px 10px', borderRadius: 6,
+                            }}>
+                                {isUp ? '▲' : '▼'} {plPctVal >= 0 ? '+' : ''}{plPctVal.toFixed(1)}%
+                                <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 6 }}>
+                                    ({isUp ? '+' : ''}{fmtCurrency(plVal)})
+                                </span>
+                            </span>
+                        )}
+                    </div>
+                );
+            })()}
+
+            {/* ── Asset Rows ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {filteredAndSortedAssets.length === 0 ? (
+                    <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                        {searchQuery ? `"${searchQuery}" ile eşleşen varlık bulunamadı.` : 'Bu kategoride varlık yok.'}
+                    </div>
+                ) : (
+                    filteredAndSortedAssets.map((asset) => (
+                        <AssetRow
+                            key={asset.id} asset={asset} plPeriod={plPeriod}
+                            onDelete={onDelete} onEdit={onEdit} onSell={onSell} onAnalyze={onAnalyze}
+                            expanded={expandedAssetId === asset.id}
+                            onToggle={() => setExpandedAssetId(prev => prev === asset.id ? null : asset.id)}
+                        />
+                    ))
+                )}
+            </div>
+
+            {filteredAndSortedAssets.length > 0 && (
+                <div style={{
+                    marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)',
+                    display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)',
+                }}>
+                    <span>{filteredAndSortedAssets.length} varlık</span>
+                    <span style={{ fontWeight: 600 }}>{SORT_OPTIONS.find(s => s.key === sortKey)?.label} {sortDir === 'desc' ? '↓' : '↑'}</span>
+                </div>
+            )}
+        </div>
     );
 }

@@ -289,18 +289,53 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                     onClick={() => { setIsOpen(!isOpen); setShowBubble(false); }}
                     style={{
                         position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
-                        width: 56, height: 56, borderRadius: '50%',
+                        width: 56, height: 56, borderRadius: 16,
                         background: isOpen
-                            ? 'linear-gradient(135deg, #dc2626, #ef4444)'
-                            : 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))',
-                        border: 'none', cursor: 'pointer',
-                        boxShadow: '0 8px 24px rgba(167,139,250,0.4)',
+                            ? 'linear-gradient(135deg, #374151, #1f2937)'
+                            : 'linear-gradient(135deg, #1e1b4b, #312e81)',
+                        border: isOpen ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(129,140,248,0.4)',
+                        cursor: 'pointer',
+                        boxShadow: isOpen
+                            ? '0 4px 16px rgba(0,0,0,0.3)'
+                            : '0 8px 32px rgba(99,102,241,0.45), 0 0 0 1px rgba(129,140,248,0.2)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 24, transition: 'all 0.3s',
-                        transform: isOpen ? 'rotate(0deg)' : 'none',
+                        transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
                     }}
                 >
-                    {isOpen ? '✕' : '🤖'}
+                    {isOpen ? (
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M2 2L16 16M16 2L2 16" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round" />
+                        </svg>
+                    ) : (
+                        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+                            {/* Finance chart line */}
+                            <polyline
+                                points="3,18 7,14 11,16 16,9 21,11"
+                                stroke="url(#chartGrad)"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                fill="none"
+                            />
+                            {/* Area fill */}
+                            <polygon
+                                points="3,18 7,14 11,16 16,9 21,11 21,21 3,21"
+                                fill="url(#areaGrad)"
+                            />
+                            {/* Peak dot */}
+                            <circle cx="16" cy="9" r="2.2" fill="#a78bfa" stroke="#fff" strokeWidth="1" />
+                            <defs>
+                                <linearGradient id="chartGrad" x1="3" y1="18" x2="21" y2="9" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stopColor="#818cf8" />
+                                    <stop offset="100%" stopColor="#a78bfa" />
+                                </linearGradient>
+                                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+                                    <stop offset="0%" stopColor="#818cf8" stopOpacity="0.25" />
+                                    <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    )}
                 </button>
             )}
 
