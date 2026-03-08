@@ -58,7 +58,7 @@ export default function AppSidebar({
         { id: 'chat', icon: '◉', label: 'AI Asistan' },
     ];
 
-    const w = sidebarCollapsed ? 64 : 220;
+    const w = sidebarCollapsed ? 68 : 240;
 
     return (
         <aside style={{
@@ -122,39 +122,37 @@ export default function AppSidebar({
                 <div style={{
                     padding: '16px 20px',
                     borderBottom: '1px solid rgba(255,255,255,0.04)',
+                    background: 'rgba(0,0,0,0.15)',
                 }}>
-                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
-                        Net Servet
+                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
+                        Toplam Servet
                     </div>
 
-                    <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, color: '#fff', lineHeight: 1, marginBottom: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.5, color: '#fff', lineHeight: 1, marginBottom: 8 }}>
                         {fmt(totalWealth)}
                     </div>
 
                     <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: 4,
                         fontSize: 11, fontWeight: 700,
-                        color: isUp ? 'var(--accent-green)' : 'var(--accent-red)',
-                        background: isUp ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                        padding: '3px 8px', borderRadius: 6,
+                        color: isUp ? '#10b981' : '#ef4444',
+                        background: isUp ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                        padding: '3px 8px', borderRadius: 6, marginBottom: 12,
                     }}>
-                        {isUp ? '▲' : '▼'} {isUp ? '+' : ''}{totalPLPct.toFixed(2)}%
+                        <span style={{ fontSize: 8 }}>{isUp ? '▲' : '▼'}</span>
+                        {isUp ? '+' : ''}{fmt(totalPL)}
+                        <span style={{ opacity: 0.7 }}>({isUp ? '+' : ''}{totalPLPct.toFixed(2)}%)</span>
                     </div>
 
-                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Maliyet</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>{fmt(totalCost)}</span>
+                    {/* Mini stats row */}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '7px 10px' }}>
+                            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', marginBottom: 3 }}>Maliyet</div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>{fmt(totalCost)}</div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>K/Z</span>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: isUp ? 'var(--accent-green)' : 'var(--accent-red)' }}>
-                                {isUp ? '+' : ''}{fmt(totalPL)}
-                            </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Varlık</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>{assetCount} kalem</span>
+                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '7px 10px' }}>
+                            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', marginBottom: 3 }}>Varlık</div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>{assetCount} kalem</div>
                         </div>
                     </div>
                 </div>
@@ -175,20 +173,21 @@ export default function AppSidebar({
                             title={sidebarCollapsed ? item.label : undefined}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
-                                padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+                                padding: sidebarCollapsed ? '11px 0' : '10px 14px',
                                 borderRadius: 10, border: 'none', cursor: 'pointer',
-                                background: isActive ? 'rgba(139,92,246,0.15)' : 'transparent',
-                                color: isActive ? 'var(--accent-purple)' : 'rgba(255,255,255,0.4)',
+                                background: isActive ? 'rgba(139,92,246,0.18)' : 'transparent',
+                                color: isActive ? '#c4b5fd' : 'rgba(255,255,255,0.4)',
                                 fontWeight: isActive ? 700 : 500,
                                 fontSize: 13, width: '100%',
                                 justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                                 transition: 'all 0.15s',
-                                borderLeft: isActive ? '2px solid var(--accent-purple)' : '2px solid transparent',
+                                boxShadow: isActive ? 'inset 0 0 12px rgba(139,92,246,0.12)' : 'none',
+                                borderLeft: isActive ? '3px solid #a78bfa' : '3px solid transparent',
                             }}
                             onMouseOver={e => {
                                 if (!isActive) {
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                    e.currentTarget.style.color = 'rgba(255,255,255,0.75)';
                                 }
                             }}
                             onMouseOut={e => {

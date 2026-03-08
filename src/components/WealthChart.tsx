@@ -110,11 +110,11 @@ export default function WealthChart({ assets }: WealthChartProps) {
                 ))}
             </div>
 
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                     <Pie
                         data={data} cx="50%" cy="50%"
-                        innerRadius={65} outerRadius={100}
+                        innerRadius={80} outerRadius={125}
                         paddingAngle={4} dataKey="value" stroke="none"
                         animationBegin={0} animationDuration={600}
                         onMouseEnter={(_, index) => setActiveIndex(index)}

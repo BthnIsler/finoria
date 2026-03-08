@@ -26,6 +26,7 @@ import HeroWealthCard from '@/components/HeroWealthCard';
 import GoalTracker from '@/components/GoalTracker';
 import PortfolioHealthScore from '@/components/PortfolioHealthScore';
 import AppSidebar from '@/components/AppSidebar';
+import UpcomingEvents from '@/components/UpcomingEvents';
 import { useAuth } from '@/lib/AuthContext';
 import AuthModal from '@/components/AuthModal';
 import ResetModal from '@/components/ResetModal';
@@ -475,10 +476,11 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Market Movers + Headlines */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 40 }}>
+                  {/* Market Movers + Headlines + UpcomingEvents */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 40 }}>
                     <MarketMovers assets={assets} />
                     <GlobalHeadlines />
+                    <UpcomingEvents />
                   </div>
                 </>
               )}

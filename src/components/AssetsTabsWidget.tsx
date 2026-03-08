@@ -586,40 +586,45 @@ export default function AssetsTabsWidget({
                         </div>
                     </div>
 
-                    {/* Category tabs */}
+                    {/* Category tabs — prominent version */}
                     {categoriesWithAssets.length > 1 && (
                         <div
                             className="hide-scrollbar"
-                            style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 12 }}
+                            style={{
+                                display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 12,
+                                background: 'var(--bg-elevated)', borderRadius: 12, padding: '6px',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                            }}
                         >
                             <button
                                 onClick={() => setActiveTab('all')}
                                 style={{
-                                    padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                                    padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700,
                                     whiteSpace: 'nowrap',
-                                    background: activeTab === 'all' ? 'var(--text-primary)' : 'var(--bg-elevated)',
-                                    color: activeTab === 'all' ? 'var(--bg-primary)' : 'var(--text-secondary)',
-                                    border: '1px solid', borderColor: activeTab === 'all' ? 'transparent' : 'var(--border)',
-                                    cursor: 'pointer', transition: 'all 0.2s',
+                                    background: activeTab === 'all' ? 'rgba(255,255,255,0.12)' : 'transparent',
+                                    color: activeTab === 'all' ? '#fff' : 'rgba(255,255,255,0.4)',
+                                    border: 'none', cursor: 'pointer', transition: 'all 0.15s',
                                 }}
                             >
-                                Tümü ({assets.length})
+                                Tümü <span style={{ opacity: 0.6, fontSize: 11 }}>({assets.length})</span>
                             </button>
                             {categoriesWithAssets.map(cat => (
                                 <button
                                     key={cat.key}
                                     onClick={() => setActiveTab(cat.key)}
                                     style={{
-                                        display: 'flex', alignItems: 'center', gap: 4,
-                                        padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700,
                                         whiteSpace: 'nowrap',
-                                        background: activeTab === cat.key ? `${cat.color}18` : 'var(--bg-elevated)',
-                                        color: activeTab === cat.key ? cat.color : 'var(--text-secondary)',
-                                        border: '1px solid', borderColor: activeTab === cat.key ? cat.color : 'var(--border)',
-                                        cursor: 'pointer', transition: 'all 0.2s',
+                                        background: activeTab === cat.key ? `${cat.color}22` : 'transparent',
+                                        color: activeTab === cat.key ? cat.color : 'rgba(255,255,255,0.4)',
+                                        border: activeTab === cat.key ? `1px solid ${cat.color}55` : '1px solid transparent',
+                                        cursor: 'pointer', transition: 'all 0.15s',
                                     }}
                                 >
-                                    {cat.icon} {cat.labelTR} ({cat.count})
+                                    <span>{cat.icon}</span>
+                                    <span>{cat.labelTR}</span>
+                                    <span style={{ opacity: 0.6, fontSize: 11 }}>({cat.count})</span>
                                 </button>
                             ))}
                         </div>
