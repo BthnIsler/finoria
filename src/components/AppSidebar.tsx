@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useCurrency } from '@/lib/contexts';
 
-type ActiveView = 'dashboard' | 'assets' | 'goals' | 'news' | 'converter' | 'chat';
+export type ActiveView = 'dashboard' | 'assets' | 'goals' | 'news' | 'converter' | 'chat';
 
 interface SidebarProps {
     totalWealth: number;

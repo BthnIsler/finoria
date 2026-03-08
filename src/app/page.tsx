@@ -4,32 +4,29 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Asset, POPULAR_CRYPTOS, POPULAR_FOREX, GOLD_TYPES, PRECIOUS_METALS } from '@/lib/types';
 import { WealthSnapshot, saveAssetPriceSnapshot } from '@/lib/storage';
 import { getAssets, getWealthHistory, saveWealthSnapshot, saveMultipleAssetPrices, migrateLocalDataToSupabase, updateAsset, deleteAsset } from '@/lib/db';
-import { fetchAllPrices } from '@/lib/prices';
 import { getAssetCostInTRY } from '@/lib/utils';
-import { useTheme, useCurrency, useWidgetLayout, useDesignTheme } from '@/lib/contexts';
-import AssetForm from '@/components/AssetForm';
-import EditAssetForm from '@/components/EditAssetForm';
-import AssetCard from '@/components/AssetCard';
-import AssetsTabsWidget from '@/components/AssetsTabsWidget';
-import GlobalHeadlines from '@/components/GlobalHeadlines';
-import WealthChart from '@/components/WealthChart';
-import WealthHistoryChart from '@/components/WealthHistoryChart';
-import MarketMovers from '@/components/MarketMovers';
-import SellAssetForm from '@/components/SellAssetForm';
-import AiAnalysis from '@/components/AiAnalysis';
-import NewsSection from '@/components/NewsSection';
-import WidgetWrapper from '@/components/WidgetWrapper';
-import AnimatedNumber from '@/components/AnimatedNumber';
-import AiPortfolioChat from '@/components/AiPortfolioChat';
-import PortfolioShareModal from '@/components/PortfolioShareModal';
-import HeroWealthCard from '@/components/HeroWealthCard';
 import GoalTracker from '@/components/GoalTracker';
 import PortfolioHealthScore from '@/components/PortfolioHealthScore';
-import AppSidebar from '@/components/AppSidebar';
-import UpcomingEvents from '@/components/UpcomingEvents';
+import AppSidebar, { ActiveView } from '@/components/AppSidebar';
+import AssetForm from '@/components/AssetForm';
+import EditAssetForm from '@/components/EditAssetForm';
+import SellAssetForm from '@/components/SellAssetForm';
+import AiAnalysis from '@/components/AiAnalysis';
+import AiPortfolioChat from '@/components/AiPortfolioChat';
+import PortfolioShareModal from '@/components/PortfolioShareModal';
+import GlobalHeadlines from '@/components/GlobalHeadlines';
+import NewsSection from '@/components/NewsSection';
 import { useAuth } from '@/lib/AuthContext';
+import { useTheme, useCurrency, useWidgetLayout } from '@/lib/contexts';
 import AuthModal from '@/components/AuthModal';
 import ResetModal from '@/components/ResetModal';
+
+// Views
+import DashboardView from '@/views/DashboardView';
+import AssetsView from '@/views/AssetsView';
+import ConverterView from '@/views/ConverterView';
+import LandingPage from '@/views/LandingPage';
+// Removed duplicate ResetModal import
 
 export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -64,10 +61,9 @@ export default function Home() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
 
+  const { convert, symbol, currency, setCurrency, exchangeRates } = useCurrency();
   const { theme, toggleTheme } = useTheme();
-  const { currency, setCurrency, convert, symbol, exchangeRates } = useCurrency();
-  const { design, setDesign } = useDesignTheme();
-  const { widgets, isEditing, setIsEditing, resetLayout, updateWidget } = useWidgetLayout();
+  const { isEditing, setIsEditing, resetLayout, updateWidget } = useWidgetLayout();
 
   useEffect(() => {
     if (!user) return;
@@ -152,28 +148,21 @@ export default function Home() {
     if (assets.length === 0) return;
     setPricesLoading(true);
     try {
-      const cryptoIds = [...new Set(assets.filter((a) => a.category === 'crypto' && a.apiId).map((a) => a.apiId!))];
-      const forexCurrencies = [...new Set(assets.filter((a) => a.category === 'forex' && a.apiId).map((a) => a.apiId!))];
-      const stockSymbols = [...new Set(assets.filter((a) => a.category === 'stock' && a.apiId).map((a) => a.apiId!))];
-      const metalIds = [...new Set(assets.filter((a) => a.category === 'precious_metals' && a.apiId).map((a) => a.apiId!.replace('metal_', '')))];
-      const hasGold = assets.some((a) => a.category === 'gold' && a.apiId === 'gold_gram');
-      const priceMap = await fetchAllPrices({ cryptoIds, forexCurrencies, stockSymbols, metalIds, hasGold });
-      const updated = assets.map((a) =>
-        a.apiId && priceMap[a.apiId] !== undefined
-          ? { ...a, currentPrice: priceMap[a.apiId], updatedAt: new Date().toISOString() }
-          : a
-      );
-      setAssets(updated);
+      // In minimal mode or simply without external price fetcher, we refresh from DB
       if (user) {
-        await saveMultipleAssetPrices(user.id, updated);
+        const dbAssets = await getAssets(user.id);
+        const updated = dbAssets;
+        
+        // Still save snapshot history
         await saveWealthSnapshot(user.id, updated);
-        saveAssetPriceSnapshot(updated); // Save per-asset price history for P/L periods
+        saveAssetPriceSnapshot(updated); 
         setHistory(await getWealthHistory(user.id));
+        setAssets(updated);
       }
       setLastUpdated(new Date().toLocaleTimeString('tr-TR'));
     } catch (err) { console.error('Fiyat güncelleme hatası:', err); }
     finally { setPricesLoading(false); }
-  }, [assets]);
+  }, [assets, user]);
 
   useEffect(() => {
     if (assets.length === 0) return;
@@ -186,7 +175,7 @@ export default function Home() {
   // 1-second live ticker micro-fluctuations (disabled in finans/minimal themes)
   useEffect(() => {
     if (assets.length === 0) return;
-    if (design === 'finans' || design === 'minimal') {
+    if (theme === 'light') {
       setTickerOffset(0);
       return;
     }
@@ -194,7 +183,7 @@ export default function Home() {
       setTickerOffset((Math.random() - 0.5) * 0.0004); // ±0.02%
     }, 1000);
     return () => { if (tickerRef.current) clearInterval(tickerRef.current); };
-  }, [assets.length, design]);
+  }, [assets.length, theme]);
 
   const getPrice = (a: Asset) => a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
   const totalWealthBase = assets.reduce((s, a) => s + a.amount * getPrice(a), 0);
@@ -249,9 +238,6 @@ export default function Home() {
   const fmt = (v: number) =>
     new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(convert(v));
 
-  const sortedWidgets = [...widgets].sort((a, b) => a.order - b.order);
-  const hiddenWidgets = widgets.filter((w) => !w.visible);
-
   if (authLoading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -283,95 +269,17 @@ export default function Home() {
     };
 
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', padding: 20 }}>
-          <div style={{ fontSize: 64, marginBottom: 24 }}>💎</div>
-          <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 16 }}>
-            <span className="gradient-text">Finoria</span>
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 15, maxWidth: 420, margin: '0 auto 32px', lineHeight: 1.6 }}>
-            Kişisel yatırım asistanınız. Kayıt olun veya giriş yapın.
-          </p>
-
-          <div style={{ maxWidth: 320, margin: '0 auto' }}>
-            {/* Mode Toggle */}
-            <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: 12, padding: 4, marginBottom: 24 }}>
-              <button
-                onClick={() => setIsRegisterMode(false)}
-                style={{
-                  flex: 1, padding: '10px', borderRadius: 10, border: 'none',
-                  background: !isRegisterMode ? 'var(--bg-card)' : 'transparent',
-                  color: !isRegisterMode ? 'var(--text-primary)' : 'var(--text-muted)',
-                  fontWeight: !isRegisterMode ? 700 : 500, fontSize: 14, cursor: 'pointer',
-                  boxShadow: !isRegisterMode ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Giriş Yap
-              </button>
-              <button
-                onClick={() => setIsRegisterMode(true)}
-                style={{
-                  flex: 1, padding: '10px', borderRadius: 10, border: 'none',
-                  background: isRegisterMode ? 'var(--bg-card)' : 'transparent',
-                  color: isRegisterMode ? 'var(--text-primary)' : 'var(--text-muted)',
-                  fontWeight: isRegisterMode ? 700 : 500, fontSize: 14, cursor: 'pointer',
-                  boxShadow: isRegisterMode ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Kayıt Ol
-              </button>
-            </div>
-
-            <form onSubmit={handleAuth}>
-              <input
-                type="text"
-                placeholder="Kullanıcı Adı"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoFocus
-                style={{
-                  width: '100%', padding: '14px 18px', borderRadius: 14,
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  color: 'var(--text-primary)', fontSize: 15, textAlign: 'left',
-                  outline: 'none', marginBottom: 12,
-                }}
-              />
-              <input
-                type="password"
-                placeholder="Şifre"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{
-                  width: '100%', padding: '14px 18px', borderRadius: 14,
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  color: 'var(--text-primary)', fontSize: 15, textAlign: 'left',
-                  outline: 'none', marginBottom: 16,
-                }}
-              />
-
-              {loginError && (
-                <div style={{ background: 'rgba(255,77,106,0.1)', padding: 12, borderRadius: 10, marginBottom: 16, border: '1px solid rgba(255,77,106,0.2)' }}>
-                  <p style={{ color: 'var(--accent-red)', fontSize: 13 }}>{loginError}</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={!username.trim() || !password.trim() || loginLoading}
-                className="btn-primary"
-                style={{
-                  width: '100%', fontSize: 15, padding: '16px',
-                  borderRadius: 14, opacity: (username.trim() && password.trim()) && !loginLoading ? 1 : 0.5,
-                }}
-              >
-                {loginLoading ? '⏳ İşleniyor...' : (isRegisterMode ? '✨ Kayıt Ol' : '🚀 Giriş Yap')}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
+      <LandingPage
+        username={username}
+        password={password}
+        setUsername={setUsername}
+        setPassword={setPassword}
+        isRegisterMode={isRegisterMode}
+        setIsRegisterMode={setIsRegisterMode}
+        loginLoading={loginLoading}
+        loginError={loginError}
+        onSubmit={handleAuth}
+      />
     );
   }
 
@@ -391,11 +299,10 @@ export default function Home() {
       <div className="ambient-bg">
         <div className="ambient-blob blob-1" />
         <div className="ambient-blob blob-2" />
-        <div className="ambient-blob blob-3" />
       </div>
 
       {/* ── App Shell: Sidebar + Main ── */}
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+      <div className="flex h-screen overflow-hidden relative z-10">
 
         {/* Left Sidebar */}
         <AppSidebar
@@ -423,101 +330,53 @@ export default function Home() {
         />
 
         {/* Main scrollable content */}
-        <main style={{
-          flex: 1, overflowY: 'auto', overflowX: 'hidden',
-          padding: '32px 36px', maxWidth: '100%',
-        }}>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-8 max-w-full">
 
           {/* ── DASHBOARD VIEW ── */}
           {activeView === 'dashboard' && (
-            <>
-              {assets.length > 0 && (
-                <div style={{ marginBottom: 24, borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <HeroWealthCard
-                    assets={assets}
-                    totalWealth={totalWealth}
-                    totalCost={totalCost}
-                    history={history}
-                    heroPLPeriod={heroPLPeriod}
-                    setHeroPLPeriod={setHeroPLPeriod}
-                    activeHeroPL={activeHeroPL}
-                    onShare={() => setShowShare(true)}
-                  />
-                </div>
-              )}
-
-              {assets.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-                  <div style={{ fontSize: 72, marginBottom: 20 }}>💎</div>
-                  <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>Portföyünüzü oluşturun</h3>
-                  <p style={{ color: 'var(--text-muted)', maxWidth: 400, margin: '0 auto 28px', fontSize: 14, lineHeight: 1.6 }}>
-                    Altın, kripto, döviz, hisse senedi ve tüm yatırımlarınızı tek yerden takip edin.
-                  </p>
-                  <button onClick={() => setShowAddForm(true)} className="btn-primary" style={{ fontSize: 15, padding: '14px 32px' }}>
-                    ＋ İlk Varlığınızı Ekleyin
-                  </button>
-                </div>
-              ) : (
-                <>
-
-                  {/* Health + Goals side by side */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-                    <PortfolioHealthScore assets={assets} totalWealth={totalWealth} totalCost={totalCost} />
-                    <GoalTracker totalWealth={totalWealth} />
-                  </div>
-
-                  {/* Charts Row */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20, alignItems: 'stretch' }}>
-                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                      <WealthHistoryChart history={history} currentTotal={totalWealth} assets={assets} totalPLPct={totalPLPct} totalCost={totalCost} />
-                    </div>
-                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                      <WealthChart assets={assets} />
-                    </div>
-                  </div>
-
-                  {/* Market data + Upcoming Events */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                    <MarketMovers assets={assets} />
-                    <UpcomingEvents />
-                  </div>
-
-                  {/* Global Headlines - full width at bottom */}
-                  <div style={{ marginBottom: 40 }}>
-                    <GlobalHeadlines />
-                  </div>
-                </>
-              )}
-            </>
+            assets.length === 0 ? (
+              <div className="text-center py-20 px-5">
+                <div className="text-7xl mb-5">💎</div>
+                <h3 className="text-2xl font-bold mb-3 text-primary">Portföyünüzü oluşturun</h3>
+                <p className="text-muted max-w-md mx-auto mb-7 text-sm leading-relaxed">
+                  Altın, kripto, döviz, hisse senedi ve tüm yatırımlarınızı tek yerden takip edin.
+                </p>
+                <button onClick={() => setShowAddForm(true)} className="btn-primary text-base px-8 py-3.5">
+                  ＋ İlk Varlığınızı Ekleyin
+                </button>
+              </div>
+            ) : (
+              <DashboardView
+                  assets={assets}
+                  totalWealth={totalWealth}
+                  totalCost={totalCost}
+                  history={history}
+                  heroPLPeriod={heroPLPeriod}
+                  setHeroPLPeriod={setHeroPLPeriod}
+                  activeHeroPL={activeHeroPL}
+              />
+            )
           )}
 
           {/* ── ASSETS VIEW ── */}
           {activeView === 'assets' && (
-            <div style={{ paddingBottom: 40 }}>
-              <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>Varlıklarım</h1>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{assets.length} varlık kalemi</p>
-              </div>
-              <AssetsTabsWidget
-                widgetId="assets"
+            <AssetsView
                 assets={assets}
                 onDelete={(id) => setAssets(p => p.filter(a => a.id !== id))}
                 onEdit={setEditingAsset}
                 onSell={setSellingAsset}
                 onAnalyze={setAnalyzingAsset}
-              />
-            </div>
+            />
           )}
 
           {/* ── GOALS VIEW ── */}
           {activeView === 'goals' && (
-            <div style={{ paddingBottom: 40 }}>
-              <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>Hedefler</h1>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Finansal hedeflerinizi takip edin</p>
+            <div className="pb-10">
+              <div className="mb-6">
+                <h1 className="text-2xl font-extrabold text-primary mb-1">Hedefler</h1>
+                <p className="text-xs text-muted">Finansal hedeflerinizi takip edin</p>
               </div>
-              <div style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <PortfolioHealthScore assets={assets} totalWealth={totalWealth} totalCost={totalCost} />
+              <div className="max-w-2xl flex flex-col gap-4">
                 <GoalTracker totalWealth={totalWealth} />
               </div>
             </div>
@@ -525,12 +384,12 @@ export default function Home() {
 
           {/* ── NEWS VIEW ── */}
           {activeView === 'news' && (
-            <div style={{ paddingBottom: 40 }}>
-              <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>Gündem</h1>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Global finans haberleri</p>
+            <div className="pb-10">
+              <div className="mb-6">
+                <h1 className="text-2xl font-extrabold text-primary mb-1">Gündem</h1>
+                <p className="text-xs text-muted">Global finans haberleri</p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <GlobalHeadlines />
                 {assets.length > 0 && <NewsSection assets={assets} />}
               </div>
@@ -538,15 +397,7 @@ export default function Home() {
           )}
 
           {/* ── CONVERTER VIEW ── */}
-          {activeView === 'converter' && (
-            <div style={{ paddingBottom: 40 }}>
-              <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>💱 Hızlı Çevirici</h1>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Döviz, altın ve kripto çevirici</p>
-              </div>
-              <iframe src="/converter" style={{ width: '100%', height: 'calc(100vh - 160px)', border: 'none', borderRadius: 16 }} />
-            </div>
-          )}
+          {activeView === 'converter' && <ConverterView />}
 
         </main>
       </div>
