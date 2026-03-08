@@ -15,15 +15,16 @@ interface AiPortfolioChatProps {
     totalPL: number;
     totalPLPct: number;
     fmt: (v: number) => string;
+    inline?: boolean;
 }
 
-export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLPct, fmt }: AiPortfolioChatProps) {
+export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLPct, fmt, inline = false }: AiPortfolioChatProps) {
     const { user, displayName } = useAuth();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
-    const [showBubble, setShowBubble] = useState(true);
+    const [isOpen, setIsOpen] = useState(inline ? true : false);
+    const [showBubble, setShowBubble] = useState(!inline);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -156,7 +157,7 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
     return (
         <>
             {/* Speech bubble */}
-            {showBubble && !isOpen && (
+            {!inline && showBubble && !isOpen && (
                 <div
                     onClick={() => { setShowBubble(false); setIsOpen(true); }}
                     style={{
@@ -185,32 +186,41 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
             )}
 
             {/* Floating mascot button */}
-            <button
-                onClick={() => { setIsOpen(!isOpen); setShowBubble(false); }}
-                style={{
-                    position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
-                    width: 56, height: 56, borderRadius: '50%',
-                    background: isOpen
-                        ? 'linear-gradient(135deg, #dc2626, #ef4444)'
-                        : 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))',
-                    border: 'none', cursor: 'pointer',
-                    boxShadow: '0 8px 24px rgba(167,139,250,0.4)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 24, transition: 'all 0.3s',
-                    transform: isOpen ? 'rotate(0deg)' : 'none',
-                }}
-            >
-                {isOpen ? '✕' : '🤖'}
-            </button>
+            {!inline && (
+                <button
+                    onClick={() => { setIsOpen(!isOpen); setShowBubble(false); }}
+                    style={{
+                        position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
+                        width: 56, height: 56, borderRadius: '50%',
+                        background: isOpen
+                            ? 'linear-gradient(135deg, #dc2626, #ef4444)'
+                            : 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))',
+                        border: 'none', cursor: 'pointer',
+                        boxShadow: '0 8px 24px rgba(167,139,250,0.4)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 24, transition: 'all 0.3s',
+                        transform: isOpen ? 'rotate(0deg)' : 'none',
+                    }}
+                >
+                    {isOpen ? '✕' : '🤖'}
+                </button>
+            )}
 
             {/* Chat panel */}
             {isOpen && (
                 <div style={{
-                    position: 'fixed', bottom: 92, right: 24, zIndex: 999,
-                    width: 380, maxHeight: 520,
+                    position: inline ? 'relative' : 'fixed',
+                    bottom: inline ? 'auto' : 92,
+                    right: inline ? 'auto' : 24,
+                    zIndex: inline ? 10 : 999,
+                    width: inline ? '100%' : 380,
+                    maxWidth: inline ? 800 : '100%',
+                    height: inline ? 'calc(100vh - 180px)' : 'auto',
+                    minHeight: inline ? 400 : 'auto',
+                    maxHeight: inline ? 'none' : 520,
                     background: 'var(--bg-card)', border: '1px solid var(--border)',
                     borderRadius: 24, overflow: 'hidden',
-                    boxShadow: '0 16px 48px rgba(0,0,0,0.3)',
+                    boxShadow: inline ? 'none' : '0 16px 48px rgba(0,0,0,0.3)',
                     animation: 'chatPanelIn 0.3s ease',
                     display: 'flex', flexDirection: 'column',
                 }}>

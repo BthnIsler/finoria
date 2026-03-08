@@ -40,14 +40,7 @@ async function fetchRates(): Promise<Rates> {
     const rates: Rates = { TRY: 1 };
     try {
         // Forex rates
-        const forexIds = ['USD', 'EUR', 'GBP', 'CHF', 'JPY', 'SAR', 'AED'];
-        const fxParams = forexIds.map(id => `currencies[]=${id}`).join('&');
-        const fxRes = await fetch(`/api/historical-prices?${fxParams}&type=forex&period=1d`).catch(() => null);
-        // We can't easily reuse the historical endpoint for spot, so use ExchangeRate-API pattern
-        // Instead, call our prices endpoint
-        // Actually let's just use the existing /api/stock-price / fetch pattern to get exchange rates
-        // We'll use a simpler direct approach: fetch from exchangerate-api via a new mini endpoint
-        // For now use the existing prices fetching
+        // We use ExchangeRate-API directly for forex spot rates instead of historical-prices
 
         // Fetch USD/TRY from a public free API
         const usdRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD').catch(() => null);

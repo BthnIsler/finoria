@@ -25,6 +25,7 @@ import PortfolioShareModal from '@/components/PortfolioShareModal';
 import HeroWealthCard from '@/components/HeroWealthCard';
 import GoalTracker from '@/components/GoalTracker';
 import PortfolioHealthScore from '@/components/PortfolioHealthScore';
+import AppSidebar from '@/components/AppSidebar';
 import { useAuth } from '@/lib/AuthContext';
 import AuthModal from '@/components/AuthModal';
 import ResetModal from '@/components/ResetModal';
@@ -49,6 +50,11 @@ export default function Home() {
   const [showProfile, setShowProfile] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [activeView, setActiveView] = useState<'dashboard' | 'assets' | 'goals' | 'news' | 'converter' | 'chat'>('dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
 
   // Auth Form State
   const [isRegisterMode, setIsRegisterMode] = useState(false);
@@ -65,21 +71,34 @@ export default function Home() {
   useEffect(() => {
     if (!user) return;
     const loadData = async () => {
-      // Check for local migration first
-      const localAssetsStr = localStorage.getItem('wealth_tracker_assets');
-      if (localAssetsStr && JSON.parse(localAssetsStr).length > 0) {
-        if (confirm('Eski cihazınızdaki veya tarayıcınızdaki verileri buluta aktarmak ister misiniz?')) {
-          await migrateLocalDataToSupabase(user.id);
-        } else {
-          localStorage.removeItem('wealth_tracker_assets');
-          localStorage.removeItem('wealth_tracker_history');
+      try {
+        // Check for local migration first
+        try {
+          const localAssetsStr = localStorage.getItem('wealth_tracker_assets');
+          if (localAssetsStr) {
+            const parsed = JSON.parse(localAssetsStr);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              if (window.confirm('Eski cihazınızdaki veya tarayıcınızdaki verileri buluta aktarmak ister misiniz?')) {
+                await migrateLocalDataToSupabase(user.id);
+              } else {
+                localStorage.removeItem('wealth_tracker_assets');
+                localStorage.removeItem('wealth_tracker_history');
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Local migration error:", e);
+          localStorage.removeItem('wealth_tracker_assets'); // Clean corrupt data
         }
-      }
 
-      const loadedAssets = await getAssets(user.id);
-      setAssets(loadedAssets);
-      setHistory(await getWealthHistory(user.id));
-      setLoading(false);
+        const loadedAssets = await getAssets(user.id);
+        setAssets(loadedAssets);
+        setHistory(await getWealthHistory(user.id));
+      } catch (err) {
+        console.error("Failed to load user data:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     loadData();
   }, [user]);
@@ -374,307 +393,233 @@ export default function Home() {
         <div className="ambient-blob blob-3" />
       </div>
 
-      <div className={mobilePreview ? 'mobile-preview-wrapper' : ''}>
-        {mobilePreview && (
-          <div className="mobile-preview-frame">
-            <div className="mobile-preview-notch" />
-          </div>
-        )}
-        <main className={mobilePreview ? 'mobile-preview-content' : ''} style={{ position: 'relative', zIndex: 1, minHeight: '100vh', padding: '28px 20px', maxWidth: mobilePreview ? 390 : 1200, margin: '0 auto' }}>
-          {/* Header */}
-          <header className="app-header">
-            <div className="header-left">
-              <h1 style={{ fontSize: 24, fontWeight: 800 }}>
-                <span className="gradient-text">Finoria</span>
-              </h1>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Tüm yatırımlarınız, tek bir bakışta</p>
-            </div>
-            <div className="header-right">
-              {lastUpdated && (
-                <span className="live-dot hide-mobile" style={{ fontSize: 11, color: 'var(--text-muted)', marginRight: 4 }}>
-                  {lastUpdated}
-                </span>
-              )}
-              <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                {(['TRY', 'USD', 'EUR'] as const).map((c) => (
-                  <button key={c} onClick={() => setCurrency(c)}
-                    style={{
-                      background: currency === c ? 'var(--accent-purple)' : 'transparent',
-                      color: currency === c ? 'white' : 'var(--text-muted)',
-                      border: 'none', padding: '7px 12px', fontSize: 11, fontWeight: 600,
-                      cursor: 'pointer', transition: 'all 0.2s',
-                    }}
-                  >
-                    {c === 'TRY' ? '₺' : c === 'USD' ? '$' : '€'}
-                  </button>
-                ))}
+      {/* ── App Shell: Sidebar + Main ── */}
+      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+
+        {/* Left Sidebar */}
+        <AppSidebar
+          totalWealth={totalWealth}
+          totalCost={totalCost}
+          totalPL={totalPL}
+          totalPLPct={totalPLPct}
+          assetCount={assets.length}
+          displayName={displayName}
+          lastUpdated={lastUpdated}
+          pricesLoading={pricesLoading}
+          activeView={activeView}
+          onViewChange={setActiveView}
+          onRefresh={refreshPrices}
+          onShare={() => setShowShare(true)}
+          onSignOut={signOut}
+          onReset={() => setShowResetModal(true)}
+          onAddAsset={() => setShowAddForm(true)}
+          currency={currency}
+          setCurrency={setCurrency}
+          theme={theme}
+          toggleTheme={toggleTheme}
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+        />
+
+        {/* Main scrollable content */}
+        <main style={{
+          flex: 1, overflowY: 'auto', overflowX: 'hidden',
+          padding: '32px 36px', maxWidth: '100%',
+        }}>
+
+          {/* ── DASHBOARD VIEW ── */}
+          {activeView === 'dashboard' && (
+            <>
+              <div style={{ marginBottom: 24 }}>
+                <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
+                  {greeting}, {displayName || 'Kullanıcı'} 👋
+                </h1>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  {new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
               </div>
 
-              <button onClick={toggleTheme} className="btn-icon" title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}>
-                {theme === 'dark' ? '☀️' : '🌙'}
-              </button>
-
-              {assets.length > 0 && (
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="btn-icon hide-mobile"
-                  title="Widget Düzenle"
-                  style={isEditing ? { borderColor: 'var(--accent-purple)', color: 'var(--accent-purple)' } : {}}
-                >
-                  ⚙️
-                </button>
-              )}
-
-              <button onClick={refreshPrices} className="btn-icon" disabled={pricesLoading} title="Fiyatları Güncelle">
-                {pricesLoading ? '⏳' : '🔄'}
-              </button>
-
-              <button
-                onClick={() => setMobilePreview(!mobilePreview)}
-                className="btn-icon hide-mobile"
-                title="Mobil Önizleme"
-                style={mobilePreview ? { borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' } : {}}
-              >
-                📱
-              </button>
-
-              {/* Profile dropdown */}
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setShowProfile(!showProfile)}
-                  title="Profil"
-                  style={{
-                    width: 36, height: 36, borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))',
-                    color: 'white', fontWeight: 700, fontSize: 14,
-                    border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  {displayName?.charAt(0).toUpperCase() || '?'}
-                </button>
-                {showProfile && (
-                  <div style={{
-                    position: 'absolute', right: 0, top: '100%', marginTop: 8,
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    borderRadius: 16, padding: 0, minWidth: 240,
-                    boxShadow: '0 16px 48px rgba(0,0,0,0.3)', zIndex: 100,
-                    animation: 'fadeIn 0.2s ease',
-                  }}>
-                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-                      <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Hesap</p>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', wordBreak: 'break-all' }}>
-                        {displayName}
-                      </p>
-                    </div>
-                    <div style={{ padding: 8 }}>
-                      <button
-                        onClick={() => { setShowProfile(false); signOut(); }}
-                        style={{
-                          width: '100%', padding: '10px 12px', borderRadius: 10,
-                          background: 'transparent', border: 'none',
-                          color: 'var(--accent-red)', fontSize: 13, fontWeight: 600,
-                          cursor: 'pointer', textAlign: 'left',
-                          display: 'flex', alignItems: 'center', gap: 8,
-                        }}
-                      >
-                        🚪 Çıkış Yap
-                      </button>
-                      <button
-                        onClick={() => { setShowProfile(false); setShowResetModal(true); }}
-                        style={{
-                          width: '100%', padding: '10px 12px', borderRadius: 10,
-                          background: 'transparent', border: 'none',
-                          color: 'var(--text-muted)', fontSize: 12, fontWeight: 500,
-                          cursor: 'pointer', textAlign: 'left',
-                          display: 'flex', alignItems: 'center', gap: 8,
-                        }}
-                      >
-                        🗑 Her Şeyi Sıfırla
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <button onClick={() => setShowAddForm(true)} className="btn-primary">＋ Ekle</button>
-              <a
-                href="/converter"
-                className="btn-secondary"
-                style={{ padding: '8px 14px', fontSize: 12, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
-              >
-                💱 Çevirici
-              </a>
-            </div>
-          </header>
-
-
-
-          {/* Widget editing bar */}
-          {
-            isEditing && (
-              <div
-                style={{
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border-light)',
-                  borderRadius: 14, padding: '12px 16px', marginBottom: 16,
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13,
-                }}
-              >
-                <span style={{ color: 'var(--text-secondary)' }}>
-                  ⚙️ Widget düzenleme modu — boyut, sıra ve görünürlüğü ayarlayın
-                </span>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {hiddenWidgets.length > 0 && (
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      {hiddenWidgets.map((w) => (
-                        <button key={w.id} className="chip" style={{ fontSize: 11 }}
-                          onClick={() => updateWidget(w.id, { visible: true })}>
-                          + {w.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: 12 }} onClick={resetLayout}>
-                    Sıfırla
-                  </button>
-                  <button className="btn-primary" style={{ padding: '6px 14px', fontSize: 12 }} onClick={() => setIsEditing(false)}>
-                    ✓ Bitti
+              {assets.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+                  <div style={{ fontSize: 72, marginBottom: 20 }}>💎</div>
+                  <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>Portföyünüzü oluşturun</h3>
+                  <p style={{ color: 'var(--text-muted)', maxWidth: 400, margin: '0 auto 28px', fontSize: 14, lineHeight: 1.6 }}>
+                    Altın, kripto, döviz, hisse senedi ve tüm yatırımlarınızı tek yerden takip edin.
+                  </p>
+                  <button onClick={() => setShowAddForm(true)} className="btn-primary" style={{ fontSize: 15, padding: '14px 32px' }}>
+                    ＋ İlk Varlığınızı Ekleyin
                   </button>
                 </div>
+              ) : (
+                <>
+                  {/* Top 3 stat cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+                    <div style={{
+                      background: 'var(--bg-elevated)', borderRadius: 16,
+                      border: '1px solid rgba(255,255,255,0.06)', padding: '20px 22px',
+                    }}>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Toplam Servet</div>
+                      <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1, color: '#fff', marginBottom: 8 }}>{fmt(totalWealth)}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: dailyPL >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', background: dailyPL >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', padding: '3px 8px', borderRadius: 6, display: 'inline-block' }}>
+                        1G {dailyPL >= 0 ? '+' : ''}{fmt(dailyPL)} ({dailyPLPct >= 0 ? '+' : ''}{dailyPLPct.toFixed(2)}%)
+                      </div>
+                    </div>
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', padding: '20px 22px' }}>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Toplam Maliyet</div>
+                      <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1, color: '#fff', marginBottom: 8 }}>{fmt(totalCost)}</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{assets.length} varlık kalemi</div>
+                    </div>
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: `1px solid ${totalPL >= 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, padding: '20px 22px', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: totalPL >= 0 ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f97316)' }} />
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Toplam Kâr / Zarar</div>
+                      <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1, color: totalPL >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', marginBottom: 8 }}>{totalPL >= 0 ? '+' : ''}{fmt(totalPL)}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: totalPL >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>{totalPLPct >= 0 ? '▲ +' : '▼ '}{totalPLPct.toFixed(2)}%</div>
+                    </div>
+                  </div>
+
+                  {/* Period P/L row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+                    {[
+                      { label: 'Günlük', pl: dailyPL, pct: dailyPLPct },
+                      { label: 'Haftalık', pl: weeklyPL, pct: weeklyPLPct },
+                      { label: 'Aylık', pl: monthlyPL, pct: monthlyPLPct },
+                      { label: 'Tüm Zamanlar', pl: totalPL, pct: totalPLPct },
+                    ].map(p => (
+                      <div key={p.label} style={{ background: 'var(--bg-elevated)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)', padding: '12px 14px' }}>
+                        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>{p.label}</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: p.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>{p.pl >= 0 ? '+' : ''}{fmt(p.pl)}</div>
+                        <div style={{ fontSize: 11, color: p.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', opacity: 0.7, marginTop: 2 }}>{p.pct >= 0 ? '+' : ''}{p.pct.toFixed(2)}%</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Health + Goals side by side */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                    <PortfolioHealthScore assets={assets} totalWealth={totalWealth} totalCost={totalCost} />
+                    <GoalTracker totalWealth={totalWealth} />
+                  </div>
+
+                  {/* Charts Row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 20 }}>
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      <WealthHistoryChart history={history} currentTotal={totalWealth} assets={assets} totalPLPct={totalPLPct} totalCost={totalCost} />
+                    </div>
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      <WealthChart assets={assets} />
+                    </div>
+                  </div>
+
+                  {/* Market Movers + Headlines */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 40 }}>
+                    <MarketMovers assets={assets} />
+                    <GlobalHeadlines />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {/* ── ASSETS VIEW ── */}
+          {activeView === 'assets' && (
+            <div style={{ paddingBottom: 40 }}>
+              <div style={{ marginBottom: 24 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>Varlıklarım</h1>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{assets.length} varlık kalemi</p>
               </div>
-            )
-          }
-
-          {/* Hero Wealth Card */}
-          <HeroWealthCard
-            assets={assets}
-            totalWealth={totalWealth}
-            totalCost={totalCost}
-            history={history}
-            heroPLPeriod={heroPLPeriod}
-            setHeroPLPeriod={setHeroPLPeriod}
-            activeHeroPL={activeHeroPL}
-            onShare={assets.length > 0 ? () => setShowShare(true) : undefined}
-          />
-
-          {/* Goal Tracker + Health Score */}
-          {assets.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14, marginBottom: 0 }}>
-              <PortfolioHealthScore
+              <AssetsTabsWidget
+                widgetId="assets"
                 assets={assets}
-                totalWealth={totalWealth}
-                totalCost={totalCost}
+                onDelete={(id) => setAssets(p => p.filter(a => a.id !== id))}
+                onEdit={setEditingAsset}
+                onSell={setSellingAsset}
+                onAnalyze={setAnalyzingAsset}
               />
-              <GoalTracker totalWealth={totalWealth} />
             </div>
           )}
 
-          {/* Widgets Grid */}
-          {
-            assets.length > 0 ? (
-              <div className="widgets-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40 }}>
-                {sortedWidgets.map((w) => {
-                  if (!w.visible) return null;
-                  switch (w.id) {
-                    case 'history':
-                      return (
-                        <WidgetWrapper key={w.id} widgetId={w.id}>
-                          <WealthHistoryChart history={history} currentTotal={totalWealth} assets={assets} totalPLPct={totalPLPct} totalCost={totalCost} />
-                          <div style={{ marginTop: 16 }}>
-                            <MarketMovers assets={assets} />
-                          </div>
-                        </WidgetWrapper>
-                      );
-                    case 'chart':
-                      return (
-                        <WidgetWrapper key={w.id} widgetId={w.id}>
-                          <WealthChart assets={assets} />
-                        </WidgetWrapper>
-                      );
-                    case 'categories':
-                      return (
-                        <WidgetWrapper key={w.id} widgetId={w.id}>
-                          <GlobalHeadlines />
-                        </WidgetWrapper>
-                      );
-                    case 'assets':
-                      return (
-                        <AssetsTabsWidget
-                          key={w.id}
-                          widgetId={w.id}
-                          assets={assets}
-                          onDelete={(id) => setAssets((p) => p.filter((a) => a.id !== id))}
-                          onEdit={setEditingAsset}
-                          onSell={setSellingAsset}
-                          onAnalyze={setAnalyzingAsset}
-                        />
-                      );
-                    case 'news':
-                      return <NewsSection key={w.id} assets={assets} />;
-                    default:
-                      return null;
-                  }
-                })}
+          {/* ── GOALS VIEW ── */}
+          {activeView === 'goals' && (
+            <div style={{ paddingBottom: 40 }}>
+              <div style={{ marginBottom: 24 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>Hedefler</h1>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Finansal hedeflerinizi takip edin</p>
               </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '50px 20px' }}>
-                <div style={{ fontSize: 56, marginBottom: 16 }}>💎</div>
-                <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Henüz varlık eklenmedi</h3>
-                <p style={{ color: 'var(--text-muted)', maxWidth: 360, margin: '0 auto 24px', fontSize: 13, lineHeight: 1.6 }}>
-                  Altın, kripto, döviz, hisse senedi ve diğer tüm yatırımlarınızı ekleyin.
-                </p>
-                <button onClick={() => setShowAddForm(true)} className="btn-primary" style={{ fontSize: 14, padding: '14px 28px' }}>
-                  ＋ İlk Varlığınızı Ekleyin
-                </button>
+              <div style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <PortfolioHealthScore assets={assets} totalWealth={totalWealth} totalCost={totalCost} />
+                <GoalTracker totalWealth={totalWealth} />
               </div>
-            )
-          }
-        </main >
-      </div >
+            </div>
+          )}
 
-      {showAddForm && <AssetForm onClose={() => setShowAddForm(false)} onAdd={(a) => setAssets((p) => [...p, a])} />
-      }
-      {editingAsset && <EditAssetForm asset={editingAsset} onClose={() => setEditingAsset(null)} onUpdate={(u) => setAssets((p) => p.map((a) => (a.id === u.id ? u : a)))} />}
-      {
-        sellingAsset && (
-          <SellAssetForm
-            asset={sellingAsset}
-            onClose={() => setSellingAsset(null)}
-            onSold={(id, updatedAsset) => {
-              if (updatedAsset) {
-                setAssets((p) => p.map((a) => (a.id === id ? updatedAsset : a)));
-              } else {
-                setAssets((p) => p.filter((a) => a.id !== id));
-              }
-            }}
-          />
-        )
-      }
-      {
-        analyzingAsset && (
-          <AiAnalysis
-            asset={analyzingAsset}
-            onClose={() => setAnalyzingAsset(null)}
-          />
-        )
-      }
-      {
-        showResetModal && (
-          <ResetModal
-            onClose={() => setShowResetModal(false)}
-            onReset={() => { setAssets([]); setHistory([]); }}
-          />
-        )
-      }
-      {/* Floating AI Chat Mascot */}
-      <AiPortfolioChat
-        assets={assets}
-        totalWealth={totalWealth}
-        totalPL={totalPL}
-        totalPLPct={totalPLPct}
-        fmt={fmt}
-      />
-      {/* Portfolio Share Modal */}
+          {/* ── NEWS VIEW ── */}
+          {activeView === 'news' && (
+            <div style={{ paddingBottom: 40 }}>
+              <div style={{ marginBottom: 24 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>Gündem</h1>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Global finans haberleri</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <GlobalHeadlines />
+                {assets.length > 0 && <NewsSection assets={assets} />}
+              </div>
+            </div>
+          )}
+
+          {/* ── CONVERTER VIEW ── */}
+          {activeView === 'converter' && (
+            <div style={{ paddingBottom: 40 }}>
+              <div style={{ marginBottom: 24 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>💱 Hızlı Çevirici</h1>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Döviz, altın ve kripto çevirici</p>
+              </div>
+              <iframe src="/converter" style={{ width: '100%', height: 'calc(100vh - 160px)', border: 'none', borderRadius: 16 }} />
+            </div>
+          )}
+
+          {/* ── CHAT VIEW ── */}
+          {activeView === 'chat' && (
+            <div style={{ paddingBottom: 40 }}>
+              <div style={{ marginBottom: 24 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>◉ AI Asistan</h1>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Portföyünüz hakkında soru sorun</p>
+              </div>
+              <AiPortfolioChat
+                assets={assets}
+                totalWealth={totalWealth}
+                totalPL={totalPL}
+                totalPLPct={totalPLPct}
+                fmt={fmt}
+                inline
+              />
+            </div>
+          )}
+
+        </main>
+      </div>
+
+      {/* ── Modals ── */}
+      {showAddForm && <AssetForm onClose={() => setShowAddForm(false)} onAdd={(a) => setAssets(p => [...p, a])} />}
+      {editingAsset && <EditAssetForm asset={editingAsset} onClose={() => setEditingAsset(null)} onUpdate={(u) => setAssets(p => p.map(a => a.id === u.id ? u : a))} />}
+      {sellingAsset && (
+        <SellAssetForm
+          asset={sellingAsset}
+          onClose={() => setSellingAsset(null)}
+          onSold={(id, updatedAsset) => {
+            if (updatedAsset) {
+              setAssets(p => p.map(a => a.id === id ? updatedAsset : a));
+            } else {
+              setAssets(p => p.filter(a => a.id !== id));
+            }
+          }}
+        />
+      )}
+      {analyzingAsset && <AiAnalysis asset={analyzingAsset} onClose={() => setAnalyzingAsset(null)} />}
+      {showResetModal && (
+        <ResetModal
+          onClose={() => setShowResetModal(false)}
+          onReset={() => { setAssets([]); setHistory([]); }}
+        />
+      )}
       {showShare && (
         <PortfolioShareModal
           isOpen={showShare}
