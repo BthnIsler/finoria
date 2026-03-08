@@ -340,26 +340,11 @@ export default function HeroWealthCard({
             <div style={{
                 position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
                 background: `
-                    radial-gradient(ellipse 70% 60% at 20% 30%, ${glowColour}, transparent),
-                    radial-gradient(ellipse 60% 50% at 80% 70%, ${glowColour2}, transparent),
-                    radial-gradient(ellipse 50% 80% at 50% 0%, rgba(139,92,246,0.06), transparent)
+                    radial-gradient(ellipse 80% 80% at 50% 100%, ${glowColour}, transparent),
+                    radial-gradient(ellipse 60% 50% at 20% 20%, ${glowColour2}, transparent)
                 `,
                 transition: 'background 1.2s ease',
             }} />
-
-            {/* ── Sparkline silhouette (behind everything) ── */}
-            {hasData && (
-                <div style={{
-                    position: 'absolute', inset: 0,
-                    opacity: 0.6, pointerEvents: 'none', zIndex: 0,
-                }}>
-                    <SparklineSilhouette
-                        history={history}
-                        totalWealth={totalWealth}
-                        isUp={isUp}
-                    />
-                </div>
-            )}
 
             {/* ── Shimmer overlay on top edge ── */}
             <div style={{
