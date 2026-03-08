@@ -23,6 +23,8 @@ import AnimatedNumber from '@/components/AnimatedNumber';
 import AiPortfolioChat from '@/components/AiPortfolioChat';
 import PortfolioShareModal from '@/components/PortfolioShareModal';
 import HeroWealthCard from '@/components/HeroWealthCard';
+import GoalTracker from '@/components/GoalTracker';
+import PortfolioHealthScore from '@/components/PortfolioHealthScore';
 import { useAuth } from '@/lib/AuthContext';
 import AuthModal from '@/components/AuthModal';
 import ResetModal from '@/components/ResetModal';
@@ -496,6 +498,13 @@ export default function Home() {
               </div>
 
               <button onClick={() => setShowAddForm(true)} className="btn-primary">＋ Ekle</button>
+              <a
+                href="/converter"
+                className="btn-secondary"
+                style={{ padding: '8px 14px', fontSize: 12, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                💱 Çevirici
+              </a>
             </div>
           </header>
 
@@ -547,6 +556,18 @@ export default function Home() {
             activeHeroPL={activeHeroPL}
             onShare={assets.length > 0 ? () => setShowShare(true) : undefined}
           />
+
+          {/* Goal Tracker + Health Score */}
+          {assets.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14, marginBottom: 0 }}>
+              <PortfolioHealthScore
+                assets={assets}
+                totalWealth={totalWealth}
+                totalCost={totalCost}
+              />
+              <GoalTracker totalWealth={totalWealth} />
+            </div>
+          )}
 
           {/* Widgets Grid */}
           {

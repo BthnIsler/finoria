@@ -10,9 +10,13 @@ export async function GET(request: NextRequest) {
 
     try {
         // Use Google News RSS feed as a free news source
-        const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=tr&gl=TR&ceid=TR:tr`;
+        // Use English + global locale for fresher, broader results
+        const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+            .toISOString().split('T')[0];
+        const globalQuery = `${query} after:${threeDaysAgo}`;
+        const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(globalQuery)}&hl=en-US&gl=US&ceid=US:en`;
         const res = await fetch(rssUrl, {
-            next: { revalidate: 300 }, // Cache for 5 minutes
+            next: { revalidate: 120 }, // Cache for 2 minutes (fresher)
         });
 
         if (!res.ok) {

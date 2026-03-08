@@ -31,7 +31,7 @@ export default function GlobalHeadlines() {
     const fetchNews = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await fetch(`/api/news?q=${encodeURIComponent('borsa ekonomi finans gündem piyasa döviz altın')}`);
+            const res = await fetch(`/api/news?q=${encodeURIComponent('global stock market economy gold crypto Fed interest rates finance')}`);
             if (!res.ok) throw new Error('News API failed');
             const data = await res.json();
             setArticles(data.articles || []);
