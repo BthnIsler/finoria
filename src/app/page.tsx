@@ -544,26 +544,19 @@ export default function Home() {
             </div>
           )}
 
-          {/* ── CHAT VIEW ── */}
-          {activeView === 'chat' && (
-            <div style={{ paddingBottom: 40 }}>
-              <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>◉ AI Asistan</h1>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Portföyünüz hakkında soru sorun</p>
-              </div>
-              <AiPortfolioChat
-                assets={assets}
-                totalWealth={totalWealth}
-                totalPL={totalPL}
-                totalPLPct={totalPLPct}
-                fmt={fmt}
-                inline
-              />
-            </div>
-          )}
-
         </main>
       </div>
+
+      {/* ── Floating AI Chat (always visible) ── */}
+      <AiPortfolioChat
+        assets={assets}
+        totalWealth={totalWealth}
+        totalPL={totalPL}
+        totalPLPct={totalPLPct}
+        dailyPL={totalPL}
+        dailyPLPct={totalPLPct}
+        fmt={fmt}
+      />
 
       {/* ── Modals ── */}
       {showAddForm && <AssetForm onClose={() => setShowAddForm(false)} onAdd={(a) => setAssets(p => [...p, a])} />}

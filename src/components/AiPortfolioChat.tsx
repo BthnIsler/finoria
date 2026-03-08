@@ -14,11 +14,13 @@ interface AiPortfolioChatProps {
     totalWealth: number;
     totalPL: number;
     totalPLPct: number;
+    dailyPL: number;
+    dailyPLPct: number;
     fmt: (v: number) => string;
     inline?: boolean;
 }
 
-export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLPct, fmt, inline = false }: AiPortfolioChatProps) {
+export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLPct, dailyPL, dailyPLPct, fmt, inline = false }: AiPortfolioChatProps) {
     const { user, displayName } = useAuth();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
@@ -156,34 +158,130 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
 
     return (
         <>
-            {/* Speech bubble */}
-            {!inline && showBubble && !isOpen && (
-                <div
-                    onClick={() => { setShowBubble(false); setIsOpen(true); }}
-                    style={{
-                        position: 'fixed', bottom: 90, right: 24, zIndex: 999,
-                        background: 'var(--bg-card)', border: '1px solid var(--border)',
-                        borderRadius: 18, borderBottomRightRadius: 6,
-                        padding: '14px 18px', maxWidth: 280,
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-                        cursor: 'pointer', animation: 'bubbleIn 0.5s ease',
-                    }}
-                >
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setShowBubble(false); }}
+            {/* Premium greeting card bubble */}
+            {!inline && showBubble && !isOpen && (() => {
+                const isUp = dailyPLPct >= 0;
+
+                // Find best / worst asset by currentPrice vs purchasePrice
+                const assetPerfs = assets.map(a => {
+                    const cur = a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
+                    const pct = a.purchasePrice > 0 ? ((cur - a.purchasePrice) / a.purchasePrice) * 100 : 0;
+                    return { name: a.name, pct };
+                });
+                const bestAsset = [...assetPerfs].sort((a, b) => b.pct - a.pct)[0];
+                const worstAsset = [...assetPerfs].sort((a, b) => a.pct - b.pct)[0];
+                const featuredAsset = isUp ? bestAsset : worstAsset;
+
+                const greetLine2 = isUp
+                    ? `Portföyün bugün %${Math.abs(dailyPLPct).toFixed(2)} büyüdü 🎉`
+                    : `Portföyün bugün %${Math.abs(dailyPLPct).toFixed(2)} küçüldü`;
+
+                const greetLine3 = featuredAsset
+                    ? isUp
+                        ? `En çok yükselen yatırımın ${featuredAsset.pct >= 0 ? `+${featuredAsset.pct.toFixed(1)}%` : ''} ile ${featuredAsset.name}.`
+                        : `En çok düşen yatırımın ${featuredAsset.name}. Tıkla ve birlikte inceleyelim.`
+                    : '';
+
+                const accentColor = isUp ? '#10b981' : '#ef4444';
+
+                return (
+                    <div
+                        onClick={() => { setShowBubble(false); setIsOpen(true); }}
                         style={{
-                            position: 'absolute', top: -8, right: -8,
-                            width: 22, height: 22, borderRadius: '50%',
-                            background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                            color: 'var(--text-muted)', fontSize: 10,
-                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            position: 'fixed', bottom: 90, right: 24, zIndex: 999,
+                            width: 300,
+                            background: 'linear-gradient(145deg, rgba(17,24,39,0.97), rgba(13,17,23,0.99))',
+                            border: `1px solid ${accentColor}33`,
+                            borderRadius: 20, borderBottomRightRadius: 6,
+                            padding: '0', overflow: 'hidden',
+                            boxShadow: `0 16px 48px rgba(0,0,0,0.4), 0 0 0 1px ${accentColor}11`,
+                            cursor: 'pointer',
+                            animation: 'bubbleIn 0.4s cubic-bezier(0.34,1.56,0.64,1)',
                         }}
-                    >✕</button>
-                    <p style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--text-primary)', margin: 0 }}>
-                        {getBubbleGreeting()}
-                    </p>
-                </div>
-            )}
+                    >
+                        {/* Accent top bar */}
+                        <div style={{
+                            height: 3,
+                            background: isUp
+                                ? 'linear-gradient(90deg, #10b981, #34d399, transparent)'
+                                : 'linear-gradient(90deg, #ef4444, #f97316, transparent)',
+                        }} />
+
+                        {/* Ambient glow */}
+                        <div style={{
+                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                            background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${accentColor}0a, transparent)`,
+                            pointerEvents: 'none',
+                        }} />
+
+                        {/* Close button */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setShowBubble(false); }}
+                            style={{
+                                position: 'absolute', top: 10, right: 10,
+                                width: 20, height: 20, borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
+                                color: 'rgba(255,255,255,0.4)', fontSize: 9,
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                zIndex: 10,
+                            }}
+                        >✕</button>
+
+                        <div style={{ padding: '16px 18px 18px' }}>
+                            {/* Avatar + robot icon */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                                <div style={{
+                                    width: 38, height: 38, borderRadius: 12,
+                                    background: `linear-gradient(135deg, ${accentColor}30, ${accentColor}18)`,
+                                    border: `1px solid ${accentColor}44`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: 18,
+                                }}>🤖</div>
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: -0.2 }}>Finoria AI</div>
+                                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>Kişisel Finans Asistanın</div>
+                                </div>
+                            </div>
+
+                            {/* Greeting lines */}
+                            <div style={{ marginBottom: 14 }}>
+                                <p style={{
+                                    fontSize: 15, fontWeight: 800, color: '#fff',
+                                    margin: '0 0 6px', letterSpacing: -0.3,
+                                }}>
+                                    Selam {name}! 👋
+                                </p>
+                                <p style={{
+                                    fontSize: 13, fontWeight: 600, margin: '0 0 6px',
+                                    color: isUp ? '#34d399' : '#f87171',
+                                }}>
+                                    {greetLine2}
+                                </p>
+                                {greetLine3 && (
+                                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.5 }}>
+                                        {greetLine3}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* CTA button */}
+                            <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '9px 14px',
+                                background: `${accentColor}18`,
+                                border: `1px solid ${accentColor}33`,
+                                borderRadius: 10, transition: 'all 0.15s',
+                            }}
+                                onMouseOver={e => (e.currentTarget.style.background = `${accentColor}28`)}
+                                onMouseOut={e => (e.currentTarget.style.background = `${accentColor}18`)}
+                            >
+                                <span style={{ fontSize: 12, fontWeight: 700, color: accentColor }}>Birlikte inceleyelim mi?</span>
+                                <span style={{ fontSize: 16, color: accentColor }}>→</span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()} 
 
             {/* Floating mascot button */}
             {!inline && (
