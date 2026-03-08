@@ -430,14 +430,20 @@ export default function Home() {
           {/* ── DASHBOARD VIEW ── */}
           {activeView === 'dashboard' && (
             <>
-              <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
-                  {greeting}, {displayName || 'Kullanıcı'} 👋
-                </h1>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                  {new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </p>
-              </div>
+              {assets.length > 0 && (
+                <div style={{ marginBottom: 24, borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <HeroWealthCard
+                    assets={assets}
+                    totalWealth={totalWealth}
+                    totalCost={totalCost}
+                    history={history}
+                    heroPLPeriod={heroPLPeriod}
+                    setHeroPLPeriod={setHeroPLPeriod}
+                    activeHeroPL={activeHeroPL}
+                    onShare={() => setShowShare(true)}
+                  />
+                </div>
+              )}
 
               {assets.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '80px 20px' }}>
@@ -452,46 +458,6 @@ export default function Home() {
                 </div>
               ) : (
                 <>
-                  {/* Top 3 stat cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-                    <div style={{
-                      background: 'var(--bg-elevated)', borderRadius: 16,
-                      border: '1px solid rgba(255,255,255,0.06)', padding: '20px 22px',
-                    }}>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Toplam Servet</div>
-                      <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1, color: '#fff', marginBottom: 8 }}>{fmt(totalWealth)}</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: dailyPL >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', background: dailyPL >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', padding: '3px 8px', borderRadius: 6, display: 'inline-block' }}>
-                        1G {dailyPL >= 0 ? '+' : ''}{fmt(dailyPL)} ({dailyPLPct >= 0 ? '+' : ''}{dailyPLPct.toFixed(2)}%)
-                      </div>
-                    </div>
-                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', padding: '20px 22px' }}>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Toplam Maliyet</div>
-                      <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1, color: '#fff', marginBottom: 8 }}>{fmt(totalCost)}</div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{assets.length} varlık kalemi</div>
-                    </div>
-                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: `1px solid ${totalPL >= 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, padding: '20px 22px', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: totalPL >= 0 ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f97316)' }} />
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Toplam Kâr / Zarar</div>
-                      <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1, color: totalPL >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', marginBottom: 8 }}>{totalPL >= 0 ? '+' : ''}{fmt(totalPL)}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: totalPL >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>{totalPLPct >= 0 ? '▲ +' : '▼ '}{totalPLPct.toFixed(2)}%</div>
-                    </div>
-                  </div>
-
-                  {/* Period P/L row */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
-                    {[
-                      { label: 'Günlük', pl: dailyPL, pct: dailyPLPct },
-                      { label: 'Haftalık', pl: weeklyPL, pct: weeklyPLPct },
-                      { label: 'Aylık', pl: monthlyPL, pct: monthlyPLPct },
-                      { label: 'Tüm Zamanlar', pl: totalPL, pct: totalPLPct },
-                    ].map(p => (
-                      <div key={p.label} style={{ background: 'var(--bg-elevated)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)', padding: '12px 14px' }}>
-                        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>{p.label}</div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: p.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>{p.pl >= 0 ? '+' : ''}{fmt(p.pl)}</div>
-                        <div style={{ fontSize: 11, color: p.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', opacity: 0.7, marginTop: 2 }}>{p.pct >= 0 ? '+' : ''}{p.pct.toFixed(2)}%</div>
-                      </div>
-                    ))}
-                  </div>
 
                   {/* Health + Goals side by side */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>

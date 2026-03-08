@@ -342,7 +342,7 @@ export default function WealthHistoryChart({
                     {/* Chart */}
                     {!isApiLoading && (
                         <div style={{ position: 'relative' }}>
-                            <ResponsiveContainer width="100%" height={280}>
+                            <ResponsiveContainer width="100%" height={420}>
                                 <TvAreaChart data={displayData} isUp={isUp} mainColor={mainColor} fmt={fmt} costLine={!selectedAssetId && totalCost > 0 ? convert(totalCost) : undefined} />
                             </ResponsiveContainer>
                         </div>

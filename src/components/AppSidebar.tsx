@@ -104,13 +104,13 @@ export default function AppSidebar({
                 <button
                     onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                     style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'rgba(255,255,255,0.25)', fontSize: 12, padding: '4px',
-                        transition: 'color 0.2s',
-                        ...(sidebarCollapsed ? { position: 'absolute', right: 6, top: 22 } : {}),
+                        background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                        color: 'rgba(255,255,255,0.8)', fontSize: 16, padding: '4px 10px', borderRadius: 8,
+                        transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        ...(sidebarCollapsed ? { position: 'absolute', right: 4, top: 22 } : {}),
                     }}
-                    onMouseOver={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}
-                    onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.25)'}
+                    onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
+                    onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.8)'; e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
                     title={sidebarCollapsed ? 'Genişlet' : 'Daralt'}
                 >
                     {sidebarCollapsed ? '›' : '‹'}
