@@ -22,6 +22,7 @@ import WidgetWrapper from '@/components/WidgetWrapper';
 import AnimatedNumber from '@/components/AnimatedNumber';
 import AiPortfolioChat from '@/components/AiPortfolioChat';
 import PortfolioShareModal from '@/components/PortfolioShareModal';
+import HeroWealthCard from '@/components/HeroWealthCard';
 import { useAuth } from '@/lib/AuthContext';
 import AuthModal from '@/components/AuthModal';
 import ResetModal from '@/components/ResetModal';
@@ -536,90 +537,16 @@ export default function Home() {
           }
 
           {/* Hero Wealth Card */}
-          <div className="wealth-hero wealth-hero-hover" style={{ padding: '36px 32px', marginBottom: 0, textAlign: 'center', position: 'relative' }}>
-            {assets.length > 0 && (
-              <button
-                onClick={() => setShowShare(true)}
-                title="Portföyünü Paylaş"
-                style={{
-                  position: 'absolute', top: 14, right: 14,
-                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
-                  fontSize: 12, color: 'rgba(255,255,255,0.5)', transition: 'all 0.15s',
-                  fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
-                }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
-              >
-                📤 Paylaş
-              </button>
-            )}
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 10 }}>
-              Toplam Servet
-            </p>
-            <h2 className="wealth-glow" style={{ fontSize: assets.length > 0 ? 44 : 32, fontWeight: 900, letterSpacing: -1.5, marginBottom: 4 }}>
-              {assets.length > 0 ? (
-                <AnimatedNumber
-                  value={convert(totalWealth)}
-                  duration={900}
-                  formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
-                />
-              ) : `${symbol}0,00`}
-            </h2>
-
-            {assets.length > 0 && totalCost > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 28, marginTop: 16, fontSize: 13 }}>
-                {/* Cost */}
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3, letterSpacing: 0.5 }}>Maliyet</p>
-                  <p style={{ fontWeight: 700, fontSize: 15 }}>
-                    <AnimatedNumber
-                      value={convert(totalCost)}
-                      duration={800}
-                      formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
-                    />
-                  </p>
-                </div>
-
-                <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch', opacity: 0.5 }} />
-
-                {/* P/L with inline period selector */}
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: activeHeroPL.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', marginBottom: 2 }}>
-                    {activeHeroPL.pl >= 0 ? '▲ ' : '▼ '}
-                    <AnimatedNumber
-                      value={Math.abs(convert(activeHeroPL.pl))}
-                      duration={800}
-                      formatter={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}
-                    />
-                    <span style={{ fontSize: 11, marginLeft: 4, opacity: 0.8 }}>({activeHeroPL.pct >= 0 ? '+' : ''}{activeHeroPL.pct.toFixed(1)}%)</span>
-                  </p>
-                  {/* Inline period tabs */}
-                  <div style={{ display: 'flex', gap: 0, justifyContent: 'center' }}>
-                    {([{ key: '1d' as const, label: '1G' }, { key: '1w' as const, label: '1H' }, { key: '1m' as const, label: '1A' }, { key: 'all' as const, label: 'Tümü' }]).map((p, i) => (
-                      <button
-                        key={p.key}
-                        onClick={() => setHeroPLPeriod(p.key)}
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          fontSize: 9, fontWeight: heroPLPeriod === p.key ? 800 : 500, letterSpacing: 0.3,
-                          color: heroPLPeriod === p.key ? (activeHeroPL.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') : 'var(--text-muted)',
-                          padding: '2px 6px', transition: 'all 0.2s',
-                          borderBottom: heroPLPeriod === p.key ? `2px solid ${activeHeroPL.pl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}` : '2px solid transparent',
-                        }}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {assets.length === 0 && (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 8 }}>Portföyünüzü oluşturmaya başlayın 🚀</p>
-            )}
-          </div>
+          <HeroWealthCard
+            assets={assets}
+            totalWealth={totalWealth}
+            totalCost={totalCost}
+            history={history}
+            heroPLPeriod={heroPLPeriod}
+            setHeroPLPeriod={setHeroPLPeriod}
+            activeHeroPL={activeHeroPL}
+            onShare={assets.length > 0 ? () => setShowShare(true) : undefined}
+          />
 
           {/* Widgets Grid */}
           {
