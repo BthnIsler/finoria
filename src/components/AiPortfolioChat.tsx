@@ -307,33 +307,31 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                             <path d="M2 2L16 16M16 2L2 16" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round" />
                         </svg>
                     ) : (
-                        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-                            {/* Finance chart line */}
-                            <polyline
-                                points="3,18 7,14 11,16 16,9 21,11"
-                                stroke="url(#chartGrad)"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                fill="none"
-                            />
-                            {/* Area fill */}
-                            <polygon
-                                points="3,18 7,14 11,16 16,9 21,11 21,21 3,21"
-                                fill="url(#areaGrad)"
-                            />
-                            {/* Peak dot */}
-                            <circle cx="16" cy="9" r="2.2" fill="#a78bfa" stroke="#fff" strokeWidth="1" />
-                            <defs>
-                                <linearGradient id="chartGrad" x1="3" y1="18" x2="21" y2="9" gradientUnits="userSpaceOnUse">
-                                    <stop offset="0%" stopColor="#818cf8" />
-                                    <stop offset="100%" stopColor="#a78bfa" />
-                                </linearGradient>
-                                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-                                    <stop offset="0%" stopColor="#818cf8" stopOpacity="0.25" />
-                                    <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
-                                </linearGradient>
-                            </defs>
+                        <svg width="30" height="30" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          {/* Robot Head Base */}
+                          <rect x="5" y="6" width="22" height="20" rx="6" fill="url(#head-grad)" stroke="url(#head-border)" strokeWidth="1.5"/>
+                          {/* Ears */}
+                          <path d="M27 13v6M5 13v6" stroke="#818cf8" strokeWidth="2" strokeLinecap="round"/>
+                          {/* Visor Screen */}
+                          <rect x="8" y="10" width="16" height="8" rx="2" fill="#0f172a" stroke="#3730A3" strokeWidth="1"/>
+                          {/* Finance Chart inside Visor */}
+                          <path d="M10 15L13 12L15 14L19 10L22 13" stroke="#22d3ee" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          {/* Glow around chart */}
+                          <path d="M10 15L13 12L15 14L19 10L22 13" stroke="#22d3ee" strokeWidth="3" strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round"/>
+                          {/* Glowing node point */}
+                          <circle cx="20" cy="9" r="2" fill="#a78bfa" />
+                          {/* Mouth/Speaker unit */}
+                          <path d="M12 22h8" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/>
+                          <defs>
+                            <linearGradient id="head-grad" x1="16" y1="6" x2="16" y2="26" gradientUnits="userSpaceOnUse">
+                              <stop stopColor="#312e81"/>
+                              <stop offset="1" stopColor="#1e1b4b"/>
+                            </linearGradient>
+                            <linearGradient id="head-border" x1="5" y1="6" x2="27" y2="26" gradientUnits="userSpaceOnUse">
+                              <stop stopColor="#6366f1"/>
+                              <stop offset="1" stopColor="#4338ca"/>
+                            </linearGradient>
+                          </defs>
                         </svg>
                     )}
                 </button>
@@ -358,24 +356,48 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                     display: 'flex', flexDirection: 'column',
                 }}>
                     {/* Header */}
+                    {/* Header: AI Name + Mascot */}
                     <div style={{
-                        padding: '14px 18px', borderBottom: '1px solid var(--border)',
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        position: 'relative',
+                        padding: '16px 20px', borderBottom: '1px solid var(--border)',
+                        background: 'linear-gradient(to right, rgba(167,139,250,0.1), rgba(34,211,238,0.05))',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     }}>
-                        <div style={{
-                            position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                            background: 'linear-gradient(90deg, var(--accent-purple), var(--accent-cyan), transparent)',
-                        }} />
-                        <span style={{
-                            width: 36, height: 36, borderRadius: 12,
-                            background: 'linear-gradient(135deg, rgba(167,139,250,0.2), rgba(34,211,238,0.15))',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 18,
-                        }}>🤖</span>
-                        <div>
-                            <p style={{ fontSize: 13, fontWeight: 700 }}>Finoria AI</p>
-                            <p style={{ fontSize: 10, color: 'var(--text-muted)' }}>Kişisel Finans Asistanı</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            {/* AI Mascot Avatar inside chat */}
+                            <div style={{
+                                width: 36, height: 36, borderRadius: 10,
+                                background: 'linear-gradient(135deg, #1e1b4b, #312e81)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 4px 12px rgba(129,140,248,0.3)',
+                                border: '1px solid rgba(129,140,248,0.4)',
+                            }}>
+                                <svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <rect x="5" y="6" width="22" height="20" rx="6" fill="url(#head-grad)" stroke="url(#head-border)" strokeWidth="1.5"/>
+                                  <path d="M27 13v6M5 13v6" stroke="#818cf8" strokeWidth="2" strokeLinecap="round"/>
+                                  <rect x="8" y="10" width="16" height="8" rx="2" fill="#0f172a" stroke="#3730A3" strokeWidth="1"/>
+                                  <path d="M10 15L13 12L15 14L19 10L22 13" stroke="#22d3ee" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M10 15L13 12L15 14L19 10L22 13" stroke="#22d3ee" strokeWidth="3" strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <circle cx="20" cy="9" r="2" fill="#a78bfa" />
+                                  <path d="M12 22h8" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/>
+                                  <defs>
+                                    <linearGradient id="head-grad" x1="16" y1="6" x2="16" y2="26" gradientUnits="userSpaceOnUse">
+                                      <stop stopColor="#312e81"/>
+                                      <stop offset="1" stopColor="#1e1b4b"/>
+                                    </linearGradient>
+                                    <linearGradient id="head-border" x1="5" y1="6" x2="27" y2="26" gradientUnits="userSpaceOnUse">
+                                      <stop stopColor="#6366f1"/>
+                                      <stop offset="1" stopColor="#4338ca"/>
+                                    </linearGradient>
+                                  </defs>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, letterSpacing: -0.3, color: 'var(--text-primary)' }}>Finoria AI</h3>
+                                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-green)', display: 'inline-block', boxShadow: '0 0 8px var(--accent-green)' }} />
+                                    Çevrimiçi
+                                </p>
+                            </div>
                         </div>
                     </div>
 
