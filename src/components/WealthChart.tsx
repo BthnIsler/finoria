@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import React, { useState, useRef, useLayoutEffect } from 'react';
+import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Asset, CATEGORIES, AssetCategory } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 
@@ -12,6 +12,28 @@ interface WealthChartProps {
 export default function WealthChart({ assets }: WealthChartProps) {
     const [filter, setFilter] = useState<'all' | AssetCategory>('all');
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [chartWidth, setChartWidth] = useState(0);
+
+    useLayoutEffect(() => {
+        const measure = () => {
+            if (containerRef.current) {
+                const w = containerRef.current.offsetWidth;
+                if (w > 0) setChartWidth(w);
+            }
+        };
+        measure();
+        // Fallback poll for Capacitor WebView
+        const t1 = setTimeout(measure, 100);
+        const t2 = setTimeout(measure, 400);
+        const t3 = setTimeout(measure, 800);
+        let ro: ResizeObserver | null = null;
+        try {
+            ro = new ResizeObserver(measure);
+            if (containerRef.current) ro.observe(containerRef.current);
+        } catch {}
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); ro?.disconnect(); };
+    }, []);
 
     // Build chart data
     const filteredAssets = filter === 'all' ? assets : assets.filter((a) => a.category === filter);
@@ -110,39 +132,41 @@ export default function WealthChart({ assets }: WealthChartProps) {
                 ))}
             </div>
 
-            <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                    <Pie
-                        data={data} cx="50%" cy="50%"
-                        innerRadius={80} outerRadius={125}
-                        paddingAngle={4} dataKey="value" stroke="none"
-                        animationBegin={0} animationDuration={600}
-                        onMouseEnter={(_, index) => setActiveIndex(index)}
-                        onMouseLeave={() => setActiveIndex(null)}
-                    >
-                        {data.map((entry, i) => {
-                            const isHovered = activeIndex === i;
-                            const isDimmed = activeIndex !== null && activeIndex !== i;
-                            return (
-                                <Cell
-                                    key={`cell-${i}`}
-                                    fill={entry.color}
-                                    opacity={isDimmed ? 0.25 : 1}
-                                    style={{
-                                        filter: isHovered ? `drop-shadow(0px 0px 10px ${entry.color}aa)` : 'none',
-                                        transition: 'all 0.3s ease',
-                                        cursor: 'pointer',
-                                        outline: 'none',
-                                        transform: isHovered ? 'scale(1.03)' : 'scale(1)',
-                                        transformOrigin: 'center'
-                                    }}
-                                />
-                            );
-                        })}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-            </ResponsiveContainer>
+            <div ref={containerRef} style={{ width: '100%', height: 260 }}>
+                {chartWidth > 0 && (
+                    <PieChart width={chartWidth} height={260}>
+                        <Pie
+                            data={data} cx="50%" cy="50%"
+                            innerRadius={70} outerRadius={110}
+                            paddingAngle={4} dataKey="value" stroke="none"
+                            animationBegin={0} animationDuration={600}
+                            onMouseEnter={(_, index) => setActiveIndex(index)}
+                            onMouseLeave={() => setActiveIndex(null)}
+                        >
+                            {data.map((entry, i) => {
+                                const isHovered = activeIndex === i;
+                                const isDimmed = activeIndex !== null && activeIndex !== i;
+                                return (
+                                    <Cell
+                                        key={`cell-${i}`}
+                                        fill={entry.color}
+                                        opacity={isDimmed ? 0.25 : 1}
+                                        style={{
+                                            filter: isHovered ? `drop-shadow(0px 0px 10px ${entry.color}aa)` : 'none',
+                                            transition: 'all 0.3s ease',
+                                            cursor: 'pointer',
+                                            outline: 'none',
+                                            transform: isHovered ? 'scale(1.03)' : 'scale(1)',
+                                            transformOrigin: 'center'
+                                        }}
+                                    />
+                                );
+                            })}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                )}
+            </div>
 
             {/* Legend */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 8 }}>

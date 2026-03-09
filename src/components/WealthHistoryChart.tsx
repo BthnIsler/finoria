@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import {
-    AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid,
+    AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
     ComposedChart, Bar, Cell, Line, ReferenceLine,
 } from 'recharts';
 import { WealthSnapshot, getHourlyHistory, HourlySnapshot } from '@/lib/storage';
@@ -118,6 +118,27 @@ export default function WealthHistoryChart({
     const [period, setPeriod] = useState<TimePeriod>('all');
     const [selectedAssetId, setSelectedAssetId] = useState('');
     const [hourly, setHourly] = useState<HourlySnapshot[]>([]);
+    const chartContainerRef = useRef<HTMLDivElement>(null);
+    const [chartWidth, setChartWidth] = useState(0);
+
+    useLayoutEffect(() => {
+        const measure = () => {
+            if (chartContainerRef.current) {
+                const w = chartContainerRef.current.offsetWidth;
+                if (w > 0) setChartWidth(w);
+            }
+        };
+        measure();
+        const t1 = setTimeout(measure, 100);
+        const t2 = setTimeout(measure, 400);
+        const t3 = setTimeout(measure, 900);
+        let ro: ResizeObserver | null = null;
+        try {
+            ro = new ResizeObserver(measure);
+            if (chartContainerRef.current) ro.observe(chartContainerRef.current);
+        } catch {}
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); ro?.disconnect(); };
+    }, []);
 
     // API fetch states
     const [apiAssetHistory, setApiAssetHistory] = useState<ChartPoint[]>([]);
@@ -341,10 +362,14 @@ export default function WealthHistoryChart({
 
                     {/* Chart */}
                     {!isApiLoading && (
-                        <div style={{ position: 'relative' }}>
-                            <ResponsiveContainer width="100%" height={340}>
-                                <TvAreaChart data={displayData} isUp={isUp} mainColor={mainColor} fmt={fmt} costLine={!selectedAssetId && totalCost > 0 ? convert(totalCost) : undefined} />
-                            </ResponsiveContainer>
+                        <div ref={chartContainerRef} style={{ width: '100%', height: 340 }}>
+                            {chartWidth > 0 && (
+                                <TvAreaChart
+                                    data={displayData} isUp={isUp} mainColor={mainColor} fmt={fmt}
+                                    costLine={!selectedAssetId && totalCost > 0 ? convert(totalCost) : undefined}
+                                    width={chartWidth} height={340}
+                                />
+                            )}
                         </div>
                     )}
 
@@ -375,8 +400,9 @@ export default function WealthHistoryChart({
 
 // ─── TradingView Area Chart ───────────────────────────────────────────────────
 
-function TvAreaChart({ data, isUp, mainColor, fmt, costLine }: {
+function TvAreaChart({ data, isUp, mainColor, fmt, costLine, width = 400, height = 340 }: {
     data: ChartPoint[]; isUp: boolean; mainColor: string; fmt: (v: number) => string; costLine?: number;
+    width?: number; height?: number;
 }) {
     const dataKey = 'close';
     const gradId = isUp ? 'tvUp' : 'tvDown';
@@ -404,7 +430,7 @@ function TvAreaChart({ data, isUp, mainColor, fmt, costLine }: {
     };
 
     return (
-        <AreaChart data={data} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+        <AreaChart width={width} height={height} data={data} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
             <defs>
                 <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={mainColor} stopOpacity={0.25} />
@@ -458,6 +484,15 @@ function WhatIfView({ data, currentTotal, assets, fmt, period, setPeriod, isLoad
     data: ChartPoint[]; currentTotal: number; assets: Asset[];
     fmt: (v: number) => string; period: TimePeriod; setPeriod: (p: TimePeriod) => void; isLoading: boolean;
 }) {
+    const wiRef = useRef<HTMLDivElement>(null);
+    const [wiWidth, setWiWidth] = useState(0);
+    useLayoutEffect(() => {
+        const m = () => { if (wiRef.current) { const w = wiRef.current.offsetWidth; if (w > 0) setWiWidth(w); } };
+        m(); const t1 = setTimeout(m, 150); const t2 = setTimeout(m, 500);
+        let ro: ResizeObserver | null = null;
+        try { ro = new ResizeObserver(m); if (wiRef.current) ro.observe(wiRef.current); } catch {}
+        return () => { clearTimeout(t1); clearTimeout(t2); ro?.disconnect(); };
+    }, []);
     const periodLabels = [
         { key: '1m' as const, label: '1 Ay' },
         { key: '1y' as const, label: '1 Yıl' },
@@ -524,8 +559,9 @@ function WhatIfView({ data, currentTotal, assets, fmt, period, setPeriod, isLoad
                 </div>
             ) : (
                 <>
-                    <ResponsiveContainer width="100%" height={240}>
-                        <AreaChart data={data} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+                <div ref={wiRef} style={{ width: '100%', height: 240 }}>
+                    {wiWidth > 0 && (
+                        <AreaChart width={wiWidth} height={240} data={data} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="wiPast" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
@@ -543,7 +579,8 @@ function WhatIfView({ data, currentTotal, assets, fmt, period, setPeriod, isLoad
                             <Area type="monotone" dataKey="pastValue" name="Geçmiş Değer" stroke="#f59e0b" strokeWidth={1.5} fill="url(#wiPast)" dot={false} isAnimationActive={false} />
                             <Area type="monotone" dataKey="currentValue" name="Güncel Değer" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="6 3" fill="url(#wiNow)" dot={false} isAnimationActive={false} />
                         </AreaChart>
-                    </ResponsiveContainer>
+                    )}
+                </div>
 
                     {/* Legend */}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 12 }}>

@@ -1,25 +1,17 @@
-feat: complete web redesign and mobile fixes
+fix(mobile): replace all ResponsiveContainer with explicit pixel dimensions
 
-Web:
-- AssetsTabsWidget: Full brokerage-style table redesign
-  - Underline tab navigation with category counts
-  - Summary band (Total Value / Cost / P&L / Count cards)
-  - Column table header (Varlık / Birim Fiyat / Değer / Period K-Z / İşlem)
-  - Compact action buttons appearing only on row hover
-  - Live dot indicator for assets with real-time prices
-  - Detail panel with category gradient background on expand
-- DashboardView: Removed GlobalHeadlines section per request
-- DashboardView: Changed chart card containers from minHeight to explicit
-  height:420 so Recharts ResponsiveContainer renders correctly in WebView
+Charts not rendering in Capacitor Android WebView because ResizeObserver
+fires with width=0. Fix: replaced every ResponsiveContainer usage in
+WealthChart, WealthHistoryChart, and WhatIfView with a useRef + useLayoutEffect
+pattern that measures real offsetWidth. Three setTimeout fallback polls
+(100ms, 400ms, 800ms or 900ms) ensure the measurement fires even if the
+WebView layout completes asynchronously. Charts now only render once
+chartWidth > 0, preventing zero-size SVG rendering.
 
-Mobile (Capacitor):
-- LandingPage: Added completely separate mobile-first view (<768px)
-  - Auto-play slide carousel with accent color backgrounds
-  - Animated slide dots, 3 mini stats, hero text with gradient last word
-  - Two prominent CTA buttons: purple primary 'Giris Yap', outline 'Kayit Ol'
-  - Back-navigable auth form with large inputs and submit button
-  - env(safe-area-inset-top) + env(safe-area-inset-bottom) applied
-- page.tsx mobile topbar: Added paddingTop env(safe-area-inset-top) +
-  alignItems flex-end so topbar clears Android status bar correctly
-- page.tsx main content: padding-top now uses calc(52px + safe-area-inset-top)
-  to prevent content from being hidden behind the topbar on notched devices
+feat(mobile): slide carousel now shows real app screenshot images
+- Added /slide-wealth.png, /slide-chart.png, /slide-ai.png to public/
+- Each slide now renders its matching image with rounded corners, drop shadow
+  accent glow, and a gradient bottom overlay
+- Slide 3 updated from 'Takvim' to 'Portfoy Dagilimi' to match the pie chart image
+
+feat(web): sidebar always starts closed on mobile (mobileSidebarOpen=false confirmed)

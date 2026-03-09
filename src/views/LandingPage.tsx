@@ -70,18 +70,21 @@ const SLIDES = [
     sub: 'Toplam varlığınız, kar/zarar durumunuz ve portföy dağılımı. Hepsi tek ekranda.',
     badge: '⚡ Canlı güncelleme',
     accent: '#10b981',
+    img: '/slide-wealth.png',
   },
   {
     title: 'AI asistan her an yanınızda',
     sub: 'Finoria AI portföyünüzü analiz eder, uyarılar verir ve sorularınızı yanıtlar.',
     badge: '🤖 AI Destekli',
     accent: '#6366f1',
+    img: '/slide-ai.png',
   },
   {
-    title: 'Önemli tarihleri kaçırmayın',
-    sub: 'Faiz kararları, bilanço günleri ve ekonomik veriler için geri sayım takvimi.',
-    badge: '📅 Takvim Takibi',
-    accent: '#ef4444',
+    title: 'Portföy dağılımınızı görün',
+    sub: 'İnteraktif pasta grafik ile hangi varlık sınıfının ağırlıkta olduğunu anında görün.',
+    badge: '📊 Portföy Analizi',
+    accent: '#eab308',
+    img: '/slide-chart.png',
   },
 ];
 
@@ -189,14 +192,26 @@ export default function LandingPage({
                 {slide.sub}
               </p>
 
-              {/* Stats mini row */}
-              <div style={{ display: 'flex', gap: 20, marginBottom: 8 }}>
-                {STATS.slice(0, 3).map(s => (
-                  <div key={s.label} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>{s.value}</span>
-                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 0.3 }}>{s.label}</span>
-                  </div>
-                ))}
+              {/* Slide image preview */}
+              <div style={{
+                borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: `0 16px 48px rgba(0,0,0,0.5), 0 0 40px ${slide.accent}15`,
+                maxHeight: 200, position: 'relative',
+              }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={slide.img}
+                  alt={slide.title}
+                  style={{
+                    width: '100%', height: 200, objectFit: 'cover', objectPosition: 'top',
+                    display: 'block', transition: 'all 0.5s',
+                  }}
+                />
+                {/* Gradient overlay bottom */}
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
+                  background: 'linear-gradient(to top, #09101f, transparent)',
+                }} />
               </div>
             </div>
 
