@@ -408,8 +408,8 @@ export default function Home() {
         totalWealth={totalWealth}
         totalPL={totalPL}
         totalPLPct={totalPLPct}
-        dailyPL={totalPL}
-        dailyPLPct={totalPLPct}
+        dailyPL={dailyPL}
+        dailyPLPct={dailyPLPct}
         fmt={fmt}
       />
 

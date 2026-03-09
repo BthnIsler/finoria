@@ -1,0 +1,10 @@
+feat: AI chat mascot animations, fix daily P&L greeting, add quick replies
+
+- Add mascotFloat CSS animation to bubble button (gentle bob+tilt movement)
+- Add mascotGlow pulsing glow animation to make the AI feel alive
+- Fix greeting bubble to use dailyPLPct instead of all-time totalPLPct
+  - "Portföyün bugün %2.5 yükseldi" instead of all-time return
+- Fix page.tsx to pass actual dailyPL/dailyPLPct values to AiPortfolioChat
+- Add 2 new quick reply suggestions:
+  - "En çok yükselen varlığımı göster"
+  - "En çok düşen varlığımı göster"

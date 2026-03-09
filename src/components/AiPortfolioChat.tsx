@@ -36,23 +36,23 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
     // Use display name from auth context
     const name = displayName || 'Dostum';
 
-    // Generate personalized greeting for the speech bubble
+    // Generate personalized greeting for the speech bubble — uses DAILY P&L
     const getBubbleGreeting = () => {
         const hour = new Date().getHours();
         const timeGreet = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
 
-        if (totalPL > 0) {
+        if (dailyPLPct > 0) {
             const greetings = [
-                `${timeGreet} ${name}! 🎉 Bugün portföyün %${totalPLPct.toFixed(1)} kârda, harika gidiyorsun! Sohbet edelim mi?`,
-                `Selam ${name}! Bugün işler yolunda, portföyün güzel kazandırıyor 💪 Konuşmak için tıkla!`,
-                `Hey ${name}! Bugünkü performansın bayağı iyi, detaylara bakmak ister misin? 📈`,
+                `${timeGreet} ${name}! 🎉 Bugün portföyün %${dailyPLPct.toFixed(1)} yükseldi, harika gidiyorsun! Sohbet edelim mi?`,
+                `Selam ${name}! Bugün işler yolunda, portföyün %${dailyPLPct.toFixed(1)} kazandırdı 💪 Konuşmak için tıkla!`,
+                `Hey ${name}! Bugünkü performansın bayağı iyi (+%${dailyPLPct.toFixed(1)}), detaylara bakmak ister misin? 📈`,
             ];
             return greetings[Math.floor(Math.random() * greetings.length)];
-        } else if (totalPL < 0) {
+        } else if (dailyPLPct < 0) {
             const greetings = [
-                `${timeGreet} ${name}! Piyasalar biraz sallantıda ama merak etme, birlikte çözeriz 💪 Tıkla konuşalım.`,
-                `Selam ${name}! Bugün biraz düşüş var ama moralini bozma, fırsatlar her zaman vardır 🌟`,
-                `Hey ${name}! Hadi birlikte portföyüne bakalım, her düşüş bir fırsat olabilir 🚀`,
+                `${timeGreet} ${name}! Piyasalar biraz sallantıda, portföyün bugün %${Math.abs(dailyPLPct).toFixed(1)} düştü. Birlikte bakalım 💪`,
+                `Selam ${name}! Bugün %${Math.abs(dailyPLPct).toFixed(1)} düşüş var ama moralini bozma, fırsatlar her zaman vardır 🌟`,
+                `Hey ${name}! Portföyün bugün -%${Math.abs(dailyPLPct).toFixed(1)} gördü. Hadi birlikte bakalım 🚀`,
             ];
             return greetings[Math.floor(Math.random() * greetings.length)];
         }
@@ -151,6 +151,8 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
 
     const suggestions = [
         'Portföyümü analiz et',
+        'En çok yükselen varlığımı göster',
+        'En çok düşen varlığımı göster',
         'Çeşitlendirme tavsiyesi ver',
         'Risk analizi yap',
         'Hangi varlığımı satmalıyım?',
@@ -303,6 +305,7 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
                         padding: 0, overflow: 'hidden',
+                        animation: isOpen ? 'none' : 'mascotFloat 3s ease-in-out infinite',
                     }}
                 >
                     {isOpen ? (
@@ -471,6 +474,16 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                 @keyframes chatPanelIn {
                     from { opacity: 0; transform: translateY(20px) scale(0.95); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                @keyframes mascotFloat {
+                    0%, 100% { transform: translateY(0px) rotate(0deg); }
+                    25% { transform: translateY(-5px) rotate(-2deg); }
+                    50% { transform: translateY(-8px) rotate(0deg); }
+                    75% { transform: translateY(-4px) rotate(2deg); }
+                }
+                @keyframes mascotGlow {
+                    0%, 100% { box-shadow: 0 8px 32px rgba(99,102,241,0.35); }
+                    50% { box-shadow: 0 12px 40px rgba(99,102,241,0.65), 0 0 20px rgba(139,92,246,0.4); }
                 }
                 .typing-dot {
                     color: var(--text-muted);
