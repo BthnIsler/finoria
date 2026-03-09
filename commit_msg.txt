@@ -1,9 +1,12 @@
-feat: sidebar live prices, market hours, typography/spacing tokens, daily P&L default
+feat: premium landing page redesign with mascot, screenshots, and new stats
 
-- Add SidebarMarketTicker component with live prices (Gram Altin, Dolar, Euro, BTC, BIST100)
-- Add market hours indicator (BIST/NYSE/Crypto) with pulsing green dot when open
-- Add /api/sidebar-prices route proxying Yahoo Finance with 5-min cache
-- Add typography scale CSS tokens (--text-xs to --text-2xl) to :root
-- Add 4px-grid spacing scale CSS tokens (--space-1 to --space-10) to :root
-- Change default hero P&L period from 'all' to '1d' (daily is now default)
-- Wire SidebarMarketTicker between nav and bottom controls in AppSidebar
+- Complete rewrite of LandingPage.tsx with premium dark design
+- Replace diamond emoji with Finoria AI mascot in nav, auth card, and footer
+- Remove outdated stats (portfolio size, annual return)
+- Add new stats: 2500+ aktif kullanıcı, 12+ varlık kategorisi, 7/24 canlı fiyat, %100 ücretsiz
+- Add 4-feature screenshot showcase section with 3D hover perspective effect
+- Add animated AI chat preview section showing Finoria AI greeting card
+- Add sticky glass-morphism navigation with smooth scroll links
+- Replace old feature icon cards with detailed feature sections using real screenshots
+- Add pulsing slide indicator animation with color matching each slide
+- Update hero headline animation with colored accent transition
