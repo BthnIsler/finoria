@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Finoria</string>
+    <string name="title_activity_main">Finoria</string>
+    <string name="package_name">tr.finoria.app</string>
+    <string name="custom_url_scheme">tr.finoria.app</string>
+</resources>

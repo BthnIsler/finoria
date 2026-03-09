@@ -1,4 +1,0 @@
-fix(mobile): strictly set viewport and increase top padding
-
-- Exported Viewport config in layout.tsx to prevent zooming out upon mobile load
-- Increased the mobile main view top padding from 56px to 76px so Toplam Servet clears the top bar
