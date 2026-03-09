@@ -17,7 +17,7 @@ interface LandingPageProps {
 const FEATURES = [
   {
     tag: 'Portföy Takibi',
-    title: 'Tüm varlıklarınız tek panelde',
+    title: 'Gerçek zamanlı varlık takibi',
     desc: 'Altın, kripto, hisse senedi, döviz ve daha fazlasını gerçek zamanlı takip edin. Canlı fiyatlar, K/Z hesaplaması ve portföy geçmişi — her şey tek ekranda.',
     imgSrc: '/screenshot-wealth.png',
     imgAlt: 'Servet Geçmişi Grafiği',

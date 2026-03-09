@@ -335,15 +335,60 @@ export default function Home() {
           {/* ── DASHBOARD VIEW ── */}
           {activeView === 'dashboard' && (
             assets.length === 0 ? (
-              <div className="text-center py-20 px-5">
-                <div className="text-7xl mb-5">💎</div>
-                <h3 className="text-2xl font-bold mb-3 text-primary">Portföyünüzü oluşturun</h3>
-                <p className="text-muted max-w-md mx-auto mb-7 text-sm leading-relaxed">
-                  Altın, kripto, döviz, hisse senedi ve tüm yatırımlarınızı tek yerden takip edin.
-                </p>
-                <button onClick={() => setShowAddForm(true)} className="btn-primary text-base px-8 py-3.5">
-                  ＋ İlk Varlığınızı Ekleyin
-                </button>
+              <div style={{
+                position: 'relative', width: '100%', minHeight: 'calc(100vh - 120px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+              }}>
+                {/* Background ambient light */}
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: 'radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }} />
+                
+                <div style={{
+                  position: 'relative', maxWidth: 640, width: '100%',
+                  background: 'rgba(20,23,29,0.5)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24,
+                  padding: '48px 32px', textAlign: 'center',
+                  boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
+                }}>
+                  <div style={{ width: 80, height: 80, margin: '0 auto 24px', borderRadius: '50%', padding: 4, background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2))', border: '1px solid rgba(139,92,246,0.3)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/finoria-ai.png" alt="Finoria AI" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  </div>
+                  
+                  <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: '#a78bfa', textTransform: 'uppercase', marginBottom: 16 }}>Finoria'ya Hoş Geldin</div>
+                  <h2 style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, color: '#fff', marginBottom: 16, lineHeight: 1.1 }}>
+                    Servetini <span style={{ background: 'linear-gradient(135deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>inşa etmeye</span> başla
+                  </h2>
+                  <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, maxWidth: 460, margin: '0 auto 32px' }}>
+                    Altın, kripto, hisse senedi ve döviz... Tüm yatırımlarını tek bir yerden, gerçek zamanlı olarak takip et.
+                  </p>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 40 }}>
+                    {[
+                      { icon: '⚡', title: 'Canlı Fiyat', desc: 'Sürekli güncel' },
+                      { icon: '🤖', title: 'AI Analiz', desc: 'Akıllı içgörüler' },
+                      { icon: '📊', title: 'P&L Takibi', desc: 'Tüm zamanlar' },
+                    ].map(f => (
+                      <div key={f.title} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: '16px 12px' }}>
+                        <div style={{ fontSize: 24, marginBottom: 8 }}>{f.icon}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{f.title}</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{f.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    style={{
+                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: 14,
+                      color: '#fff', fontSize: 16, fontWeight: 800, padding: '16px 36px', cursor: 'pointer',
+                      boxShadow: '0 8px 32px rgba(99,102,241,0.4)', transition: 'all 0.2s',
+                    }}
+                    onMouseOver={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 40px rgba(99,102,241,0.6)'; }}
+                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(99,102,241,0.4)'; }}
+                  >
+                    ＋ İlk Varlığını Ekle
+                  </button>
+                </div>
               </div>
             ) : (
               <DashboardView
