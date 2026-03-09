@@ -1,10 +1,9 @@
-feat: AI chat mascot animations, fix daily P&L greeting, add quick replies
+feat: sidebar live prices, market hours, typography/spacing tokens, daily P&L default
 
-- Add mascotFloat CSS animation to bubble button (gentle bob+tilt movement)
-- Add mascotGlow pulsing glow animation to make the AI feel alive
-- Fix greeting bubble to use dailyPLPct instead of all-time totalPLPct
-  - "Portföyün bugün %2.5 yükseldi" instead of all-time return
-- Fix page.tsx to pass actual dailyPL/dailyPLPct values to AiPortfolioChat
-- Add 2 new quick reply suggestions:
-  - "En çok yükselen varlığımı göster"
-  - "En çok düşen varlığımı göster"
+- Add SidebarMarketTicker component with live prices (Gram Altin, Dolar, Euro, BTC, BIST100)
+- Add market hours indicator (BIST/NYSE/Crypto) with pulsing green dot when open
+- Add /api/sidebar-prices route proxying Yahoo Finance with 5-min cache
+- Add typography scale CSS tokens (--text-xs to --text-2xl) to :root
+- Add 4px-grid spacing scale CSS tokens (--space-1 to --space-10) to :root
+- Change default hero P&L period from 'all' to '1d' (daily is now default)
+- Wire SidebarMarketTicker between nav and bottom controls in AppSidebar

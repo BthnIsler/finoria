@@ -4,7 +4,7 @@
 /* ===== DARK THEME (default) ===== */
 :root,
 [data-theme="dark"] {
-  --bg-primary: #09090b; /* Slightly warmer, very dark clean back */
+  --bg-primary: #09090b;
   --bg-secondary: #0f1115;
   --bg-card: #14171d;
   --bg-card-hover: #1c2028;
@@ -16,24 +16,43 @@
   --text-muted: #64748b;
   
   /* Trust Blue / Indigo Palette */
-  --accent-primary: #6366f1; /* Indigo 500 */
-  --accent-secondary: #3b82f6; /* Blue 500 */
+  --accent-primary: #6366f1;
+  --accent-secondary: #3b82f6;
   
   /* Semantic Colors ONLY */
-  --accent-green: #10b981; /* Emerald 500 */
-  --accent-red: #ef4444; /* Red 500 */
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
   
   --glass-bg: rgba(20, 23, 29, 0.7);
   --glass-border: rgba(255, 255, 255, 0.05);
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.25);
   
   /* Subtle Blobs */
-  --blob-1: rgba(99, 102, 241, 0.03); /* Indigo */
-  --blob-2: rgba(59, 130, 246, 0.03); /* Blue */
+  --blob-1: rgba(99, 102, 241, 0.03);
+  --blob-2: rgba(59, 130, 246, 0.03);
   
-  /* Sizing Constants */
+  /* ── Sizing Constants ── */
   --card-radius: 16px;
   --card-padding: 24px;
+  
+  /* ── Typography Scale (4-step: xs → xl) ── */
+  --text-xs:   10px;   /* labels, badges, captions */
+  --text-sm:   12px;   /* secondary text, table cells */
+  --text-base: 13px;   /* body/nav text */
+  --text-md:   15px;   /* card subtitles */
+  --text-lg:   18px;   /* card headers */
+  --text-xl:   24px;   /* section headings */
+  --text-2xl:  32px;   /* hero numbers */
+  
+  /* ── Spacing Scale (4px grid) ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
   
   color-scheme: dark;
 }

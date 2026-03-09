@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useCurrency } from '@/lib/contexts';
+import SidebarMarketTicker from './SidebarMarketTicker';
 
 export type ActiveView = 'dashboard' | 'assets' | 'goals' | 'news' | 'converter' | 'chat';
 
@@ -200,6 +201,9 @@ export default function AppSidebar({
                     );
                 })}
             </nav>
+
+            {/* ── Market Ticker ── */}
+            <SidebarMarketTicker collapsed={sidebarCollapsed} />
 
             {/* ── Bottom Controls ── */}
             <div style={{

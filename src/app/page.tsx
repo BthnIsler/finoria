@@ -41,7 +41,7 @@ export default function Home() {
   const [analyzingAsset, setAnalyzingAsset] = useState<Asset | null>(null);
   const [tickerOffset, setTickerOffset] = useState(0);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [heroPLPeriod, setHeroPLPeriod] = useState<'1d' | '1w' | '1m' | 'all'>('all');
+  const [heroPLPeriod, setHeroPLPeriod] = useState<'1d' | '1w' | '1m' | 'all'>('1d');
 
   const { user, displayName, loading: authLoading, login, register, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
