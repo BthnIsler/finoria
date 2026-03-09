@@ -409,7 +409,7 @@ export default function Home() {
         </div>
 
         {/* Main scrollable content */}
-        <main style={isMobile ? { flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '56px 16px 80px', width: '100%' } : undefined}
+        <main style={isMobile ? { flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '76px 16px 90px', width: '100%' } : undefined}
           className={isMobile ? '' : 'flex-1 overflow-y-auto overflow-x-hidden p-8 max-w-full'}
         >
 

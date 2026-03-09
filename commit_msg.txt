@@ -1,5 +1,4 @@
-fix(db): add robust localStorage fallback and restore real-time API prices
+fix(mobile): strictly set viewport and increase top padding
 
-- Rewrote AuthContext to fully support local registration/login and dual mode auth
-- Rewrote db.ts to have a 100% localStorage fallback for assets when Supabase URL is dummy
-- Fixed page.tsx refreshPrices that wasn't actually loading real prices; Now dynamically maps and fetches live CoinGecko/Forex/Yahoo Finance data through our lib/prices.ts every 30 seconds.
+- Exported Viewport config in layout.tsx to prevent zooming out upon mobile load
+- Increased the mobile main view top padding from 56px to 76px so Toplam Servet clears the top bar
