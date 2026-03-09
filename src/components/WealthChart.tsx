@@ -82,7 +82,7 @@ export default function WealthChart({ assets }: WealthChartProps) {
     }
 
     return (
-        <div className="glass-card" style={{ padding: 20 }}>
+        <div className="glass-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>
                     {filter === 'all' ? 'Portföy Dağılımı' : `${CATEGORIES.find((c) => c.key === filter)?.icon} ${CATEGORIES.find((c) => c.key === filter)?.labelTR}`}

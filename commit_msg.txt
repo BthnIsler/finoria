@@ -1,0 +1,11 @@
+feat: premium UI overhaul - Assets, Converter, Dashboard
+
+- AssetsTabsWidget: Completely redesigned AssetRow as premium floating cards
+  with category-colored gradient backgrounds, glowing borders on hover,
+  and a dedicated P/L bottom bar showing the current period label (Gunluk KZ etc.)
+- ConverterView: Replaced broken iframe with a full in-page live rate converter.
+  Fetches CoinGecko + ExchangeRate APIs, features searchable asset selector
+  (crypto/forex/metals), quick amount shortcuts, swap button, and popular pairs grid
+- DashboardView: Fixed pie chart centering with flex layout + added Portfolyo Haberleri
+  section with NewsSection and GlobalHeadlines side-by-side
+- WealthChart: Added flex column layout so pie chart centers vertically in card

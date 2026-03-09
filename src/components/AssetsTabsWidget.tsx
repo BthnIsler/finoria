@@ -136,117 +136,196 @@ function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expand
 
     const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
 
+    const PERIOD_LABELS: Record<PLPeriod, string> = {
+        '1d': 'Günlük KZ',
+        '1w': 'Haftalık KZ',
+        '1m': 'Aylık KZ',
+        'all': 'Toplam KZ',
+    };
+
+    const plPercentFormatted = pl ? `${pl.isPositive ? '+' : ''}${pl.pct.toFixed(2)}%` : null;
+    const plValFormatted = pl ? `${pl.isPositive ? '+' : ''}${fmt(pl.valDisplay)}` : null;
+
     return (
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', marginBottom: 8 }}>
             <div
                 onClick={onToggle}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
                 style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 14px 12px 0',
-                    borderRadius: 12, transition: 'background 0.15s',
-                    background: hovered ? 'rgba(255,255,255,0.035)' : 'transparent',
-                    cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                    borderRadius: 16,
+                    background: hovered
+                        ? `linear-gradient(135deg, ${cat.color}0a 0%, rgba(255,255,255,0.03) 100%)`
+                        : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${hovered ? cat.color + '35' : 'rgba(255,255,255,0.06)'}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                    overflow: 'hidden',
+                    boxShadow: hovered ? `0 4px 24px ${cat.color}18` : 'none',
                 }}
             >
-                {/* Category color stripe */}
-                <div style={{
-                    position: 'absolute', left: 0, top: 8, bottom: 8,
-                    width: 3, borderRadius: '3px 0 0 3px',
-                    background: cat.color,
-                    opacity: hovered ? 1 : 0.5,
-                    transition: 'opacity 0.2s',
-                }} />
+                {/* Top section */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px 10px' }}>
+                    {/* Category vertical accent */}
+                    <div style={{
+                        position: 'absolute', left: 0, top: 12, bottom: 12, width: 3,
+                        borderRadius: '0 3px 3px 0',
+                        background: cat.color,
+                        opacity: hovered ? 1 : 0.6,
+                        transition: 'opacity 0.2s',
+                    }} />
 
-                {/* Icon */}
-                <div style={{
-                    width: 38, height: 38, borderRadius: 10,
-                    background: `${cat.color}18`, border: `1px solid ${cat.color}28`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 17, flexShrink: 0, marginLeft: 12,
-                }}>
-                    {cat.icon}
-                </div>
-
-                {/* Name + amount + smart tags */}
-                <div style={{ minWidth: 0, flex: '1 1 120px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0, color: 'var(--text-primary)' }}>
-                            {asset.name}
-                        </p>
-                        {tags.map((tag, i) => (
-                            <span key={i} title={tag.title} style={{
-                                fontSize: 9, fontWeight: 700, padding: '1px 5px',
-                                borderRadius: 4, background: tag.bg, color: tag.color,
-                                letterSpacing: 0.3, flexShrink: 0,
-                            }}>
-                                {tag.icon} {tag.label}
-                            </span>
-                        ))}
+                    {/* Icon */}
+                    <div style={{
+                        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                        background: `linear-gradient(135deg, ${cat.color}25, ${cat.color}10)`,
+                        border: `1px solid ${cat.color}30`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 20,
+                        boxShadow: `0 2px 12px ${cat.color}20`,
+                    }}>
+                        {cat.icon}
                     </div>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, margin: 0 }}>
-                        {asset.amount} adet
-                        {asset.currentPrice && (
-                            <span style={{
-                                marginLeft: 6, fontSize: 10, color: 'var(--accent-cyan)',
-                                background: 'rgba(34,211,238,0.08)', padding: '1px 6px', borderRadius: 6,
-                            }}>● canlı</span>
-                        )}
-                    </p>
-                </div>
 
-                {/* Value + P/L */}
-                <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 'auto' }}>
-                    <p style={{ fontSize: 13, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>{fmt(currentValueDisplay)}</p>
-                    {pl !== null && (
-                        <div style={{ marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                    {/* Name + amount */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                             <span style={{
-                                fontSize: 11, fontWeight: 700,
-                                color: pl.isPositive ? 'var(--accent-green)' : 'var(--accent-red)',
+                                fontSize: 14, fontWeight: 800, color: '#fff',
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                letterSpacing: -0.3,
                             }}>
-                                {pl.isPositive ? '▲' : '▼'} {formatPercentage(pl.pct)}
+                                {asset.name}
                             </span>
-                            <span style={{
-                                fontSize: 10, fontWeight: 600,
-                                color: pl.isPositive ? 'var(--accent-green)' : 'var(--accent-red)', opacity: 0.7,
-                            }}>
-                                ({pl.isPositive ? '+' : ''}{fmt(pl.valDisplay)})
+                            {tags.map((tag, i) => (
+                                <span key={i} title={tag.title} style={{
+                                    fontSize: 9, fontWeight: 700, padding: '2px 6px',
+                                    borderRadius: 5, background: tag.bg, color: tag.color,
+                                    letterSpacing: 0.3, flexShrink: 0,
+                                }}>
+                                    {tag.icon} {tag.label}
+                                </span>
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+                                {asset.amount.toLocaleString('tr-TR', { maximumFractionDigits: 6 })} adet
+                            </span>
+                            {asset.currentPrice && (
+                                <span style={{
+                                    fontSize: 9, color: '#22d3ee', fontWeight: 700,
+                                    background: 'rgba(34,211,238,0.08)', padding: '1px 6px', borderRadius: 5,
+                                    letterSpacing: 0.3,
+                                }}>⚡ CANLI</span>
+                            )}
+                            <span style={{ fontSize: 11, color: `${cat.color}90`, fontWeight: 600 }}>
+                                {cat.icon} {cat.labelTR}
                             </span>
                         </div>
-                    )}
+                    </div>
+
+                    {/* Right: Value */}
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', letterSpacing: -0.5, fontVariantNumeric: 'tabular-nums' }}>
+                            {fmt(currentValueDisplay)}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
+                            birim: {fmt(convert(currentPriceTRY))}
+                        </div>
+                    </div>
+
+                    {/* Chevron */}
+                    <span style={{
+                        fontSize: 11, color: 'rgba(255,255,255,0.25)',
+                        transition: 'transform 0.2s',
+                        transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                        flexShrink: 0,
+                    }}>▼</span>
                 </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                    {onAnalyze && (
-                        <button onClick={() => onAnalyze(asset)} className="btn-icon" title="AI Analiz" style={{ width: 28, height: 28, fontSize: 12 }}>🤖</button>
+                {/* Bottom section: P/L bar */}
+                <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '8px 16px 12px',
+                    borderTop: '1px solid rgba(255,255,255,0.04)',
+                }}>
+                    {/* P/L badge */}
+                    {pl !== null ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{
+                                fontSize: 10, fontWeight: 700, letterSpacing: 0.3,
+                                color: 'rgba(255,255,255,0.3)',
+                            }}>
+                                {PERIOD_LABELS[plPeriod]}
+                            </span>
+                            <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                                padding: '3px 10px', borderRadius: 8,
+                                background: pl.isPositive ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                                border: `1px solid ${pl.isPositive ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                                fontSize: 12, fontWeight: 800,
+                                color: pl.isPositive ? '#10b981' : '#ef4444',
+                            }}>
+                                {pl.isPositive ? '▲' : '▼'} {plPercentFormatted}
+                            </span>
+                            <span style={{
+                                fontSize: 11, color: pl.isPositive ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)',
+                                fontWeight: 600,
+                            }}>
+                                {plValFormatted}
+                            </span>
+                        </div>
+                    ) : (
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>Geçmiş veri yok</div>
                     )}
-                    <button onClick={() => onEdit(asset)} className="btn-icon" title="Düzenle" style={{ width: 28, height: 28, fontSize: 12 }}>✏️</button>
-                    <button onClick={() => onSell(asset)} className="btn-icon" title="Sat/Çıkar" style={{ width: 28, height: 28, fontSize: 12 }}>💸</button>
-                    <button
-                        onClick={handleDelete} className="btn-icon" title="Sil"
-                        style={{ width: 28, height: 28, fontSize: 12 }}
-                        onMouseOver={(e) => (e.currentTarget.style.borderColor = 'var(--accent-red)')}
-                        onMouseOut={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
-                    >🗑</button>
-                </div>
 
-                {/* Expand chevron */}
-                <span style={{
-                    fontSize: 12, color: 'var(--text-muted)', transition: 'transform 0.2s',
-                    transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0,
-                }}>▼</span>
+                    {/* Action buttons */}
+                    <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
+                        {onAnalyze && (
+                            <button onClick={() => onAnalyze(asset)} title="AI Analiz" style={{
+                                width: 30, height: 30, borderRadius: 8, fontSize: 13, cursor: 'pointer',
+                                background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)',
+                                color: '#a78bfa', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.15s',
+                            }}>🤖</button>
+                        )}
+                        <button onClick={() => onEdit(asset)} title="Düzenle" style={{
+                            width: 30, height: 30, borderRadius: 8, fontSize: 13, cursor: 'pointer',
+                            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.15s',
+                        }}>✏️</button>
+                        <button onClick={() => onSell(asset)} title="Sat/Çıkar" style={{
+                            width: 30, height: 30, borderRadius: 8, fontSize: 13, cursor: 'pointer',
+                            background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                            color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.15s',
+                        }}>💸</button>
+                        <button
+                            onClick={handleDelete} title="Sil"
+                            style={{
+                                width: 30, height: 30, borderRadius: 8, fontSize: 13, cursor: 'pointer',
+                                background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)',
+                                color: 'rgba(239,68,68,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.15s',
+                            }}
+                            onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.15)'; (e.currentTarget as HTMLElement).style.color = '#ef4444'; }}
+                            onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.05)'; (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.6)'; }}
+                        >🗑</button>
+                    </div>
+                </div>
             </div>
 
             {/* Expandable Detail */}
             {expanded && (
                 <div style={{
-                    margin: '0 14px 8px 57px', padding: '12px 16px',
-                    background: 'var(--bg-elevated)', borderRadius: 10,
-                    border: '1px solid var(--border)', fontSize: 12,
+                    margin: '4px 2px 0', padding: '16px 20px',
+                    background: `linear-gradient(135deg, ${cat.color}07, rgba(255,255,255,0.02))`,
+                    borderRadius: '0 0 16px 16px',
+                    border: `1px solid ${cat.color}20`,
+                    borderTop: 'none',
                     display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-                    gap: '10px 20px', animation: 'fadeSlideIn 0.2s ease',
+                    gap: '12px 20px', animation: 'fadeSlideIn 0.2s ease',
                 }}>
                     <DetailItem label="Alış Fiyatı" value={fmt(convert(asset.purchasePrice))} />
                     <DetailItem label="Güncel Fiyat" value={fmt(convert(currentPriceTRY))} accent />
@@ -262,7 +341,7 @@ function AssetRow({ asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expand
 
             <style>{`
                 @keyframes fadeSlideIn {
-                    from { opacity: 0; transform: translateY(-6px); }
+                    from { opacity: 0; transform: translateY(-8px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
             `}</style>
@@ -498,7 +577,7 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
             })()}
 
             {/* ── Asset Rows ── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {filteredAndSortedAssets.length === 0 ? (
                     <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                         {searchQuery ? `"${searchQuery}" ile eşleşen varlık bulunamadı.` : 'Bu kategoride varlık yok.'}
