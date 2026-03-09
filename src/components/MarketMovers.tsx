@@ -122,7 +122,49 @@ export default function MarketMovers({ assets }: { assets: Asset[] }) {
 
     const current = periodData[activePeriod];
 
-    if (fetchable.length === 0) return null;
+    if (fetchable.length === 0) {
+        return (
+            <div style={{
+                background: '#0d1117',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 16,
+                overflow: 'hidden',
+                fontFamily: "'Inter', sans-serif",
+                marginTop: 0,
+            }}>
+                <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '14px 20px',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                            width: 32, height: 32, borderRadius: 10,
+                            background: 'linear-gradient(135deg, #26a69a22, #26a69a44)',
+                            border: '1px solid #26a69a44',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 15,
+                        }}>⚡</div>
+                        <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', letterSpacing: -0.2 }}>
+                                Portföy Nabzı
+                            </div>
+                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 0.5 }}>
+                                EN ÇOK KAZANDIRANLAR & KAYB ETTİRENLER
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.8 }}>⚡</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>
+                        Piyasa verisi alınabilecek bir varlığınız yok.<br />
+                        Kripto, hisse senedi veya döviz eklediğinizde burada görünecek.
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={{
