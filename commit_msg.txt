@@ -1,5 +1,0 @@
-feat: premium dashboard empty state and updated landing page screenshots
-
-- Replace generic text on Dashboard empty state with a stunning glass-morphism card featuring Finoria AI mascot, gradient text, and feature previews
-- Update LandingPage.tsx text from "Tüm varlıklarınız tek panelde" to "Gerçek zamanlı varlık takibi"
-- Update screenshot-wealth.png and screenshot-events.png in public/ to map to new images uploaded by user

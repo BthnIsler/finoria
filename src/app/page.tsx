@@ -50,6 +50,19 @@ export default function Home() {
   const [showShare, setShowShare] = useState(false);
   const [activeView, setActiveView] = useState<'dashboard' | 'assets' | 'goals' | 'news' | 'converter' | 'chat'>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setSidebarCollapsed(true);
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
@@ -301,36 +314,130 @@ export default function Home() {
         <div className="ambient-blob blob-2" />
       </div>
 
-      {/* ── App Shell: Sidebar + Main ── */}
+      {/* ---- App Shell: Sidebar + Main ---- */}
       <div className="flex h-screen overflow-hidden relative z-10">
 
+        {/* Mobile backdrop */}
+        {isMobile && mobileSidebarOpen && (
+          <div
+            onClick={() => setMobileSidebarOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+              zIndex: 40, backdropFilter: 'blur(2px)',
+            }}
+          />
+        )}
+
         {/* Left Sidebar */}
-        <AppSidebar
-          totalWealth={totalWealth}
-          totalCost={totalCost}
-          totalPL={totalPL}
-          totalPLPct={totalPLPct}
-          assetCount={assets.length}
-          displayName={displayName}
-          lastUpdated={lastUpdated}
-          pricesLoading={pricesLoading}
-          activeView={activeView}
-          onViewChange={setActiveView}
-          onRefresh={refreshPrices}
-          onShare={() => setShowShare(true)}
-          onSignOut={signOut}
-          onReset={() => setShowResetModal(true)}
-          onAddAsset={() => setShowAddForm(true)}
-          currency={currency}
-          setCurrency={setCurrency}
-          theme={theme}
-          toggleTheme={toggleTheme}
-          sidebarCollapsed={sidebarCollapsed}
-          setSidebarCollapsed={setSidebarCollapsed}
-        />
+        <div style={isMobile ? {
+          position: 'fixed', top: 0, left: 0, height: '100vh',
+          transform: mobileSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+          zIndex: 50,
+          boxShadow: mobileSidebarOpen ? '4px 0 32px rgba(0,0,0,0.5)' : 'none',
+        } : { flexShrink: 0 }}>
+          <AppSidebar
+            totalWealth={totalWealth}
+            totalCost={totalCost}
+            totalPL={totalPL}
+            totalPLPct={totalPLPct}
+            assetCount={assets.length}
+            displayName={displayName}
+            lastUpdated={lastUpdated}
+            pricesLoading={pricesLoading}
+            activeView={activeView}
+            onViewChange={(v) => { setActiveView(v); if (isMobile) setMobileSidebarOpen(false); }}
+            onRefresh={refreshPrices}
+            onShare={() => setShowShare(true)}
+            onSignOut={signOut}
+            onReset={() => setShowResetModal(true)}
+            onAddAsset={() => { setShowAddForm(true); if (isMobile) setMobileSidebarOpen(false); }}
+            currency={currency}
+            setCurrency={setCurrency}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            sidebarCollapsed={isMobile ? false : sidebarCollapsed}
+            setSidebarCollapsed={setSidebarCollapsed}
+          />
+        </div>
 
         {/* Main scrollable content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-8 max-w-full">
+        <main style={isMobile ? { flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '56px 16px 80px', width: '100%' } : undefined}
+          className={isMobile ? '' : 'flex-1 overflow-y-auto overflow-x-hidden p-8 max-w-full'}
+        >
+
+          {/* Mobile top bar */}
+          {isMobile && (
+            <div style={{
+              position: 'fixed', top: 0, left: 0, right: 0, height: 52, zIndex: 30,
+              background: 'var(--bg-elevated)',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '0 12px',
+              backdropFilter: 'blur(16px)',
+            }}>
+              {/* Hamburger */}
+              <button
+                onClick={() => setMobileSidebarOpen(v => !v)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', gap: 0, flexDirection: 'column', flexShrink: 0 }}
+              >
+                {[0,1,2].map(i => (
+                  <span key={i} style={{ display: 'block', width: 16, height: 1.5, background: 'rgba(255,255,255,0.7)', borderRadius: 2, margin: '2px 0', transition: 'all 0.2s' }} />
+                ))}
+              </button>
+
+              {/* Logo */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <div style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/finoria-ai.png" alt="Finoria" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: -0.3, background: 'linear-gradient(135deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Finoria</span>
+              </div>
+
+              {/* Quick add */}
+              <button
+                onClick={() => setShowAddForm(true)}
+                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 20, color: '#fff', flexShrink: 0 }}
+              >
+                +
+              </button>
+            </div>
+          )}
+
+          {/* Mobile bottom nav */}
+          {isMobile && (
+            <div style={{
+              position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 30,
+              background: 'var(--bg-elevated)',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              display: 'flex', height: 60,
+              backdropFilter: 'blur(16px)',
+            }}>
+              {[
+                { id: 'dashboard' as const, icon: '◈', label: 'Özet' },
+                { id: 'assets' as const, icon: '⬡', label: 'Varlıklar' },
+                { id: 'converter' as const, icon: '⇌', label: 'Çevirici' },
+              ].map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveView(item.id)}
+                  style={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                    border: 'none', cursor: 'pointer', background: 'transparent',
+                    color: activeView === item.id ? '#a78bfa' : 'rgba(255,255,255,0.3)',
+                    transition: 'color 0.15s',
+                  }}
+                >
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>{item.icon}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>{item.label}</span>
+                  {activeView === item.id && (
+                    <span style={{ position: 'absolute', bottom: 0, width: 4, height: 4, borderRadius: '50%', background: '#a78bfa' }} />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* ── DASHBOARD VIEW ── */}
           {activeView === 'dashboard' && (
