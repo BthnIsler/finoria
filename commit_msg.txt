@@ -1,12 +1,5 @@
-feat: premium landing page redesign with mascot, screenshots, and new stats
+style(landing): update to richer, more vibrant navy background for trust
 
-- Complete rewrite of LandingPage.tsx with premium dark design
-- Replace diamond emoji with Finoria AI mascot in nav, auth card, and footer
-- Remove outdated stats (portfolio size, annual return)
-- Add new stats: 2500+ aktif kullanıcı, 12+ varlık kategorisi, 7/24 canlı fiyat, %100 ücretsiz
-- Add 4-feature screenshot showcase section with 3D hover perspective effect
-- Add animated AI chat preview section showing Finoria AI greeting card
-- Add sticky glass-morphism navigation with smooth scroll links
-- Replace old feature icon cards with detailed feature sections using real screenshots
-- Add pulsing slide indicator animation with color matching each slide
-- Update hero headline animation with colored accent transition
+- Changed base landing page background from almost black (#06070a) to a deep, professional navy blue (#0a1021)
+- Adjusted the navigation background and card backgrounds to match the richer, trust-inspiring palette
+- Adjusted AI Chat preview card gradient to match the new vibrant navy tones

@@ -109,7 +109,7 @@ export default function LandingPage({
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#06070a',
+      background: '#0a1021', // Lighter, richer deep blue for trust
       fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
       color: '#f8fafc',
       overflowX: 'hidden',
@@ -118,7 +118,7 @@ export default function LandingPage({
       {/* ===== NAV ===== */}
       <nav style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(6,7,10,0.85)',
+        background: 'rgba(10,16,33,0.85)', // Match background
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         padding: '0 24px',
@@ -246,12 +246,12 @@ export default function LandingPage({
 
           {/* Right — Auth card */}
           <div id="auth-section" style={{
-            background: 'rgba(20,23,29,0.9)',
+            background: 'rgba(16,24,48,0.7)', // Lighter card background
             backdropFilter: 'blur(24px)',
             border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: 24,
             padding: 32,
-            boxShadow: '0 24px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
           }}>
             {/* Card header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
@@ -415,7 +415,7 @@ export default function LandingPage({
                     }}
                     onMouseOut={e => {
                       const el = e.currentTarget as HTMLElement;
-                      el.style.boxShadow = `0 24px 64px rgba(0,0,0,0.5), 0 0 40px ${f.color}10`;
+                      el.style.boxShadow = `0 24px 64px rgba(0,0,0,0.3), 0 0 40px ${f.color}10`;
                       el.style.transform = 'perspective(1200px) rotateY(0deg)';
                     }}
                   >
@@ -460,11 +460,11 @@ export default function LandingPage({
           {/* AI Chat preview card */}
           <div style={{
             maxWidth: 360, margin: '0 auto',
-            background: 'linear-gradient(160deg, rgba(30,22,53,0.95), rgba(14,17,25,0.95))',
+            background: 'linear-gradient(160deg, rgba(30,35,70,0.95), rgba(15,20,40,0.95))', // Adjusted gradient
             border: '1px solid rgba(139,92,246,0.25)',
             borderRadius: 20,
             overflow: 'hidden',
-            boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 40px rgba(139,92,246,0.15)',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.4), 0 0 40px rgba(139,92,246,0.15)',
           }}>
             <div style={{ height: 3, background: 'linear-gradient(90deg, #ef4444, #f97316)' }} />
             <div style={{ padding: '20px 22px' }}>
