@@ -2,7 +2,7 @@
 <network-security-config>
     <!-- Only allow HTTPS traffic for production -->
     <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">finoria.vercel.app</domain>
+        <domain includeSubdomains="true">finoria-weld.vercel.app</domain>
         <domain includeSubdomains="true">finoria.tr</domain>
         <domain includeSubdomains="true">api.coingecko.com</domain>
         <domain includeSubdomains="true">api.exchangerate-api.com</domain>

@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   webDir: 'out',
   server: {
     // Use the live Vercel deployment so all Next.js API routes work
-    url: 'https://finoria.vercel.app',
+    url: 'https://finoria-weld.vercel.app',
     cleartext: false,
     // Allow navigation back to the app
     androidScheme: 'https',
