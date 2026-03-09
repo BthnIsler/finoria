@@ -231,12 +231,14 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                             {/* Avatar + robot icon */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                                 <div style={{
-                                    width: 38, height: 38, borderRadius: 12,
-                                    background: `linear-gradient(135deg, ${accentColor}30, ${accentColor}18)`,
+                                    width: 38, height: 38, borderRadius: '50%',
+                                    overflow: 'hidden',
                                     border: `1px solid ${accentColor}44`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: 18,
-                                }}>🤖</div>
+                                    flexShrink: 0,
+                                }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src="/finoria-ai.png" alt="Finoria AI" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
                                 <div>
                                     <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: -0.2 }}>Finoria AI</div>
                                     <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>Kişisel Finans Asistanın</div>
@@ -289,17 +291,18 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                     onClick={() => { setIsOpen(!isOpen); setShowBubble(false); }}
                     style={{
                         position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
-                        width: 56, height: 56, borderRadius: 16,
+                        width: isOpen ? 56 : 72, height: isOpen ? 56 : 72, borderRadius: isOpen ? 16 : '50%',
                         background: isOpen
                             ? 'linear-gradient(135deg, #374151, #1f2937)'
-                            : 'linear-gradient(135deg, #1e1b4b, #312e81)',
-                        border: isOpen ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(129,140,248,0.4)',
+                            : 'transparent',
+                        border: isOpen ? '1px solid rgba(255,255,255,0.1)' : 'none',
                         cursor: 'pointer',
                         boxShadow: isOpen
                             ? '0 4px 16px rgba(0,0,0,0.3)'
-                            : '0 8px 32px rgba(99,102,241,0.45), 0 0 0 1px rgba(129,140,248,0.2)',
+                            : '0 8px 32px rgba(99,102,241,0.4)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                        padding: 0, overflow: 'hidden',
                     }}
                 >
                     {isOpen ? (
@@ -307,32 +310,12 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                             <path d="M2 2L16 16M16 2L2 16" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round" />
                         </svg>
                     ) : (
-                        <svg width="30" height="30" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          {/* Robot Head Base */}
-                          <rect x="5" y="6" width="22" height="20" rx="6" fill="url(#head-grad)" stroke="url(#head-border)" strokeWidth="1.5"/>
-                          {/* Ears */}
-                          <path d="M27 13v6M5 13v6" stroke="#818cf8" strokeWidth="2" strokeLinecap="round"/>
-                          {/* Visor Screen */}
-                          <rect x="8" y="10" width="16" height="8" rx="2" fill="#0f172a" stroke="#3730A3" strokeWidth="1"/>
-                          {/* Finance Chart inside Visor */}
-                          <path d="M10 15L13 12L15 14L19 10L22 13" stroke="#22d3ee" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          {/* Glow around chart */}
-                          <path d="M10 15L13 12L15 14L19 10L22 13" stroke="#22d3ee" strokeWidth="3" strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round"/>
-                          {/* Glowing node point */}
-                          <circle cx="20" cy="9" r="2" fill="#a78bfa" />
-                          {/* Mouth/Speaker unit */}
-                          <path d="M12 22h8" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/>
-                          <defs>
-                            <linearGradient id="head-grad" x1="16" y1="6" x2="16" y2="26" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#312e81"/>
-                              <stop offset="1" stopColor="#1e1b4b"/>
-                            </linearGradient>
-                            <linearGradient id="head-border" x1="5" y1="6" x2="27" y2="26" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#6366f1"/>
-                              <stop offset="1" stopColor="#4338ca"/>
-                            </linearGradient>
-                          </defs>
-                        </svg>
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src="/finoria-ai.png"
+                            alt="Finoria AI"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                        />
                     )}
                 </button>
             )}
@@ -363,33 +346,20 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            {/* AI Mascot Avatar inside chat */}
+                            {/* Finoria AI Mascot Avatar */}
                             <div style={{
-                                width: 36, height: 36, borderRadius: 10,
-                                background: 'linear-gradient(135deg, #1e1b4b, #312e81)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                width: 42, height: 42, borderRadius: '50%',
+                                overflow: 'hidden',
                                 boxShadow: '0 4px 12px rgba(129,140,248,0.3)',
-                                border: '1px solid rgba(129,140,248,0.4)',
+                                border: '2px solid rgba(129,140,248,0.35)',
+                                flexShrink: 0,
                             }}>
-                                <svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <rect x="5" y="6" width="22" height="20" rx="6" fill="url(#head-grad)" stroke="url(#head-border)" strokeWidth="1.5"/>
-                                  <path d="M27 13v6M5 13v6" stroke="#818cf8" strokeWidth="2" strokeLinecap="round"/>
-                                  <rect x="8" y="10" width="16" height="8" rx="2" fill="#0f172a" stroke="#3730A3" strokeWidth="1"/>
-                                  <path d="M10 15L13 12L15 14L19 10L22 13" stroke="#22d3ee" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M10 15L13 12L15 14L19 10L22 13" stroke="#22d3ee" strokeWidth="3" strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <circle cx="20" cy="9" r="2" fill="#a78bfa" />
-                                  <path d="M12 22h8" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/>
-                                  <defs>
-                                    <linearGradient id="head-grad" x1="16" y1="6" x2="16" y2="26" gradientUnits="userSpaceOnUse">
-                                      <stop stopColor="#312e81"/>
-                                      <stop offset="1" stopColor="#1e1b4b"/>
-                                    </linearGradient>
-                                    <linearGradient id="head-border" x1="5" y1="6" x2="27" y2="26" gradientUnits="userSpaceOnUse">
-                                      <stop stopColor="#6366f1"/>
-                                      <stop offset="1" stopColor="#4338ca"/>
-                                    </linearGradient>
-                                  </defs>
-                                </svg>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src="/finoria-ai.png"
+                                    alt="Finoria AI"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
                             </div>
                             <div>
                                 <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, letterSpacing: -0.3, color: 'var(--text-primary)' }}>Finoria AI</h3>
