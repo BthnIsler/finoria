@@ -103,6 +103,28 @@ export default function WealthChart({ assets }: WealthChartProps) {
         );
     }
 
+    const total = data.reduce((s, d) => s + d.value, 0);
+
+    // Custom label renderer - external labels matching reference image 3
+    const renderLabel = ({ cx, cy, midAngle, outerRadius, percent, name, color }: any) => {
+        const RADIAN = Math.PI / 180;
+        const radius = outerRadius + 28;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+        if (percent < 0.04) return null; // skip tiny slices
+        return (
+            <text
+                x={x} y={y}
+                fill={color}
+                textAnchor={x > cx ? 'start' : 'end'}
+                dominantBaseline="central"
+                fontSize={10} fontWeight={700}
+            >
+                {name.split(' ')[0]} {(percent * 100).toFixed(0)}%
+            </text>
+        );
+    };
+
     return (
         <div className="glass-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -142,6 +164,8 @@ export default function WealthChart({ assets }: WealthChartProps) {
                             animationBegin={0} animationDuration={600}
                             onMouseEnter={(_, index) => setActiveIndex(index)}
                             onMouseLeave={() => setActiveIndex(null)}
+                            label={renderLabel}
+                            labelLine={{ stroke: 'rgba(255,255,255,0.12)', strokeWidth: 1 }}
                         >
                             {data.map((entry, i) => {
                                 const isHovered = activeIndex === i;
@@ -168,14 +192,28 @@ export default function WealthChart({ assets }: WealthChartProps) {
                 )}
             </div>
 
-            {/* Legend */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 8 }}>
-                {data.map((d) => (
-                    <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color }} />
-                        <span style={{ color: 'var(--text-secondary)' }}>{d.icon} {d.name}</span>
-                    </div>
-                ))}
+            {/* Category rows table - matching reference image 3 */}
+            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {data.map(d => {
+                    const pct = total > 0 ? (d.value / total) * 100 : 0;
+                    return (
+                        <div key={d.name} style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '8px 12px', borderRadius: 10,
+                            background: 'rgba(255,255,255,0.025)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                        }}>
+                            <div style={{
+                                width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                                background: `${d.color}22`, border: `1px solid ${d.color}44`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 14,
+                            }}>{d.icon || '●'}</div>
+                            <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>{d.name}</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: d.color }}>{pct.toFixed(1)}%</span>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

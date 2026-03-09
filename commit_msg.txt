@@ -1,17 +1,16 @@
-fix(mobile): replace all ResponsiveContainer with explicit pixel dimensions
+feat(mobile): premium UI redesign matching reference images
 
-Charts not rendering in Capacitor Android WebView because ResizeObserver
-fires with width=0. Fix: replaced every ResponsiveContainer usage in
-WealthChart, WealthHistoryChart, and WhatIfView with a useRef + useLayoutEffect
-pattern that measures real offsetWidth. Three setTimeout fallback polls
-(100ms, 400ms, 800ms or 900ms) ensure the measurement fires even if the
-WebView layout completes asynchronously. Charts now only render once
-chartWidth > 0, preventing zero-size SVG rendering.
+Bottom nav: 5 tabs (Anasayfa/Portföy/Asistan/Transfer/Profil) with SVG icons.
+Frosted glass dark background, purple active top-pill indicator, raised center
+Asistan button with purple glow above the bar. safe-area-inset-bottom padding.
 
-feat(mobile): slide carousel now shows real app screenshot images
-- Added /slide-wealth.png, /slide-chart.png, /slide-ai.png to public/
-- Each slide now renders its matching image with rounded corners, drop shadow
-  accent glow, and a gradient bottom overlay
-- Slide 3 updated from 'Takvim' to 'Portfoy Dagilimi' to match the pie chart image
+Top bar: Clean white bold Finoria title + avatar logo border, purple + button,
+profile initial avatar with gradient background. Hamburger removed.
 
-feat(web): sidebar always starts closed on mobile (mobileSidebarOpen=false confirmed)
+AI Chat: Replaced image avatar with glowing purple robot SVG matching
+reference image 2. robotGlow animation pulses outer glow every 2s. Added
+dedicated full-screen Asistan tab that renders AiPortfolioChat inline.
+
+WealthChart: External % labels on donut segments via custom renderLabel.
+Added labelLine connectors. Replaced legend with premium category rows table
+(colored icon + name + % column) matching bottom table in reference image 3.

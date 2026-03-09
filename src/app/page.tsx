@@ -413,78 +413,156 @@ export default function Home() {
           className={isMobile ? '' : 'flex-1 overflow-y-auto overflow-x-hidden p-8 max-w-full'}
         >
 
-          {/* Mobile top bar */}
+          {/* Mobile top bar - premium reference style */}
           {isMobile && (
             <div style={{
               position: 'fixed', top: 0, left: 0, right: 0, zIndex: 30,
-              background: 'var(--bg-elevated)',
+              background: 'rgba(9,16,33,0.92)',
               borderBottom: '1px solid rgba(255,255,255,0.06)',
               display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
               paddingTop: 'env(safe-area-inset-top)',
-              paddingLeft: 12, paddingRight: 12, paddingBottom: 8,
+              paddingLeft: 20, paddingRight: 20, paddingBottom: 12,
               minHeight: 'calc(52px + env(safe-area-inset-top))',
-              backdropFilter: 'blur(16px)',
+              backdropFilter: 'blur(20px)',
             }}>
-              {/* Hamburger */}
-              <button
-                onClick={() => setMobileSidebarOpen(v => !v)}
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', gap: 0, flexDirection: 'column', flexShrink: 0 }}
-              >
-                {[0,1,2].map(i => (
-                  <span key={i} style={{ display: 'block', width: 16, height: 1.5, background: 'rgba(255,255,255,0.7)', borderRadius: 2, margin: '2px 0', transition: 'all 0.2s' }} />
-                ))}
-              </button>
-
-              {/* Logo */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <div style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+              {/* Logo + brand */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid rgba(139,92,246,0.5)' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/finoria-ai.png" alt="Finoria" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
-                <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: -0.3, background: 'linear-gradient(135deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Finoria</span>
+                <span style={{ fontSize: 19, fontWeight: 900, letterSpacing: -0.4, color: '#fff' }}>Finoria</span>
               </div>
 
-              {/* Quick add */}
-              <button
-                onClick={() => setShowAddForm(true)}
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 20, color: '#fff', flexShrink: 0 }}
-              >
-                +
-              </button>
+              {/* Right side: add + profile */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  style={{
+                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                    border: 'none', borderRadius: 10, width: 32, height: 32,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', fontSize: 18, color: '#fff', fontWeight: 300, flexShrink: 0,
+                    boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
+                  }}
+                >+</button>
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', fontSize: 14, color: '#fff', fontWeight: 700,
+                  border: '2px solid rgba(139,92,246,0.4)',
+                  boxShadow: '0 0 12px rgba(139,92,246,0.3)',
+                }}>
+                  {displayName ? displayName.charAt(0).toUpperCase() : '👤'}
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Mobile bottom nav */}
+          {/* Mobile bottom nav - premium style */}
           {isMobile && (
             <div style={{
               position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 30,
-              background: 'var(--bg-elevated)',
-              borderTop: '1px solid rgba(255,255,255,0.06)',
-              display: 'flex', height: 60,
-              backdropFilter: 'blur(16px)',
+              background: 'rgba(9,16,33,0.95)',
+              borderTop: '1px solid rgba(255,255,255,0.07)',
+              display: 'flex',
+              paddingBottom: 'env(safe-area-inset-bottom)',
+              backdropFilter: 'blur(24px)',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.4)',
             }}>
-              {[
-                { id: 'dashboard' as const, icon: '◈', label: 'Özet' },
-                { id: 'assets' as const, icon: '⬡', label: 'Varlıklar' },
-                { id: 'converter' as const, icon: '⇌', label: 'Çevirici' },
-              ].map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveView(item.id)}
-                  style={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-                    border: 'none', cursor: 'pointer', background: 'transparent',
-                    color: activeView === item.id ? '#a78bfa' : 'rgba(255,255,255,0.3)',
-                    transition: 'color 0.15s',
-                  }}
-                >
-                  <span style={{ fontSize: 18, lineHeight: 1 }}>{item.icon}</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>{item.label}</span>
-                  {activeView === item.id && (
-                    <span style={{ position: 'absolute', bottom: 0, width: 4, height: 4, borderRadius: '50%', background: '#a78bfa' }} />
-                  )}
-                </button>
-              ))}
+              {([
+                {
+                  id: 'dashboard' as const, label: 'Anasayfa',
+                  icon: (active: boolean) => (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <path d="M3 9.5L12 3L21 9.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9.5Z"
+                        fill={active ? '#8b5cf6' : 'none'} stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8" strokeLinejoin="round" />
+                    </svg>
+                  )
+                },
+                {
+                  id: 'assets' as const, label: 'Portföy',
+                  icon: (active: boolean) => (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="9" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8" />
+                      <path d="M12 12L12 7M12 12L16 14" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8" strokeLinecap="round" />
+                      <circle cx="12" cy="12" r="1.5" fill={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} />
+                    </svg>
+                  )
+                },
+                {
+                  id: 'chat' as const, label: 'Asistan',
+                  icon: (active: boolean) => (
+                    <div style={{
+                      width: 44, height: 44, borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: active ? '0 0 20px rgba(139,92,246,0.7), 0 0 40px rgba(139,92,246,0.3)' : '0 4px 16px rgba(99,102,241,0.5)',
+                      marginTop: -20, border: '3px solid rgba(9,16,33,0.95)',
+                    }}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="10" r="3" fill="white" />
+                        <path d="M6 20C6 17 8.686 15 12 15C15.314 15 18 17 18 20" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                        <circle cx="12" cy="10" r="7" stroke="white" strokeWidth="1.5" />
+                      </svg>
+                    </div>
+                  )
+                },
+                {
+                  id: 'converter' as const, label: 'Transfer',
+                  icon: (active: boolean) => (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <path d="M7 16L3 12M3 12L7 8M3 12H21" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M17 8L21 12M21 12L17 16" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )
+                },
+                {
+                  id: 'goals' as const, label: 'Profil',
+                  icon: (active: boolean) => (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="8" r="3.5" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8" />
+                      <path d="M4 20C4 16.686 7.582 14 12 14C16.418 14 20 16.686 20 20" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  )
+                },
+              ] as const).map(item => {
+                const isActive = activeView === item.id;
+                const isCenter = item.id === 'chat';
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveView(item.id)}
+                    style={{
+                      flex: 1, display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: isCenter ? 'flex-start' : 'center',
+                      gap: isCenter ? 2 : 4,
+                      border: 'none', cursor: 'pointer', background: 'transparent',
+                      padding: isCenter ? '0 0 4px' : '10px 0 10px',
+                      position: 'relative',
+                    }}
+                  >
+                    {/* Active indicator */}
+                    {isActive && !isCenter && (
+                      <span style={{
+                        position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                        width: 20, height: 3, borderRadius: 3,
+                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        boxShadow: '0 0 8px rgba(139,92,246,0.8)',
+                      }} />
+                    )}
+                    {item.icon(isActive)}
+                    {!isCenter && (
+                      <span style={{
+                        fontSize: 10, fontWeight: isActive ? 700 : 500,
+                        color: isActive ? '#a78bfa' : 'rgba(255,255,255,0.3)',
+                        transition: 'color 0.15s', letterSpacing: 0.2,
+                      }}>{item.label}</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -599,6 +677,27 @@ export default function Home() {
 
           {/* ── CONVERTER VIEW ── */}
           {activeView === 'converter' && <ConverterView />}
+
+          {/* ── CHAT VIEW (mobile inline) ── */}
+          {activeView === 'chat' && (
+            <div style={{ minHeight: 'calc(100vh - 160px)', display: 'flex', flexDirection: 'column' }}>
+              {/* Header */}
+              <div style={{ marginBottom: 8, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <h1 style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: -0.8, margin: '0 0 2px' }}>Asistanım</h1>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', margin: 0 }}>Finoria AI · Her zaman yanında</p>
+              </div>
+              <AiPortfolioChat
+                assets={assets}
+                totalWealth={totalWealth}
+                totalPL={totalPL}
+                totalPLPct={totalPLPct}
+                dailyPL={dailyPL}
+                dailyPLPct={dailyPLPct}
+                fmt={fmt}
+                inline={true}
+              />
+            </div>
+          )}
 
         </main>
       </div>

@@ -232,14 +232,23 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                         <div style={{ padding: '16px 18px 18px' }}>
                             {/* Avatar + robot icon */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                                {/* Glowing robot avatar */}
                                 <div style={{
                                     width: 38, height: 38, borderRadius: '50%',
-                                    overflow: 'hidden',
-                                    border: `1px solid ${accentColor}44`,
+                                    background: 'radial-gradient(circle at 35% 35%, #7c3aed, #4c1d95)',
+                                    border: `1px solid rgba(167,139,250,0.5)`,
+                                    boxShadow: '0 0 16px rgba(139,92,246,0.5)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     flexShrink: 0,
                                 }}>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src="/finoria-ai.png" alt="Finoria AI" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                                        <rect x="8" y="10" width="16" height="13" rx="3" fill="white" opacity="0.9"/>
+                                        <circle cx="12" cy="15" r="2" fill="#6366f1"/>
+                                        <circle cx="20" cy="15" r="2" fill="#6366f1"/>
+                                        <rect x="12" y="19" width="8" height="1.5" rx="1" fill="#6366f1" opacity="0.8"/>
+                                        <line x1="16" y1="10" x2="16" y2="6" stroke="white" strokeWidth="1.5" opacity="0.8"/>
+                                        <circle cx="16" cy="5" r="1.5" fill="white" opacity="0.9"/>
+                                    </svg>
                                 </div>
                                 <div>
                                     <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: -0.2 }}>Finoria AI</div>
@@ -349,20 +358,30 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            {/* Finoria AI Mascot Avatar */}
+                            {/* Glowing purple robot avatar - matching reference image */}
                             <div style={{
-                                width: 42, height: 42, borderRadius: '50%',
-                                overflow: 'hidden',
-                                boxShadow: '0 4px 12px rgba(129,140,248,0.3)',
-                                border: '2px solid rgba(129,140,248,0.35)',
-                                flexShrink: 0,
+                                width: 48, height: 48, borderRadius: '50%',
+                                background: 'radial-gradient(circle at 35% 35%, #7c3aed, #4c1d95)',
+                                border: '2px solid rgba(167,139,250,0.5)',
+                                boxShadow: '0 0 20px rgba(139,92,246,0.6), 0 0 40px rgba(139,92,246,0.2)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                flexShrink: 0, animation: 'robotGlow 2s ease-in-out infinite',
                             }}>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src="/finoria-ai.png"
-                                    alt="Finoria AI"
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
+                                <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+                                    {/* Robot head */}
+                                    <rect x="8" y="10" width="16" height="13" rx="3" fill="white" opacity="0.9"/>
+                                    {/* Eyes */}
+                                    <circle cx="12" cy="15" r="2" fill="#6366f1"/>
+                                    <circle cx="20" cy="15" r="2" fill="#6366f1"/>
+                                    {/* Mouth */}
+                                    <rect x="12" y="19" width="8" height="1.5" rx="1" fill="#6366f1" opacity="0.8"/>
+                                    {/* Antenna */}
+                                    <line x1="16" y1="10" x2="16" y2="6" stroke="white" strokeWidth="1.5" opacity="0.8"/>
+                                    <circle cx="16" cy="5" r="1.5" fill="white" opacity="0.9"/>
+                                    {/* Ears/connectors */}
+                                    <rect x="5" y="13" width="3" height="5" rx="1" fill="white" opacity="0.7"/>
+                                    <rect x="24" y="13" width="3" height="5" rx="1" fill="white" opacity="0.7"/>
+                                </svg>
                             </div>
                             <div>
                                 <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, letterSpacing: -0.3, color: 'var(--text-primary)' }}>Finoria AI</h3>
@@ -481,9 +500,9 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                     50% { transform: translateY(-8px) rotate(0deg); }
                     75% { transform: translateY(-4px) rotate(2deg); }
                 }
-                @keyframes mascotGlow {
-                    0%, 100% { box-shadow: 0 8px 32px rgba(99,102,241,0.35); }
-                    50% { box-shadow: 0 12px 40px rgba(99,102,241,0.65), 0 0 20px rgba(139,92,246,0.4); }
+                @keyframes robotGlow {
+                    0%, 100% { box-shadow: 0 0 20px rgba(139,92,246,0.6), 0 0 40px rgba(139,92,246,0.2); }
+                    50% { box-shadow: 0 0 30px rgba(139,92,246,0.9), 0 0 60px rgba(139,92,246,0.4), 0 0 80px rgba(99,102,241,0.2); }
                 }
                 .typing-dot {
                     color: var(--text-muted);
