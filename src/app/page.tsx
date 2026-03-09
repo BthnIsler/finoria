@@ -409,18 +409,20 @@ export default function Home() {
         </div>
 
         {/* Main scrollable content */}
-        <main style={isMobile ? { flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '76px 16px 90px', width: '100%' } : undefined}
+        <main style={isMobile ? { flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 'calc(52px + env(safe-area-inset-top) + 16px) 16px calc(90px + env(safe-area-inset-bottom)) 16px', width: '100%' } : undefined}
           className={isMobile ? '' : 'flex-1 overflow-y-auto overflow-x-hidden p-8 max-w-full'}
         >
 
           {/* Mobile top bar */}
           {isMobile && (
             <div style={{
-              position: 'fixed', top: 0, left: 0, right: 0, height: 52, zIndex: 30,
+              position: 'fixed', top: 0, left: 0, right: 0, zIndex: 30,
               background: 'var(--bg-elevated)',
               borderBottom: '1px solid rgba(255,255,255,0.06)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '0 12px',
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+              paddingTop: 'env(safe-area-inset-top)',
+              paddingLeft: 12, paddingRight: 12, paddingBottom: 8,
+              minHeight: 'calc(52px + env(safe-area-inset-top))',
               backdropFilter: 'blur(16px)',
             }}>
               {/* Hamburger */}

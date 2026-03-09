@@ -1,11 +1,25 @@
-feat: premium UI overhaul - Assets, Converter, Dashboard
+feat: complete web redesign and mobile fixes
 
-- AssetsTabsWidget: Completely redesigned AssetRow as premium floating cards
-  with category-colored gradient backgrounds, glowing borders on hover,
-  and a dedicated P/L bottom bar showing the current period label (Gunluk KZ etc.)
-- ConverterView: Replaced broken iframe with a full in-page live rate converter.
-  Fetches CoinGecko + ExchangeRate APIs, features searchable asset selector
-  (crypto/forex/metals), quick amount shortcuts, swap button, and popular pairs grid
-- DashboardView: Fixed pie chart centering with flex layout + added Portfolyo Haberleri
-  section with NewsSection and GlobalHeadlines side-by-side
-- WealthChart: Added flex column layout so pie chart centers vertically in card
+Web:
+- AssetsTabsWidget: Full brokerage-style table redesign
+  - Underline tab navigation with category counts
+  - Summary band (Total Value / Cost / P&L / Count cards)
+  - Column table header (Varlık / Birim Fiyat / Değer / Period K-Z / İşlem)
+  - Compact action buttons appearing only on row hover
+  - Live dot indicator for assets with real-time prices
+  - Detail panel with category gradient background on expand
+- DashboardView: Removed GlobalHeadlines section per request
+- DashboardView: Changed chart card containers from minHeight to explicit
+  height:420 so Recharts ResponsiveContainer renders correctly in WebView
+
+Mobile (Capacitor):
+- LandingPage: Added completely separate mobile-first view (<768px)
+  - Auto-play slide carousel with accent color backgrounds
+  - Animated slide dots, 3 mini stats, hero text with gradient last word
+  - Two prominent CTA buttons: purple primary 'Giris Yap', outline 'Kayit Ol'
+  - Back-navigable auth form with large inputs and submit button
+  - env(safe-area-inset-top) + env(safe-area-inset-bottom) applied
+- page.tsx mobile topbar: Added paddingTop env(safe-area-inset-top) +
+  alignItems flex-end so topbar clears Android status bar correctly
+- page.tsx main content: padding-top now uses calc(52px + safe-area-inset-top)
+  to prevent content from being hidden behind the topbar on notched devices

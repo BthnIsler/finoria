@@ -98,6 +98,15 @@ export default function LandingPage({
 }: LandingPageProps) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [visibleFeature, setVisibleFeature] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showAuthForm, setShowAuthForm] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     const t = setInterval(() => setActiveSlide((s) => (s + 1) % SLIDES.length), 4000);
@@ -106,6 +115,242 @@ export default function LandingPage({
 
   const slide = SLIDES[activeSlide];
 
+  // ═══════════════════════════════════════════════════
+  // MOBILE VIEW
+  // ═══════════════════════════════════════════════════
+  if (isMobile) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#09101f',
+        fontFamily: "'Inter', system-ui, sans-serif",
+        color: '#fff', overflow: 'hidden',
+        display: 'flex', flexDirection: 'column',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+
+        {/* ── Slide section ── */}
+        {!showAuthForm ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Background blobs */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute', top: '-15%', left: '-20%',
+                width: 400, height: 400, borderRadius: '50%',
+                background: `radial-gradient(circle, ${slide.accent}22 0%, transparent 70%)`,
+                filter: 'blur(50px)', transition: 'all 0.8s',
+              }} />
+              <div style={{
+                position: 'absolute', bottom: 0, right: '-20%',
+                width: 300, height: 300, borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
+                filter: 'blur(40px)',
+              }} />
+            </div>
+
+            {/* Top logo */}
+            <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid rgba(139,92,246,0.4)' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/finoria-ai.png" alt="Finoria" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.5, background: 'linear-gradient(135deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Finoria
+              </span>
+            </div>
+
+            {/* Slides content */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 28px 20px', position: 'relative' }}>
+              {/* Badge */}
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 20,
+                padding: '6px 14px', borderRadius: 100, alignSelf: 'flex-start',
+                background: `${slide.accent}20`, border: `1px solid ${slide.accent}35`,
+                fontSize: 12, fontWeight: 700, color: slide.accent,
+                transition: 'all 0.5s',
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: slide.accent }} />
+                {slide.badge}
+              </div>
+
+              {/* Headline */}
+              <h1 style={{
+                fontSize: 36, fontWeight: 900, letterSpacing: -1.2, lineHeight: 1.1,
+                color: '#fff', marginBottom: 16, transition: 'all 0.4s',
+              }}>
+                {slide.title.split(' ').map((word, i, arr) =>
+                  i === arr.length - 1 ? (
+                    <span key={i} style={{ background: 'linear-gradient(135deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}> {word}</span>
+                  ) : <span key={i}> {word}</span>
+                )}
+              </h1>
+
+              <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', lineHeight: 1.65, marginBottom: 32, transition: 'all 0.4s' }}>
+                {slide.sub}
+              </p>
+
+              {/* Stats mini row */}
+              <div style={{ display: 'flex', gap: 20, marginBottom: 8 }}>
+                {STATS.slice(0, 3).map(s => (
+                  <div key={s.label} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>{s.value}</span>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 0.3 }}>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Slide dots */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, padding: '0 0 24px' }}>
+              {SLIDES.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveSlide(i)}
+                  style={{
+                    width: i === activeSlide ? 24 : 7, height: 7,
+                    borderRadius: 100, border: 'none', cursor: 'pointer',
+                    background: i === activeSlide ? slide.accent : 'rgba(255,255,255,0.2)',
+                    transition: 'all 0.3s', padding: 0,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Two big CTA buttons */}
+            <div style={{ padding: '0 20px 32px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button
+                onClick={() => { setIsRegisterMode(false); setShowAuthForm(true); }}
+                style={{
+                  width: '100%', padding: '17px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', fontSize: 16, fontWeight: 800, letterSpacing: 0.2,
+                  boxShadow: '0 8px 32px rgba(99,102,241,0.45)',
+                }}
+              >
+                → Giriş Yap
+              </button>
+              <button
+                onClick={() => { setIsRegisterMode(true); setShowAuthForm(true); }}
+                style={{
+                  width: '100%', padding: '17px', borderRadius: 16, cursor: 'pointer',
+                  background: 'transparent',
+                  border: '1.5px solid rgba(167,139,250,0.4)',
+                  color: '#a78bfa', fontSize: 16, fontWeight: 800, letterSpacing: 0.2,
+                }}
+              >
+                🚀 Ücretsiz Kayıt Ol
+              </button>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', textAlign: 'center', margin: 0 }}>
+                Ücretsiz · Reklam yok · Veri satılmaz
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* ── Auth Form (mobile) ── */
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px 20px', overflowY: 'auto' }}>
+            {/* Back button */}
+            <button
+              onClick={() => setShowAuthForm(false)}
+              style={{
+                alignSelf: 'flex-start', marginBottom: 24,
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 10, padding: '8px 14px', color: 'rgba(255,255,255,0.6)',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              ← Geri
+            </button>
+
+            {/* Logo */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(139,92,246,0.4)' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/finoria-ai.png" alt="Finoria" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 900, background: 'linear-gradient(135deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Finoria</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Kişisel Finansal Asistanın</div>
+              </div>
+            </div>
+
+            {/* Mode toggle */}
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 4, marginBottom: 24, border: '1px solid rgba(255,255,255,0.07)' }}>
+              {['Giriş Yap', 'Kayıt Ol'].map((label, i) => (
+                <button
+                  key={label}
+                  onClick={() => setIsRegisterMode(i === 1)}
+                  style={{
+                    flex: 1, padding: '13px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                    background: (i === 0 ? !isRegisterMode : isRegisterMode)
+                      ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                    color: (i === 0 ? !isRegisterMode : isRegisterMode) ? '#fff' : 'rgba(255,255,255,0.3)',
+                    fontSize: 15, fontWeight: 800, transition: 'all 0.2s',
+                    boxShadow: (i === 0 ? !isRegisterMode : isRegisterMode) ? '0 2px 12px rgba(99,102,241,0.4)' : 'none',
+                  }}
+                >{label}</button>
+              ))}
+            </div>
+
+            {/* Form */}
+            <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[
+                { placeholder: 'Kullanıcı adı', icon: '👤', type: 'text', value: username, onChange: setUsername },
+                { placeholder: 'Şifre', icon: '🔒', type: 'password', value: password, onChange: setPassword },
+              ].map(f => (
+                <div key={f.placeholder} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 14, padding: '0 16px',
+                }}>
+                  <span style={{ fontSize: 16, opacity: 0.5 }}>{f.icon}</span>
+                  <input
+                    type={f.type} placeholder={f.placeholder}
+                    value={f.value} onChange={e => f.onChange(e.target.value)}
+                    style={{
+                      flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                      color: '#fff', fontSize: 15, padding: '16px 0', fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+              ))}
+
+              {loginError && (
+                <div style={{
+                  fontSize: 13, color: '#ef4444', background: 'rgba(239,68,68,0.1)',
+                  border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '12px 16px',
+                }}>
+                  {loginError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loginLoading || !username.trim() || !password.trim()}
+                style={{
+                  width: '100%', padding: '17px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', fontSize: 16, fontWeight: 800, marginTop: 4,
+                  boxShadow: '0 4px 24px rgba(99,102,241,0.45)',
+                  opacity: loginLoading || !username.trim() || !password.trim() ? 0.5 : 1,
+                }}
+              >
+                {loginLoading ? 'Lütfen bekleyin...' : isRegisterMode ? '🚀 Hesap Oluştur' : '→ Giriş Yap'}
+              </button>
+            </form>
+
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: 20, lineHeight: 1.6 }}>
+              🔒 Tamamen ücretsiz · Verileriniz güvende
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════
+  // DESKTOP VIEW (unchanged)
+  // ═══════════════════════════════════════════════════
   return (
     <div style={{
       minHeight: '100vh',

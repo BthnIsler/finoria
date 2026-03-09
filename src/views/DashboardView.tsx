@@ -7,7 +7,6 @@ import WealthChart from '@/components/WealthChart';
 import WealthHistoryChart from '@/components/WealthHistoryChart';
 import MarketMovers from '@/components/MarketMovers';
 import UpcomingEvents from '@/components/UpcomingEvents';
-import GlobalHeadlines from '@/components/GlobalHeadlines';
 import NewsSection from '@/components/NewsSection';
 
 import { WealthSnapshot } from '@/lib/storage';
@@ -41,7 +40,7 @@ export default function DashboardView({ assets, totalWealth, totalCost, history,
 
             {/* 2. Charts Row — History chart left, Pie chart right and perfectly centered */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-                <div className="bg-elevated rounded-2xl border border-light overflow-hidden" style={{ minHeight: 380 }}>
+                <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', height: 420 }}>
                     <WealthHistoryChart
                         history={history}
                         currentTotal={totalWealth}
@@ -49,8 +48,8 @@ export default function DashboardView({ assets, totalWealth, totalCost, history,
                         totalCost={totalCost}
                     />
                 </div>
-                {/* Pie chart: fixed height container so the chart is perfectly centered */}
-                <div className="bg-elevated rounded-2xl border border-light overflow-hidden" style={{ minHeight: 380, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+                {/* Pie chart: explicit height so ResponsiveContainer works in Capacitor WebView */}
+                <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', height: 420 }}>
                     <WealthChart assets={assets} />
                 </div>
             </div>
@@ -73,17 +72,7 @@ export default function DashboardView({ assets, totalWealth, totalCost, history,
                             varlıklarınızla ilgili haberler
                         </span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <NewsSection assets={assets} />
-                        <GlobalHeadlines />
-                    </div>
-                </div>
-            )}
-
-            {/* 5. Global headlines if no assets yet */}
-            {assets.length === 0 && (
-                <div className="mb-10">
-                    <GlobalHeadlines />
+                    <NewsSection assets={assets} />
                 </div>
             )}
         </div>
