@@ -20,6 +20,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useTheme, useCurrency, useWidgetLayout } from '@/lib/contexts';
 import AuthModal from '@/components/AuthModal';
 import ResetModal from '@/components/ResetModal';
+import { fetchAllPrices } from '@/lib/prices';
 
 // Views
 import DashboardView from '@/views/DashboardView';
@@ -158,24 +159,70 @@ export default function Home() {
   }, [assets.length, user]);
 
   const refreshPrices = useCallback(async () => {
-    if (assets.length === 0) return;
+    if (assets.length === 0 || !user) return;
     setPricesLoading(true);
     try {
-      // In minimal mode or simply without external price fetcher, we refresh from DB
-      if (user) {
-        const dbAssets = await getAssets(user.id);
-        const updated = dbAssets;
+      // 1. Fetch latest state from DB in case another device added an asset
+      const dbAssets = await getAssets(user.id);
+      
+      // 2. Prepare API parameters for external price fetching
+      const cryptoIds: string[] = [];
+      const forexCurrencies: string[] = [];
+      const stockSymbols: string[] = [];
+      const metalIds: string[] = [];
+      let hasGold = false;
+
+      dbAssets.forEach(a => {
+        if (!a.apiId) return;
+        if (a.category === 'crypto') cryptoIds.push(a.apiId);
+        else if (a.category === 'forex') forexCurrencies.push(a.apiId);
+        else if (a.category === 'stock') stockSymbols.push(a.apiId);
+        else if (a.category === 'gold') hasGold = true;
+        else if (a.category === 'precious_metals') metalIds.push(a.apiId.replace('metal_', ''));
+      });
+
+      // 3. Fetch real prices from external networks (cache handles rate limits)
+      const priceMap = await fetchAllPrices({
+        cryptoIds: [...new Set(cryptoIds)],
+        forexCurrencies: [...new Set(forexCurrencies)],
+        stockSymbols: [...new Set(stockSymbols)],
+        metalIds: [...new Set(metalIds)],
+        hasGold,
+      });
+
+      // 4. Map new prices to our assets
+      let hasUpdates = false;
+      const updated = dbAssets.map(a => {
+        // If it's a manual asset or has no apiId, trust the DB price
+        if (!a.apiId || a.manualCurrentPrice) return a;
         
-        // Still save snapshot history
-        await saveWealthSnapshot(user.id, updated);
-        saveAssetPriceSnapshot(updated); 
-        setHistory(await getWealthHistory(user.id));
-        setAssets(updated);
+        let newPrice = priceMap[a.apiId];
+        // special hack for gold
+        if (a.category === 'gold' && priceMap['gold_gram']) newPrice = priceMap['gold_gram'];
+        
+        if (newPrice && typeof newPrice === 'number' && newPrice !== a.currentPrice) {
+          hasUpdates = true;
+          return { ...a, currentPrice: newPrice };
+        }
+        return a;
+      });
+
+      // 5. Save the updated live prices back to DB so history tracks correctly
+      if (hasUpdates) {
+        await saveMultipleAssetPrices(user.id, updated);
       }
+      
+      // 6. Save historical snapshot and update UI state
+      await saveWealthSnapshot(user.id, updated);
+      saveAssetPriceSnapshot(updated); 
+      setHistory(await getWealthHistory(user.id));
+      setAssets(updated);
       setLastUpdated(new Date().toLocaleTimeString('tr-TR'));
-    } catch (err) { console.error('Fiyat güncelleme hatası:', err); }
+    } catch (err) { 
+      console.error('Fiyat güncelleme hatası:', err); 
+    }
     finally { setPricesLoading(false); }
-  }, [assets, user]);
+  }, [assets.length, user]);
 
   useEffect(() => {
     if (assets.length === 0) return;

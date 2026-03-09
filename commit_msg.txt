@@ -1,0 +1,5 @@
+fix(db): add robust localStorage fallback and restore real-time API prices
+
+- Rewrote AuthContext to fully support local registration/login and dual mode auth
+- Rewrote db.ts to have a 100% localStorage fallback for assets when Supabase URL is dummy
+- Fixed page.tsx refreshPrices that wasn't actually loading real prices; Now dynamically maps and fetches live CoinGecko/Forex/Yahoo Finance data through our lib/prices.ts every 30 seconds.
