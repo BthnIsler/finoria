@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Asset, getCategoryMeta } from '@/lib/types';
-import WidgetWrapper from '@/components/WidgetWrapper';
 
 interface NewsArticle {
     title: string;
@@ -15,373 +14,338 @@ interface NewsSectionProps {
     assets: Asset[];
 }
 
-type NewsTab = 'market' | 'portfolio' | 'asset';
-type TimeFilter = '1d' | '1w' | '1m' | 'all';
-
-const TIME_FILTERS: { key: TimeFilter; label: string }[] = [
-    { key: '1d', label: '1 Gün' },
-    { key: '1w', label: '1 Hafta' },
-    { key: '1m', label: '1 Ay' },
-    { key: 'all', label: 'Tümü' },
-];
-
 const formatDate = (dateStr: string) => {
     try {
         const date = new Date(dateStr);
         const now = new Date();
         const diffH = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
         if (diffH < 1) return 'Az önce';
-        if (diffH < 24) return `${diffH} saat önce`;
+        if (diffH < 24) return `${diffH}s`;
         const diffD = Math.floor(diffH / 24);
-        if (diffD < 7) return `${diffD} gün önce`;
+        if (diffD < 7) return `${diffD}g`;
         return date.toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' });
     } catch { return ''; }
 };
 
-function ArticleList({ articles, loading }: { articles: NewsArticle[]; loading: boolean }) {
-    if (loading) return (
-        <div style={{ padding: '24px', textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Haberler yükleniyor...</p>
-        </div>
-    );
-    if (articles.length === 0) return (
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Haber bulunamadı.</p>
-        </div>
-    );
+// Skeleton loader card
+function SkeletonCard() {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {articles.slice(0, 10).map((article, i) => (
-                <a
-                    key={i}
-                    href={article.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        gap: 12,
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        textDecoration: 'none',
-                        transition: 'background 0.15s',
-                    }}
-                    onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-elevated)')}
-                    onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                    <div style={{ minWidth: 0 }}>
-                        <p style={{
-                            fontSize: 13, fontWeight: 500, lineHeight: 1.5,
-                            color: 'var(--text-primary)',
-                            display: '-webkit-box', WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                        }}>
-                            {article.title}
-                        </p>
-                        <div style={{ marginTop: 4, display: 'flex', gap: 8, fontSize: 11, color: 'var(--text-muted)' }}>
-                            {article.source && (
-                                <>
-                                    <span style={{ color: 'var(--accent-purple)', fontWeight: 500 }}>{article.source}</span>
-                                    <span>·</span>
-                                </>
-                            )}
-                            <span>{formatDate(article.pubDate)}</span>
-                        </div>
-                    </div>
-                    <span style={{ color: 'var(--text-muted)', fontSize: 14, flexShrink: 0, marginTop: 2 }}>↗</span>
-                </a>
-            ))}
+        <div style={{
+            background: 'rgba(255,255,255,0.03)', borderRadius: 16,
+            border: '1px solid rgba(255,255,255,0.06)', padding: '16px 18px',
+            animation: 'skeletonPulse 1.4s ease-in-out infinite',
+        }}>
+            <div style={{ height: 12, borderRadius: 6, background: 'rgba(255,255,255,0.06)', width: '80%', marginBottom: 10 }} />
+            <div style={{ height: 12, borderRadius: 6, background: 'rgba(255,255,255,0.04)', width: '55%' }} />
+            <style>{`@keyframes skeletonPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
         </div>
     );
 }
 
+// Premium article card
+function ArticleCard({ article, accent }: { article: NewsArticle; accent?: string }) {
+    const color = accent ?? '#a78bfa';
+    return (
+        <a
+            href={article.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: 'none', display: 'block' }}
+        >
+            <div
+                style={{
+                    background: 'rgba(255,255,255,0.03)', borderRadius: 16,
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    padding: '14px 16px', cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    position: 'relative', overflow: 'hidden',
+                }}
+                onMouseOver={e => {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)';
+                    (e.currentTarget as HTMLElement).style.borderColor = `${color}44`;
+                }}
+                onMouseOut={e => {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                }}
+            >
+                {/* Left accent bar */}
+                <div style={{
+                    position: 'absolute', left: 0, top: 16, bottom: 16,
+                    width: 3, borderRadius: '0 3px 3px 0',
+                    background: `linear-gradient(180deg, ${color}, ${color}44)`,
+                }} />
+                <div style={{ paddingLeft: 8 }}>
+                    <p style={{
+                        fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)',
+                        lineHeight: 1.5, margin: '0 0 8px',
+                        display: '-webkit-box', WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    }}>{article.title}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{
+                            fontSize: 10, fontWeight: 700, color,
+                            background: `${color}18`, border: `1px solid ${color}30`,
+                            padding: '2px 8px', borderRadius: 20, lineHeight: 1.8,
+                        }}>{article.source || 'Haber'}</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>
+                            {formatDate(article.pubDate)}
+                        </span>
+                        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>↗</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    );
+}
+
+// Breaking global news card (larger, highlighted)
+function BreakingCard({ article }: { article: NewsArticle }) {
+    return (
+        <a href={article.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
+            <div
+                style={{
+                    background: 'linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04))',
+                    borderRadius: 18, border: '1px solid rgba(239,68,68,0.25)',
+                    padding: '18px 20px', cursor: 'pointer',
+                    transition: 'all 0.2s', position: 'relative', overflow: 'hidden',
+                }}
+                onMouseOver={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.5)'}
+                onMouseOut={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.25)'}
+            >
+                {/* Breaking badge */}
+                <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    background: '#ef4444', borderRadius: 6,
+                    padding: '3px 9px', marginBottom: 10,
+                }}>
+                    <div style={{
+                        width: 6, height: 6, borderRadius: '50%',
+                        background: '#fff', animation: 'breakingDot 1s ease-in-out infinite',
+                    }} />
+                    <span style={{ fontSize: 9, fontWeight: 900, color: '#fff', letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                        Önemli Gelişme
+                    </span>
+                </div>
+                <p style={{
+                    fontSize: 14, fontWeight: 700, color: '#fff',
+                    lineHeight: 1.55, margin: '0 0 10px',
+                    display: '-webkit-box', WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                }}>{article.title}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 10, color: '#ef4444', fontWeight: 700 }}>{article.source || 'Global'}</span>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{formatDate(article.pubDate)}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 14, color: 'rgba(239,68,68,0.7)' }}>↗</span>
+                </div>
+                <style>{`@keyframes breakingDot { 0%,100%{opacity:1} 50%{opacity:0.2} }`}</style>
+            </div>
+        </a>
+    );
+}
+
 export default function NewsSection({ assets }: NewsSectionProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState<NewsTab>('market');
-    const [timeFilter, setTimeFilter] = useState<TimeFilter>('1w');
+    type Tab = 'global' | 'portfolio' | 'asset';
+    const [activeTab, setActiveTab] = useState<Tab>('portfolio');
     const [articles, setArticles] = useState<NewsArticle[]>([]);
     const [loading, setLoading] = useState(false);
-
-    // For 'asset' tab: which asset is expanded, which is selected for news
-    const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set());
-    const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+    const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
     const [assetArticles, setAssetArticles] = useState<NewsArticle[]>([]);
     const [assetLoading, setAssetLoading] = useState(false);
+    const cacheRef = useRef<Record<string, NewsArticle[]>>({});
 
-    const buildQuery = useCallback((tab: NewsTab) => {
-        if (tab === 'market') {
-            return 'borsa ekonomi piyasa bist haberleri';
-        }
-        // portfolio: use all asset names as search terms so results are relevant to the user's holdings
-        const names = assets.map(a => a.name).slice(0, 8);
-        const categories = [...new Set(assets.map(a => a.category))];
-        if (categories.includes('stock')) names.push('hisse borsa');
-        if (categories.includes('crypto')) names.push('kripto');
-        if (categories.includes('gold')) names.push('altın');
-        if (categories.includes('forex')) names.push('döviz kur');
-        return names.join(' OR ');
-    }, [assets]);
-
-    // Fetch market/portfolio news whenever tab, timeFilter or open state changes
-    useEffect(() => {
-        if (!isOpen || activeTab === 'asset') return;
-        if (assets.length === 0 && activeTab === 'portfolio') return;
-
-        const fetchNews = async () => {
-            setLoading(true);
-            try {
-                const query = buildQuery(activeTab);
-                const period = timeFilter !== 'all' ? `&period=${timeFilter}` : '';
-                const res = await fetch(`/api/news?q=${encodeURIComponent(query)}${period}`);
-                const data = await res.json();
-                setArticles(data.articles || []);
-            } catch {
-                setArticles([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchNews();
-    }, [isOpen, activeTab, timeFilter, buildQuery, assets.length]);
-
-    // Fetch news for a specific asset
-    const fetchAssetNews = useCallback(async (asset: Asset) => {
-        setSelectedAssetId(asset.id);
-        setAssetLoading(true);
+    const fetchNews = useCallback(async (query: string, key: string, setter: (a: NewsArticle[]) => void, setL: (b: boolean) => void) => {
+        if (cacheRef.current[key]) { setter(cacheRef.current[key]); return; }
+        setL(true);
         try {
-            let query = asset.name;
-            if (asset.category === 'stock' && asset.apiId) {
-                const symbol = asset.apiId.split(':')[1] || asset.apiId;
-                query = `${symbol} hisse ${asset.name}`;
-            } else if (asset.category === 'crypto' && asset.apiId) {
-                query = `${asset.name} kripto haberleri`;
-            } else if (asset.category === 'forex') {
-                query = `${asset.name} kur haberleri`;
-            }
             const res = await fetch(`/api/news?q=${encodeURIComponent(query)}&period=1w`);
             const data = await res.json();
-            setAssetArticles(data.articles || []);
-        } catch {
-            setAssetArticles([]);
-        } finally {
-            setAssetLoading(false);
-        }
+            const result = data.articles || [];
+            cacheRef.current[key] = result;
+            setter(result);
+        } catch { setter([]); }
+        finally { setL(false); }
     }, []);
 
-    const toggleAsset = (asset: Asset) => {
-        const next = new Set(expandedAssets);
-        if (next.has(asset.id)) {
-            next.delete(asset.id);
-            if (selectedAssetId === asset.id) {
-                setSelectedAssetId(null);
-                setAssetArticles([]);
-            }
-        } else {
-            next.add(asset.id);
-            fetchAssetNews(asset);
-        }
-        setExpandedAssets(next);
+    useEffect(() => {
+        if (activeTab === 'asset') return;
+        const key = activeTab;
+        const query = activeTab === 'global'
+            ? 'global economy major event market crash breaking'
+            : assets.map(a => a.name).slice(0, 6).join(' OR ') + ' borsa kripto altın döviz';
+        if (query) fetchNews(query, key, setArticles, setLoading);
+    }, [activeTab, assets, fetchNews]);
+
+    const handleSelectAsset = (asset: Asset) => {
+        if (selectedAsset?.id === asset.id) { setSelectedAsset(null); return; }
+        setSelectedAsset(asset);
+        const cat = getCategoryMeta(asset.category);
+        let q = asset.name;
+        if (asset.category === 'stock') q = `${asset.name} hisse`;
+        if (asset.category === 'crypto') q = `${asset.name} kripto`;
+        if (asset.category === 'forex') q = `${asset.name} kur`;
+        if (asset.category === 'gold') q = `${asset.name} altın`;
+        fetchNews(q, `asset-${asset.id}`, setAssetArticles, setAssetLoading);
+        void cat;
     };
 
-    const TABS: { key: NewsTab; icon: string; label: string }[] = [
-        { key: 'market', icon: '🌍', label: 'Piyasa' },
-        { key: 'portfolio', icon: '📊', label: 'Hisselerimin' },
-        { key: 'asset', icon: '💼', label: 'Yatırımlarım' },
+    const TABS: { key: Tab; label: string; icon: string; desc: string }[] = [
+        { key: 'portfolio', label: 'Portföyüm', icon: '📊', desc: 'Varlıklarınıza özel' },
+        { key: 'global', label: 'Dünya', icon: '🌍', desc: 'Önemli gelişmeler' },
+        { key: 'asset', label: 'Varlık', icon: '🔎', desc: 'Varlık bazlı' },
     ];
 
     return (
-        <WidgetWrapper widgetId="news">
-            <div>
-                {/* Clickable header */}
-                <button
-                    onClick={() => setIsOpen(o => !o)}
-                    style={{
-                        width: '100%', display: 'flex', alignItems: 'center',
-                        justifyContent: 'space-between', gap: 8,
-                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                    }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+
+            {/* ── Tab bar ── */}
+            <div style={{
+                display: 'flex', gap: 8, marginBottom: 20, padding: '4px',
+                background: 'rgba(255,255,255,0.03)', borderRadius: 18,
+                border: '1px solid rgba(255,255,255,0.06)',
+            }}>
+                {TABS.map(tab => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key)}
+                        style={{
+                            flex: 1, padding: '10px 6px', borderRadius: 14,
+                            cursor: 'pointer', transition: 'all 0.2s',
+                            background: activeTab === tab.key
+                                ? 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.15))'
+                                : 'transparent',
+                            boxShadow: activeTab === tab.key ? '0 2px 12px rgba(99,102,241,0.2)' : 'none',
+                            border: activeTab === tab.key ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
+                        }}
+                    >
+                        <div style={{ fontSize: 16, marginBottom: 3 }}>{tab.icon}</div>
                         <div style={{
-                            width: 32, height: 32, borderRadius: 9,
-                            background: 'linear-gradient(135deg, rgba(167,139,250,0.15), rgba(34,211,238,0.1))',
-                            border: '1px solid rgba(167,139,250,0.2)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-                        }}>
-                            📰
-                        </div>
-                        <div style={{ textAlign: 'left' }}>
-                            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>
-                                Haberler
-                            </span>
-                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                                Piyasa · Portföy · Varlık bazlı
-                            </span>
-                        </div>
-                    </div>
-                    <span style={{
-                        fontSize: 18, color: 'var(--text-muted)',
-                        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
-                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        display: 'flex', alignItems: 'center',
+                            fontSize: 11, fontWeight: activeTab === tab.key ? 700 : 500,
+                            color: activeTab === tab.key ? '#c4b5fd' : 'rgba(255,255,255,0.4)',
+                        }}>{tab.label}</div>
+                    </button>
+                ))}
+            </div>
+
+            {/* ── Portfolio tab ── */}
+            {activeTab === 'portfolio' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {loading
+                        ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+                        : articles.length === 0
+                            ? <div style={{ textAlign: 'center', padding: '32px 0', color: 'rgba(255,255,255,0.25)', fontSize: 13 }}>Haber bulunamadı</div>
+                            : articles.slice(0, 8).map((a, i) => (
+                                <ArticleCard key={i} article={a} accent="#a78bfa" />
+                            ))
+                    }
+                </div>
+            )}
+
+            {/* ── Global tab ── */}
+            {activeTab === 'global' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4,
+                        padding: '10px 14px', borderRadius: 12,
+                        background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
                     }}>
-                        ⌄
-                    </span>
-                </button>
-
-                {/* Collapsible body */}
-                <div style={{
-                    overflow: 'hidden',
-                    maxHeight: isOpen ? '3000px' : '0px',
-                    opacity: isOpen ? 1 : 0,
-                    transition: 'max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s',
-                }}>
-                    <div style={{ height: 1, background: 'var(--border)', margin: '14px 0 14px' }} />
-
-                    {/* Tab bar */}
-                    <div className="hide-scrollbar" style={{ display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto' }}>
-                        {TABS.map(tab => (
-                            <button
-                                key={tab.key}
-                                onClick={() => setActiveTab(tab.key)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 6,
-                                    padding: '7px 14px', borderRadius: 20,
-                                    fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
-                                    background: activeTab === tab.key
-                                        ? 'linear-gradient(135deg, rgba(167,139,250,0.2), rgba(34,211,238,0.12))'
-                                        : 'var(--bg-elevated)',
-                                    color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                    border: '1px solid',
-                                    borderColor: activeTab === tab.key ? 'rgba(167,139,250,0.3)' : 'var(--border)',
-                                    cursor: 'pointer', transition: 'all 0.2s',
-                                }}
-                            >
-                                <span>{tab.icon}</span>
-                                <span>{tab.label}</span>
-                            </button>
-                        ))}
+                        <span style={{ fontSize: 13 }}>⚠️</span>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>
+                            Yalnızca küresel çaplı <strong style={{ color: 'rgba(255,255,255,0.8)' }}>çok önemli</strong> gelişmeler gösterilir
+                        </span>
                     </div>
-                    {activeTab !== 'asset' && (
-                        <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
-                            {TIME_FILTERS.map(tf => (
-                                <button
-                                    key={tf.key}
-                                    onClick={() => setTimeFilter(tf.key)}
-                                    style={{
-                                        padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-                                        background: timeFilter === tf.key ? 'var(--accent-purple)' : 'var(--bg-elevated)',
-                                        color: timeFilter === tf.key ? 'white' : 'var(--text-muted)',
-                                        border: timeFilter === tf.key ? 'none' : '1px solid var(--border)',
-                                        cursor: 'pointer', transition: 'all 0.2s',
-                                    }}
-                                >
-                                    {tf.label}
-                                </button>
-                            ))}
+                    {loading
+                        ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+                        : articles.length === 0
+                            ? <div style={{ textAlign: 'center', padding: '32px 0', color: 'rgba(255,255,255,0.25)', fontSize: 13 }}>Önemli gelişme bulunamadı</div>
+                            : articles.slice(0, 5).map((a, i) =>
+                                i === 0
+                                    ? <BreakingCard key={i} article={a} />
+                                    : <ArticleCard key={i} article={a} accent="#ef4444" />
+                            )
+                    }
+                </div>
+            )}
+
+            {/* ── Asset tab ── */}
+            {activeTab === 'asset' && (
+                <div>
+                    {/* Asset selector chips */}
+                    <div style={{
+                        display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16,
+                    }}>
+                        {assets.length === 0
+                            ? <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Önce varlık ekleyin</p>
+                            : assets.map(asset => {
+                                const cat = getCategoryMeta(asset.category);
+                                const isActive = selectedAsset?.id === asset.id;
+                                return (
+                                    <button
+                                        key={asset.id}
+                                        onClick={() => handleSelectAsset(asset)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 6,
+                                            padding: '8px 14px', borderRadius: 50,
+                                            cursor: 'pointer', transition: 'all 0.2s',
+                                            background: isActive
+                                                ? `linear-gradient(135deg, ${cat.color}40, ${cat.color}20)`
+                                                : 'rgba(255,255,255,0.05)',
+                                            border: isActive ? `1.5px solid ${cat.color}66` : '1.5px solid rgba(255,255,255,0.08)',
+                                            color: isActive ? cat.color : 'rgba(255,255,255,0.55)',
+                                            fontSize: 12, fontWeight: isActive ? 700 : 500,
+                                            boxShadow: isActive ? `0 4px 16px ${cat.color}22` : 'none',
+                                        }}
+                                    >
+                                        <span style={{ fontSize: 14 }}>{cat.icon}</span>
+                                        <span style={{
+                                            maxWidth: 90, overflow: 'hidden',
+                                            textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                        }}>{asset.name}</span>
+                                    </button>
+                                );
+                            })
+                        }
+                    </div>
+
+                    {/* News for selected asset */}
+                    {selectedAsset && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4,
+                            }}>
+                                <span style={{ fontSize: 14 }}>{getCategoryMeta(selectedAsset.category).icon}</span>
+                                <span style={{
+                                    fontSize: 13, fontWeight: 700,
+                                    color: getCategoryMeta(selectedAsset.category).color,
+                                }}>{selectedAsset.name}</span>
+                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>· Son haberler</span>
+                            </div>
+                            {assetLoading
+                                ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+                                : assetArticles.length === 0
+                                    ? <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(255,255,255,0.25)', fontSize: 13 }}>
+                                        Bu varlık için haber bulunamadı
+                                    </div>
+                                    : assetArticles.slice(0, 7).map((a, i) => (
+                                        <ArticleCard
+                                            key={i} article={a}
+                                            accent={getCategoryMeta(selectedAsset.category).color}
+                                        />
+                                    ))
+                            }
                         </div>
                     )}
 
-                    {activeTab !== 'asset' ? (
-                        <ArticleList articles={articles} loading={loading} />
-                    ) : (
-                        /* Yatırımlarım: left = asset list, right = news panel sliding in */
-                        <div style={{ display: 'flex', gap: 0, minHeight: 240, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)' }}>
-
-                            {/* Left: asset list */}
-                            <div style={{
-                                width: selectedAssetId ? '38%' : '100%',
-                                transition: 'width 0.35s cubic-bezier(0.4,0,0.2,1)',
-                                borderRight: selectedAssetId ? '1px solid var(--border)' : 'none',
-                                overflowY: 'auto',
-                                flexShrink: 0,
-                            }}>
-                                {assets.length === 0 ? (
-                                    <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: 16 }}>Henüz varlık eklenmedi.</p>
-                                ) : assets.map((asset) => {
-                                    const cat = getCategoryMeta(asset.category);
-                                    const isSelected = selectedAssetId === asset.id;
-                                    return (
-                                        <button
-                                            key={asset.id}
-                                            onClick={() => {
-                                                if (isSelected) {
-                                                    setSelectedAssetId(null);
-                                                    setAssetArticles([]);
-                                                } else {
-                                                    fetchAssetNews(asset);
-                                                }
-                                            }}
-                                            style={{
-                                                width: '100%',
-                                                display: 'flex', alignItems: 'center', gap: 10,
-                                                padding: '12px 14px',
-                                                background: isSelected
-                                                    ? `${cat.color}12`
-                                                    : 'transparent',
-                                                border: 'none',
-                                                borderBottom: '1px solid var(--border)',
-                                                cursor: 'pointer',
-                                                transition: 'background 0.15s',
-                                                textAlign: 'left',
-                                            }}
-                                            onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-elevated)'; }}
-                                            onMouseOut={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
-                                        >
-                                            <div style={{
-                                                width: 28, height: 28, borderRadius: 8,
-                                                background: `${cat.color}18`, border: `1px solid ${cat.color}28`,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: 13, flexShrink: 0,
-                                            }}>
-                                                {cat.icon}
-                                            </div>
-                                            <div style={{ minWidth: 0, flex: 1 }}>
-                                                <p style={{
-                                                    fontSize: 12, fontWeight: 600,
-                                                    color: isSelected ? cat.color : 'var(--text-primary)',
-                                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                                }}>
-                                                    {asset.name}
-                                                </p>
-                                                {!selectedAssetId && (
-                                                    <p style={{ fontSize: 10, color: 'var(--text-muted)' }}>{cat.labelTR}</p>
-                                                )}
-                                            </div>
-                                            {/* Arrow hint */}
-                                            <span style={{
-                                                fontSize: 12,
-                                                color: isSelected ? cat.color : 'var(--text-muted)',
-                                                transition: 'transform 0.2s, opacity 0.2s',
-                                                opacity: isSelected ? 1 : 0.4,
-                                                transform: isSelected ? 'translateX(0)' : 'translateX(-4px)',
-                                            }}>›</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Right: news panel — slides in */}
-                            <div style={{
-                                flex: 1,
-                                overflow: 'hidden',
-                                opacity: selectedAssetId ? 1 : 0,
-                                transform: selectedAssetId ? 'translateX(0)' : 'translateX(20px)',
-                                transition: 'opacity 0.3s ease, transform 0.35s cubic-bezier(0.4,0,0.2,1)',
-                                pointerEvents: selectedAssetId ? 'auto' : 'none',
-                            }}>
-                                <div style={{ padding: 12, overflowY: 'auto', height: '100%' }}>
-                                    {selectedAssetId && (
-                                        <ArticleList articles={assetArticles} loading={assetLoading} />
-                                    )}
-                                </div>
-                            </div>
+                    {!selectedAsset && assets.length > 0 && (
+                        <div style={{
+                            textAlign: 'center', padding: '28px 0',
+                            color: 'rgba(255,255,255,0.2)', fontSize: 13,
+                        }}>
+                            Haber görmek için bir varlık seçin ↑
                         </div>
                     )}
                 </div>
-            </div>
-        </WidgetWrapper>
+            )}
+        </div>
     );
 }

@@ -6,6 +6,7 @@ import { WealthSnapshot, saveAssetPriceSnapshot } from '@/lib/storage';
 import { getAssets, getWealthHistory, saveWealthSnapshot, saveMultipleAssetPrices, migrateLocalDataToSupabase, updateAsset, deleteAsset } from '@/lib/db';
 import { getAssetCostInTRY } from '@/lib/utils';
 import GoalTracker from '@/components/GoalTracker';
+import ProfileView from '@/components/ProfileView';
 import PortfolioHealthScore from '@/components/PortfolioHealthScore';
 import AppSidebar, { ActiveView } from '@/components/AppSidebar';
 import AssetForm from '@/components/AssetForm';
@@ -562,21 +563,44 @@ export default function Home() {
                 {
                   id: 'chat' as const, label: 'Asistan',
                   icon: (active: boolean) => (
-                    <div style={{
-                      width: 44, height: 44, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: active ? '0 0 20px rgba(139,92,246,0.7), 0 0 40px rgba(139,92,246,0.3)' : '0 4px 16px rgba(99,102,241,0.5)',
-                      marginTop: -20, border: '3px solid rgba(9,16,33,0.95)',
-                    }}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="10" r="3" fill="white" />
-                        <path d="M6 20C6 17 8.686 15 12 15C15.314 15 18 17 18 20" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                        <circle cx="12" cy="10" r="7" stroke="white" strokeWidth="1.5" />
-                      </svg>
+                    <div style={{ position: 'relative', marginTop: -24 }}>
+                      {/* Outer pulsing ring */}
+                      <div style={{
+                        position: 'absolute', inset: -5, borderRadius: '50%',
+                        border: `2px solid ${active ? 'rgba(139,92,246,0.9)' : 'rgba(99,102,241,0.5)'}`,
+                        animation: 'mascotRingGlow 2s ease-in-out infinite',
+                        boxShadow: active ? '0 0 16px rgba(139,92,246,0.6)' : 'none',
+                      }} />
+                      {/* Mascot button */}
+                      <div style={{
+                        width: 58, height: 58, borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #4338ca, #7c3aed)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: active
+                          ? '0 0 0 3px #080d1a, 0 0 32px rgba(139,92,246,1), 0 0 64px rgba(99,102,241,0.4)'
+                          : '0 0 0 3px #080d1a, 0 8px 28px rgba(99,102,241,0.7)',
+                        overflow: 'hidden',
+                        border: '2px solid rgba(255,255,255,0.18)',
+                        transition: 'box-shadow 0.3s ease',
+                      }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/finoria-ai.png"
+                          alt="Finoria AI"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          draggable={false}
+                        />
+                      </div>
+                      <style>{`
+                        @keyframes mascotRingGlow {
+                          0%, 100% { transform: scale(1); opacity: 0.5; }
+                          50% { transform: scale(1.15); opacity: 1; }
+                        }
+                      `}</style>
                     </div>
                   )
                 },
+
                 {
                   id: 'news' as const, label: 'Haberler',
                   icon: (active: boolean) => (
@@ -720,30 +744,25 @@ export default function Home() {
             />
           )}
 
-          {/* ── GOALS VIEW ── */}
+          {/* ── PROFILE / GOALS VIEW ── */}
           {activeView === 'goals' && (
             <div className="pb-10">
-              <div className="mb-6">
-                <h1 className="text-2xl font-extrabold text-primary mb-1">Hedefler</h1>
-                <p className="text-xs text-muted">Finansal hedeflerinizi takip edin</p>
-              </div>
-              <div className="max-w-2xl flex flex-col gap-4">
-                <GoalTracker totalWealth={totalWealth} />
-              </div>
+              <ProfileView
+                totalWealth={totalWealth}
+                fmt={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)}
+                username={undefined}
+              />
             </div>
           )}
 
           {/* ── NEWS VIEW ── */}
           {activeView === 'news' && (
             <div className="pb-10">
-              <div className="mb-6">
-                <h1 className="text-2xl font-extrabold text-primary mb-1">Gündem</h1>
-                <p className="text-xs text-muted">Global finans haberleri</p>
+              <div style={{ marginBottom: 20 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 900, color: '#fff', margin: '0 0 4px', letterSpacing: -0.5 }}>Haberler</h1>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Portföyünüze özel haberler ve önemli gelişmeler</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <GlobalHeadlines />
-                {assets.length > 0 && <NewsSection assets={assets} />}
-              </div>
+              <NewsSection assets={assets} />
             </div>
           )}
 
