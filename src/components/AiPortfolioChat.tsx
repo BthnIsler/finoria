@@ -29,6 +29,39 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
     const [showBubble, setShowBubble] = useState(!inline);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
+    // Draggable bubble state
+    const [bubblePos, setBubblePos] = useState({ right: 24, bottom: 24 });
+    const dragRef = useRef<{
+        isDragging: boolean;
+        startX: number; startY: number;
+        startRight: number; startBottom: number;
+        moved: boolean;
+    }>({ isDragging: false, startX: 0, startY: 0, startRight: 24, startBottom: 24, moved: false });
+
+    const onPointerDown = (e: React.PointerEvent) => {
+        if (inline) return;
+        dragRef.current = {
+            isDragging: true, moved: false,
+            startX: e.clientX, startY: e.clientY,
+            startRight: bubblePos.right, startBottom: bubblePos.bottom,
+        };
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    };
+    const onPointerMove = (e: React.PointerEvent) => {
+        if (!dragRef.current.isDragging) return;
+        const dx = e.clientX - dragRef.current.startX;
+        const dy = e.clientY - dragRef.current.startY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragRef.current.moved = true;
+        const newRight = Math.max(8, Math.min(window.innerWidth - 80, dragRef.current.startRight - dx));
+        const newBottom = Math.max(8, Math.min(window.innerHeight - 80, dragRef.current.startBottom - dy));
+        setBubblePos({ right: newRight, bottom: newBottom });
+    };
+    const onPointerUp = () => {
+        if (!dragRef.current.isDragging) return;
+        dragRef.current.isDragging = false;
+        if (!dragRef.current.moved) { setIsOpen(!isOpen); setShowBubble(false); }
+    };
+
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -296,25 +329,31 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                 );
             })()} 
 
-            {/* Floating mascot button */}
+            {/* Floating mascot button - draggable */}
             {!inline && (
                 <button
-                    onClick={() => { setIsOpen(!isOpen); setShowBubble(false); }}
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
                     style={{
-                        position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
-                        width: isOpen ? 56 : 72, height: isOpen ? 56 : 72, borderRadius: isOpen ? 16 : '50%',
+                        position: 'fixed',
+                        bottom: bubblePos.bottom, right: bubblePos.right,
+                        zIndex: 1000,
+                        width: isOpen ? 56 : 72, height: isOpen ? 56 : 72,
+                        borderRadius: isOpen ? 16 : '50%',
                         background: isOpen
                             ? 'linear-gradient(135deg, #374151, #1f2937)'
                             : 'transparent',
                         border: isOpen ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                        cursor: 'pointer',
+                        cursor: dragRef.current.isDragging ? 'grabbing' : 'grab',
                         boxShadow: isOpen
                             ? '0 4px 16px rgba(0,0,0,0.3)'
                             : '0 8px 32px rgba(99,102,241,0.4)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                        transition: dragRef.current.isDragging ? 'none' : 'width 0.3s, height 0.3s, border-radius 0.3s',
                         padding: 0, overflow: 'hidden',
-                        animation: isOpen ? 'none' : 'mascotFloat 3s ease-in-out infinite',
+                        animation: isOpen || dragRef.current.isDragging ? 'none' : 'mascotFloat 3s ease-in-out infinite',
+                        userSelect: 'none', touchAction: 'none',
                     }}
                 >
                     {isOpen ? (
@@ -327,6 +366,7 @@ export default function AiPortfolioChat({ assets, totalWealth, totalPL, totalPLP
                             src="/finoria-ai.png"
                             alt="Finoria AI"
                             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                            draggable={false}
                         />
                     )}
                 </button>

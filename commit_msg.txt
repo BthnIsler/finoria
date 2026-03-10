@@ -1,16 +1,17 @@
-feat(mobile): premium UI redesign matching reference images
+fix: web & mobile polish sprint - 10 changes
 
-Bottom nav: 5 tabs (Anasayfa/Portföy/Asistan/Transfer/Profil) with SVG icons.
-Frosted glass dark background, purple active top-pill indicator, raised center
-Asistan button with purple glow above the bar. safe-area-inset-bottom padding.
+Web:
+- Premium loading screen: spinning dual ring, animated progress bar, brand
+  name with purple glow (replaces basic emoji loader)
+- WealthHistoryChart: removed 'Geçmişte Olsaydı?' what-if tab & all related
+  state/effects. Cleaned up ChartMode type.
+- WealthHistoryChart: replaced native <select> (white-on-white text on Win)
+  with custom dark-background dropdown panel. Options now visible on Windows.
+- AI bubble: now draggable via pointer events (mouse + touch). Tap to open
+  chat, drag to reposition anywhere on screen. touchAction:none prevents
+  scroll conflict on mobile.
 
-Top bar: Clean white bold Finoria title + avatar logo border, purple + button,
-profile initial avatar with gradient background. Hamburger removed.
-
-AI Chat: Replaced image avatar with glowing purple robot SVG matching
-reference image 2. robotGlow animation pulses outer glow every 2s. Added
-dedicated full-screen Asistan tab that renders AiPortfolioChat inline.
-
-WealthChart: External % labels on donut segments via custom renderLabel.
-Added labelLine connectors. Replaced legend with premium category rows table
-(colored icon + name + % column) matching bottom table in reference image 3.
+Mobile:
+- Bottom nav: replaced Transfer tab (converter) with Haberler (news) tab
+  with newspaper SVG icon. News view already had a render case.
+- Transfer/converter was not relevant to portfolio tracking use-case.

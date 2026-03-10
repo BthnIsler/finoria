@@ -345,11 +345,79 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>💎</div>
-          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Portföy yükleniyor...</p>
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(135deg, #060912 0%, #0a0f1e 50%, #0d1117 100%)',
+        flexDirection: 'column', gap: 0,
+      }}>
+        {/* Ambient glow */}
+        <div style={{
+          position: 'absolute', width: 400, height: 400, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
+          filter: 'blur(60px)', pointerEvents: 'none',
+        }} />
+
+        {/* Logo ring */}
+        <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 32 }}>
+          {/* Spinning outer ring */}
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            border: '2px solid transparent',
+            borderTopColor: '#6366f1', borderRightColor: 'rgba(99,102,241,0.3)',
+            animation: 'loaderSpin 1.2s linear infinite',
+          }} />
+          {/* Inner ring */}
+          <div style={{
+            position: 'absolute', inset: 8, borderRadius: '50%',
+            border: '1.5px solid rgba(139,92,246,0.2)',
+            borderBottomColor: '#8b5cf6',
+            animation: 'loaderSpin 1.8s linear infinite reverse',
+          }} />
+          {/* Logo center */}
+          <div style={{
+            position: 'absolute', inset: 16, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 24px rgba(99,102,241,0.5)',
+            animation: 'logoPulse 2s ease-in-out infinite',
+          }}>
+            <span style={{ fontSize: 26 }}>💎</span>
+          </div>
         </div>
+
+        {/* Brand name */}
+        <div style={{
+          fontSize: 28, fontWeight: 900, letterSpacing: -0.8, color: '#fff',
+          marginBottom: 8, fontFamily: "'Inter', sans-serif",
+        }}>Finoria</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginBottom: 36, letterSpacing: 0.3 }}>
+          Portföy yükleniyor...
+        </div>
+
+        {/* Progress bar */}
+        <div style={{
+          width: 180, height: 3, background: 'rgba(255,255,255,0.07)',
+          borderRadius: 3, overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%', borderRadius: 3,
+            background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa)',
+            animation: 'loaderProgress 1.8s ease-in-out infinite',
+          }} />
+        </div>
+
+        <style>{`
+          @keyframes loaderSpin { to { transform: rotate(360deg); } }
+          @keyframes logoPulse {
+            0%, 100% { box-shadow: 0 0 24px rgba(99,102,241,0.5); }
+            50% { box-shadow: 0 0 40px rgba(99,102,241,0.8), 0 0 60px rgba(139,92,246,0.3); }
+          }
+          @keyframes loaderProgress {
+            0% { width: 0%; margin-left: 0; }
+            50% { width: 70%; margin-left: 0; }
+            100% { width: 0%; margin-left: 100%; }
+          }
+        `}</style>
       </div>
     );
   }
@@ -510,11 +578,13 @@ export default function Home() {
                   )
                 },
                 {
-                  id: 'converter' as const, label: 'Transfer',
+                  id: 'news' as const, label: 'Haberler',
                   icon: (active: boolean) => (
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                      <path d="M7 16L3 12M3 12L7 8M3 12H21" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M17 8L21 12M21 12L17 16" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <rect x="3" y="5" width="18" height="14" rx="2" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.8"/>
+                      <line x1="7" y1="9" x2="17" y2="9" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.5" strokeLinecap="round"/>
+                      <line x1="7" y1="12" x2="14" y2="12" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.5" strokeLinecap="round"/>
+                      <line x1="7" y1="15" x2="11" y2="15" stroke={active ? '#8b5cf6' : 'rgba(255,255,255,0.35)'} strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
                   )
                 },

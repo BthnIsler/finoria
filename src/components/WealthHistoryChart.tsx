@@ -10,7 +10,6 @@ import { Asset } from '@/lib/types';
 import { useCurrency } from '@/lib/contexts';
 
 type TimePeriod = '4h' | '1w' | '1m' | '1y' | 'all';
-type ChartMode = 'wealth' | 'whatif';
 
 interface WealthHistoryChartProps {
     history: WealthSnapshot[];
@@ -114,10 +113,10 @@ export default function WealthHistoryChart({
     history, currentTotal, assets = [], totalPLPct = 0, totalCost = 0,
 }: WealthHistoryChartProps) {
     const { currency, convert } = useCurrency();
-    const [chartMode, setChartMode] = useState<ChartMode>('wealth');
     const [period, setPeriod] = useState<TimePeriod>('all');
     const [selectedAssetId, setSelectedAssetId] = useState('');
     const [hourly, setHourly] = useState<HourlySnapshot[]>([]);
+    const [showAssetPicker, setShowAssetPicker] = useState(false);
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const [chartWidth, setChartWidth] = useState(0);
 
@@ -144,9 +143,6 @@ export default function WealthHistoryChart({
     const [apiAssetHistory, setApiAssetHistory] = useState<ChartPoint[]>([]);
     const [isApiLoading, setIsApiLoading] = useState(false);
     const [lastFetchKey, setLastFetchKey] = useState('');
-    const [whatIfApiData, setWhatIfApiData] = useState<ChartPoint[]>([]);
-    const [isWhatIfLoading, setIsWhatIfLoading] = useState(false);
-    const [lastWhatIfKey, setLastWhatIfKey] = useState('');
 
     useEffect(() => { setHourly(getHourlyHistory()); }, [currentTotal]);
 
@@ -183,35 +179,6 @@ export default function WealthHistoryChart({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedAssetId, period]);
 
-    // Fetch What-If data
-    useEffect(() => {
-        if (chartMode !== 'whatif' || assets.length === 0) return;
-        const apiPeriod = (period === '4h' || period === '1w' || period === '1m') ? '3m' : period === 'all' ? '3y' : '1y';
-        const fetchable = assets.filter(a => a.apiId && ['crypto', 'stock', 'forex', 'precious_metals'].includes(a.category));
-        const key = `${fetchable.map(a => a.apiId).join(',')}_${apiPeriod}`;
-        if (key === lastWhatIfKey && whatIfApiData.length > 0) return;
-        let cancelled = false;
-        setIsWhatIfLoading(true);
-        fetch('/api/historical-prices', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ period: apiPeriod, assets: fetchable.map(a => ({ apiId: a.apiId, category: a.category, amount: a.amount })) }),
-            cache: 'no-store',
-        }).then(r => r.json()).then(data => {
-            if (cancelled) return;
-            let pts: ChartPoint[] = (data.points || []).map((p: any) => ({
-                label: fmtDate(p.date), date: p.date, pastValue: p.value, currentValue: currentTotal,
-            }));
-            if (period === '1w') pts = pts.slice(-7);
-            else if (period === '1m') pts = pts.slice(-30);
-            else if (period === '1y') pts = pts.slice(-365);
-            setWhatIfApiData(pts);
-            setLastWhatIfKey(key);
-        }).catch(e => console.error(e)).finally(() => { if (!cancelled) setIsWhatIfLoading(false); });
-        return () => { cancelled = true; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [chartMode, period]);
-
     // Build chart data
     const chartData = useMemo(() => {
         if (selectedAssetId) return apiAssetHistory;
@@ -219,7 +186,7 @@ export default function WealthHistoryChart({
         return buildDailyData(history, currentTotal, period);
     }, [history, currentTotal, period, hourly, selectedAssetId, apiAssetHistory]);
 
-    const activeData = chartMode === 'whatif' ? whatIfApiData : chartData;
+    const activeData = chartData;
 
     // Currency conversion
     const displayData = useMemo(() => activeData.map(d => ({
@@ -242,8 +209,7 @@ export default function WealthHistoryChart({
     const totalChange = lastVal - firstVal;
     const displayChangePct = selectedAssetId
         ? (firstVal > 0 ? (totalChange / firstVal) * 100 : 0)
-        : chartMode === 'wealth' ? totalPLPct
-            : (firstVal > 0 ? (totalChange / firstVal) * 100 : 0);
+        : totalPLPct;
     const isUp = displayChangePct >= 0;
     const mainColor = isUp ? '#26a69a' : '#ef5350';  // TradingView green/red
     const selectedAsset = assets.find(a => a.id === selectedAssetId);
@@ -255,34 +221,8 @@ export default function WealthHistoryChart({
             background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: 16, overflow: 'hidden', fontFamily: "'Inter', sans-serif",
         }}>
-            {/* ── Top header bar (mode toggle) ── */}
-            <div style={{
-                display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                padding: '0 16px',
-            }}>
-                {(['wealth', 'whatif'] as const).map(m => (
-                    <button key={m} onClick={() => setChartMode(m)} style={{
-                        padding: '12px 16px', border: 'none', background: 'transparent',
-                        cursor: 'pointer', fontSize: 12, fontWeight: 600, letterSpacing: 0.3,
-                        color: chartMode === m ? '#fff' : 'rgba(255,255,255,0.35)',
-                        borderBottom: chartMode === m ? `2px solid ${mainColor}` : '2px solid transparent',
-                        marginBottom: -1, transition: 'color 0.2s',
-                    }}>
-                        {m === 'wealth' ? 'Servet Geçmişi' : 'Geçmişte Olsaydı?'}
-                    </button>
-                ))}
-            </div>
-
-            {/* ── Body ── */}
-            {chartMode === 'whatif' ? (
-                <WhatIfView
-                    data={displayData} currentTotal={convert(currentTotal)}
-                    assets={assets} fmt={fmt}
-                    period={period} setPeriod={setPeriod}
-                    isLoading={isWhatIfLoading}
-                />
-            ) : (
-                <div style={{ padding: '16px 0 0' }}>
+            {/* ── Body (wealth view only, what-if removed) ── */}
+            <div style={{ padding: '16px 0 0' }}>
                     {/* Value + P/L Header */}
                     <div style={{ padding: '0 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                         <div>
@@ -307,23 +247,60 @@ export default function WealthHistoryChart({
                             </div>
                         </div>
 
-                        {/* Asset Selector */}
+                        {/* Custom Asset Picker - fixes white-on-white option text bug */}
                         {assets.length > 0 && (
-                            <select
-                                value={selectedAssetId}
-                                onChange={e => {
-                                    setSelectedAssetId(e.target.value);
-                                    if (e.target.value && (period === '4h' || period === '1w')) setPeriod('1m');
-                                }}
-                                style={{
-                                    background: 'rgba(255,255,255,0.05)', color: selectedAssetId ? '#fff' : 'rgba(255,255,255,0.4)',
-                                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
-                                    padding: '6px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', outline: 'none',
-                                }}
-                            >
-                                <option value="">Toplam Portföy</option>
-                                {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                            </select>
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    onClick={() => setShowAssetPicker(v => !v)}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.05)', color: selectedAssetId ? '#fff' : 'rgba(255,255,255,0.4)',
+                                        border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
+                                        padding: '6px 12px', fontSize: 11, fontWeight: 600,
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                                        minWidth: 130,
+                                    }}
+                                >
+                                    <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {selectedAssetId ? assets.find(a => a.id === selectedAssetId)?.name ?? 'Varlık' : 'Toplam Portföy'}
+                                    </span>
+                                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+                                        <path d="M1 1L5 5L9 1" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+                                    </svg>
+                                </button>
+                                {showAssetPicker && (
+                                    <div style={{
+                                        position: 'absolute', top: '100%', right: 0, zIndex: 50,
+                                        background: '#1a1f2e', border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: 10, overflow: 'hidden', marginTop: 4,
+                                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                                        minWidth: 180, maxHeight: 260, overflowY: 'auto',
+                                    }}>
+                                        {[{ id: '', name: 'Toplam Portföy' }, ...assets].map(a => (
+                                            <button
+                                                key={a.id}
+                                                onClick={() => {
+                                                    setSelectedAssetId(a.id);
+                                                    setShowAssetPicker(false);
+                                                    if (a.id && (period === '4h' || period === '1w')) setPeriod('1m');
+                                                }}
+                                                style={{
+                                                    display: 'block', width: '100%', textAlign: 'left',
+                                                    padding: '8px 12px', border: 'none', cursor: 'pointer',
+                                                    background: selectedAssetId === a.id ? 'rgba(99,102,241,0.2)' : 'transparent',
+                                                    color: selectedAssetId === a.id ? '#a78bfa' : 'rgba(255,255,255,0.8)',
+                                                    fontSize: 12, fontWeight: 500,
+                                                    borderLeft: selectedAssetId === a.id ? '2px solid #6366f1' : '2px solid transparent',
+                                                    transition: 'all 0.15s',
+                                                }}
+                                                onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
+                                                onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = selectedAssetId === a.id ? 'rgba(99,102,241,0.2)' : 'transparent'; }}
+                                            >
+                                                {a.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
 
@@ -393,7 +370,6 @@ export default function WealthHistoryChart({
                         </div>
                     )}
                 </div>
-            )}
         </div>
     );
 }
