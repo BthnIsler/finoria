@@ -793,16 +793,18 @@ export default function Home() {
         </main>
       </div>
 
-      {/* ── Floating AI Chat (always visible) ── */}
-      <AiPortfolioChat
-        assets={assets}
-        totalWealth={totalWealth}
-        totalPL={totalPL}
-        totalPLPct={totalPLPct}
-        dailyPL={dailyPL}
-        dailyPLPct={dailyPLPct}
-        fmt={fmt}
-      />
+      {/* ── Floating AI Chat (desktop only – mobile uses the Asistan tab) ── */}
+      {!isMobile && (
+        <AiPortfolioChat
+          assets={assets}
+          totalWealth={totalWealth}
+          totalPL={totalPL}
+          totalPLPct={totalPLPct}
+          dailyPL={dailyPL}
+          dailyPLPct={dailyPLPct}
+          fmt={fmt}
+        />
+      )}
 
       {/* ── Modals ── */}
       {showAddForm && <AssetForm onClose={() => setShowAddForm(false)} onAdd={(a) => setAssets(p => [...p, a])} />}
