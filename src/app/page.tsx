@@ -703,6 +703,7 @@ export default function Home() {
                   heroPLPeriod={heroPLPeriod}
                   setHeroPLPeriod={setHeroPLPeriod}
                   activeHeroPL={activeHeroPL}
+                  isMobile={isMobile}
               />
             )
           )}
@@ -715,6 +716,7 @@ export default function Home() {
                 onEdit={setEditingAsset}
                 onSell={setSellingAsset}
                 onAnalyze={setAnalyzingAsset}
+                isMobile={isMobile}
             />
           )}
 

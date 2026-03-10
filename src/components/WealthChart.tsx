@@ -7,9 +7,10 @@ import { formatCurrency } from '@/lib/utils';
 
 interface WealthChartProps {
     assets: Asset[];
+    isMobile?: boolean;
 }
 
-export default function WealthChart({ assets }: WealthChartProps) {
+export default function WealthChart({ assets, isMobile = false }: WealthChartProps) {
     const [filter, setFilter] = useState<'all' | AssetCategory>('all');
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -154,18 +155,20 @@ export default function WealthChart({ assets }: WealthChartProps) {
                 ))}
             </div>
 
-            <div ref={containerRef} style={{ width: '100%', height: 260 }}>
+            <div ref={containerRef} style={{ width: '100%', height: isMobile ? 220 : 260 }}>
                 {chartWidth > 0 && (
-                    <PieChart width={chartWidth} height={260}>
+                    <PieChart width={chartWidth} height={isMobile ? 220 : 260}>
                         <Pie
                             data={data} cx="50%" cy="50%"
-                            innerRadius={70} outerRadius={110}
+                            innerRadius={isMobile ? 55 : 70} outerRadius={isMobile ? 85 : 110}
                             paddingAngle={4} dataKey="value" stroke="none"
                             animationBegin={0} animationDuration={600}
                             onMouseEnter={(_, index) => setActiveIndex(index)}
                             onMouseLeave={() => setActiveIndex(null)}
-                            label={renderLabel}
-                            labelLine={{ stroke: 'rgba(255,255,255,0.12)', strokeWidth: 1 }}
+                            {...(!isMobile && {
+                                label: renderLabel,
+                                labelLine: { stroke: 'rgba(255,255,255,0.12)', strokeWidth: 1 },
+                            })}
                         >
                             {data.map((entry, i) => {
                                 const isHovered = activeIndex === i;

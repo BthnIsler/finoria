@@ -18,6 +18,7 @@ interface AssetsTabsWidgetProps {
     onEdit: (asset: Asset) => void;
     onSell: (asset: Asset) => void;
     onAnalyze?: (asset: Asset) => void;
+    isMobile?: boolean;
 }
 
 function getCutoffDate(period: PLPeriod): Date | null {
@@ -89,7 +90,7 @@ const PL_PERIODS: { key: PLPeriod; label: string }[] = [
     { key: 'all', label: 'Tümü' },
 ];
 
-export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, onSell, onAnalyze }: AssetsTabsWidgetProps) {
+export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, onSell, onAnalyze, isMobile = false }: AssetsTabsWidgetProps) {
     const [activeTab, setActiveTab] = useState<string>('all');
     const [plPeriod, setPLPeriod] = useState<PLPeriod>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -238,8 +239,9 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
             {/* ── PORTFOLIO SUMMARY BAND ── */}
             {filteredAndSortedAssets.length > 0 && (
                 <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12,
-                    marginBottom: 20,
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(160px, 1fr))',
+                    gap: 12, marginBottom: 20,
                 }}>
                     {[
                         { label: 'Toplam Değer', value: fmt(tabTotalVal), color: '#a78bfa', icon: '💰' },
@@ -310,8 +312,8 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
                 </div>
             </div>
 
-            {/* ── TABLE HEADER ── */}
-            {filteredAndSortedAssets.length > 0 && (
+            {/* ── TABLE HEADER — hidden on mobile ── */}
+            {!isMobile && filteredAndSortedAssets.length > 0 && (
                 <div style={{
                     display: 'grid',
                     gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
@@ -349,6 +351,7 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
                             expanded={expandedAssetId === asset.id}
                             onToggle={() => setExpandedAssetId(prev => prev === asset.id ? null : asset.id)}
                             isLast={idx === filteredAndSortedAssets.length - 1}
+                            isMobile={isMobile}
                         />
                     ))
                 )}
@@ -383,7 +386,7 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
 // Asset Table Row
 // ─────────────────────────────────────────────────────────────────────────────
 function AssetTableRow({
-    asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expanded, onToggle, isLast,
+    asset, plPeriod, onDelete, onEdit, onSell, onAnalyze, expanded, onToggle, isLast, isMobile = false,
 }: {
     asset: Asset;
     plPeriod: PLPeriod;
@@ -394,6 +397,7 @@ function AssetTableRow({
     expanded: boolean;
     onToggle: () => void;
     isLast: boolean;
+    isMobile?: boolean;
 }) {
     const cat = getCategoryMeta(asset.category);
     const { currency, convert, exchangeRates } = useCurrency();
@@ -421,16 +425,17 @@ function AssetTableRow({
 
     return (
         <>
-            {/* Main row */}
+            {/* Main row - mobile: 2-col card, desktop: 5-col brokerage grid */}
             <div
                 onClick={onToggle}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
                 style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
+                    display: isMobile ? 'flex' : 'grid',
+                    gridTemplateColumns: isMobile ? undefined : '2fr 1fr 1fr 1fr auto',
                     alignItems: 'center',
-                    padding: '12px 16px',
+                    justifyContent: isMobile ? 'space-between' : undefined,
+                    padding: isMobile ? '10px 12px' : '12px 16px',
                     borderRadius: 10,
                     cursor: 'pointer',
                     background: expanded
@@ -493,24 +498,33 @@ function AssetTableRow({
                     </div>
                 </div>
 
-                {/* Col 2: Unit price */}
+                {/* Col 2: Unit price — desktop only */}
+                {!isMobile && (
                 <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums' }}>
                         {fmt(convert(currentPriceTRY))}
                     </div>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 1 }}>birim</div>
                 </div>
+                )}
 
-                {/* Col 3: Total value */}
+                {/* Col 3: Total value — desktop only (mobile: shown in PL block above) */}
+                {!isMobile && (
                 <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
                         {fmt(currentValueDisplay)}
                     </div>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 1 }}>toplam</div>
                 </div>
+                )}
 
-                {/* Col 4: P/L */}
-                <div style={{ textAlign: 'right' }}>
+                {/* Col 4: P/L — on mobile: show combined value+pl in one block */}
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    {isMobile && (
+                        <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums', marginBottom: 2 }}>
+                            {fmt(currentValueDisplay)}
+                        </div>
+                    )}
                     {pl ? (
                         <>
                             <div style={{
@@ -519,12 +533,12 @@ function AssetTableRow({
                             }}>
                                 {pl.isPositive ? '+' : ''}{pl.pct.toFixed(2)}%
                             </div>
-                            <div style={{
+                            {!isMobile && <div style={{
                                 fontSize: 10, color: plColor, opacity: 0.7,
                                 fontVariantNumeric: 'tabular-nums', marginTop: 1,
                             }}>
                                 {pl.isPositive ? '+' : ''}{fmt(pl.valDisplay)}
-                            </div>
+                            </div>}
                         </>
                     ) : (
                         <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>—</span>

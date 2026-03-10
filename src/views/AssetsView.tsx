@@ -10,9 +10,10 @@ interface AssetsViewProps {
     onEdit: (asset: Asset) => void;
     onSell: (asset: Asset) => void;
     onAnalyze: (asset: Asset) => void;
+    isMobile?: boolean;
 }
 
-export default function AssetsView({ assets, onDelete, onEdit, onSell, onAnalyze }: AssetsViewProps) {
+export default function AssetsView({ assets, onDelete, onEdit, onSell, onAnalyze, isMobile = false }: AssetsViewProps) {
     if (assets.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20 px-5 text-center bg-elevated rounded-2xl border border-light">
@@ -34,6 +35,7 @@ export default function AssetsView({ assets, onDelete, onEdit, onSell, onAnalyze
                 onEdit={onEdit}
                 onSell={onSell}
                 onAnalyze={onAnalyze}
+                isMobile={isMobile}
             />
         </div>
     );
