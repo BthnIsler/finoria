@@ -273,44 +273,59 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
                 </div>
             )}
 
-            {/* ── CONTROLS ROW ── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-                {/* P/L Period */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 600, letterSpacing: 0.3 }}>KAR/ZARAR DÖNEMİ:</span>
-                    <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 2, border: '1px solid rgba(255,255,255,0.07)' }}>
-                        {PL_PERIODS.map(p => (
-                            <button key={p.key} onClick={() => setPLPeriod(p.key)} style={{
-                                padding: '5px 12px', fontSize: 11, fontWeight: 700, borderRadius: 6,
+            {/* ── CONTROLS ROW — simplified on mobile ── */}
+            {isMobile ? (
+                <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto' }} className="hide-scrollbar">
+                    {PL_PERIODS.map(p => (
+                        <button key={p.key} onClick={() => setPLPeriod(p.key)} style={{
+                            padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                            background: plPeriod === p.key ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(255,255,255,0.06)',
+                            color: plPeriod === p.key ? '#fff' : 'rgba(255,255,255,0.45)',
+                            fontSize: 12, fontWeight: 700, flexShrink: 0,
+                            boxShadow: plPeriod === p.key ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
+                            transition: 'all 0.2s',
+                        }}>{p.label}</button>
+                    ))}
+                </div>
+            ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+                    {/* P/L Period */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 600, letterSpacing: 0.3 }}>KAR/ZARAR DÖNEMİ:</span>
+                        <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 2, border: '1px solid rgba(255,255,255,0.07)' }}>
+                            {PL_PERIODS.map(p => (
+                                <button key={p.key} onClick={() => setPLPeriod(p.key)} style={{
+                                    padding: '5px 12px', fontSize: 11, fontWeight: 700, borderRadius: 6,
+                                    border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                                    background: plPeriod === p.key ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                                    color: plPeriod === p.key ? '#fff' : 'rgba(255,255,255,0.35)',
+                                    boxShadow: plPeriod === p.key ? '0 2px 8px rgba(99,102,241,0.4)' : 'none',
+                                }}>{p.label}</button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Sort — compact */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+                        <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 600, letterSpacing: 0.3 }}>SIRALA:</span>
+                        {([
+                            { k: 'value', l: 'Değer' },
+                            { k: 'plPct', l: 'K/Z%' },
+                            { k: 'name', l: 'İsim' },
+                            { k: 'date', l: 'Tarih' },
+                        ] as { k: SortKey; l: string }[]).map(s => (
+                            <button key={s.k} onClick={() => handleSortClick(s.k)} style={{
+                                padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6,
                                 border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                                background: plPeriod === p.key ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
-                                color: plPeriod === p.key ? '#fff' : 'rgba(255,255,255,0.35)',
-                                boxShadow: plPeriod === p.key ? '0 2px 8px rgba(99,102,241,0.4)' : 'none',
-                            }}>{p.label}</button>
+                                background: sortKey === s.k ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                color: sortKey === s.k ? '#fff' : 'rgba(255,255,255,0.3)',
+                            }}>
+                                {s.l}{sortKey === s.k ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                            </button>
                         ))}
                     </div>
                 </div>
-
-                {/* Sort — compact */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
-                    <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 600, letterSpacing: 0.3 }}>SIRALA:</span>
-                    {([
-                        { k: 'value', l: 'Değer' },
-                        { k: 'plPct', l: 'K/Z%' },
-                        { k: 'name', l: 'İsim' },
-                        { k: 'date', l: 'Tarih' },
-                    ] as { k: SortKey; l: string }[]).map(s => (
-                        <button key={s.k} onClick={() => handleSortClick(s.k)} style={{
-                            padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6,
-                            border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                            background: sortKey === s.k ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            color: sortKey === s.k ? '#fff' : 'rgba(255,255,255,0.3)',
-                        }}>
-                            {s.l}{sortKey === s.k ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                        </button>
-                    ))}
-                </div>
-            </div>
+            )}
 
             {/* ── TABLE HEADER — hidden on mobile ── */}
             {!isMobile && filteredAndSortedAssets.length > 0 && (
@@ -425,155 +440,179 @@ function AssetTableRow({
 
     return (
         <>
-            {/* Main row - mobile: 2-col card, desktop: 5-col brokerage grid */}
-            <div
-                onClick={onToggle}
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
-                style={{
-                    display: isMobile ? 'flex' : 'grid',
-                    gridTemplateColumns: isMobile ? undefined : '2fr 1fr 1fr 1fr auto',
-                    alignItems: 'center',
-                    justifyContent: isMobile ? 'space-between' : undefined,
-                    padding: isMobile ? '10px 12px' : '12px 16px',
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    background: expanded
-                        ? `${cat.color}0a`
-                        : hovered ? 'rgba(255,255,255,0.03)' : 'transparent',
-                    borderBottom: isLast && !expanded ? 'none' : '1px solid rgba(255,255,255,0.04)',
-                    transition: 'background 0.15s',
-                    gap: 8,
-                }}
-            >
-                {/* Col 1: Asset identity */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                    {/* Color dot + icon */}
-                    <div style={{
-                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                        background: `linear-gradient(135deg, ${cat.color}30, ${cat.color}15)`,
-                        border: `1px solid ${cat.color}30`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 18, position: 'relative',
-                    }}>
-                        {cat.icon}
-                        {asset.currentPrice && (
-                            <span style={{
-                                position: 'absolute', top: -4, right: -4,
-                                width: 10, height: 10, borderRadius: '50%',
-                                background: '#10b981', border: '2px solid #0a1021',
-                                boxShadow: '0 0 6px rgba(16,185,129,0.8)',
-                            }} />
-                        )}
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                            <span style={{
-                                fontSize: 13, fontWeight: 700, color: '#fff',
-                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                            }}>{asset.name}</span>
-                            {tags.map((tag, i) => (
-                                <span key={i} title={tag.title} style={{
-                                    fontSize: 9, fontWeight: 700, padding: '1px 5px',
-                                    borderRadius: 4, background: tag.bg, color: tag.color,
-                                    letterSpacing: 0.3, flexShrink: 0,
-                                }}>{tag.icon}</span>
-                            ))}
-                            <span style={{
-                                fontSize: 10, transition: 'transform 0.2s',
-                                transform: expanded ? 'rotate(180deg)' : '',
-                                color: 'rgba(255,255,255,0.2)', lineHeight: 1,
-                            }}>▾</span>
+                {/* Mobile layout: premium card with left accent bar */}
+                {isMobile ? (
+                    <div
+                        onClick={onToggle}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 14,
+                            padding: '14px 14px 14px 0',
+                            borderRadius: 16,
+                            cursor: 'pointer',
+                            background: expanded ? `${cat.color}0d` : 'rgba(255,255,255,0.025)',
+                            border: `1px solid ${expanded ? cat.color + '30' : 'rgba(255,255,255,0.07)'}`,
+                            marginBottom: 1,
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        {/* Left accent bar */}
+                        <div style={{
+                            width: 3, alignSelf: 'stretch', flexShrink: 0,
+                            background: `linear-gradient(180deg, ${cat.color}, ${cat.color}55)`,
+                            borderRadius: '0 2px 2px 0',
+                            minHeight: 48,
+                        }} />
+                        {/* Icon */}
+                        <div style={{
+                            width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+                            background: `${cat.color}18`, border: `1px solid ${cat.color}28`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+                            position: 'relative',
+                        }}>
+                            {cat.icon}
+                            {asset.currentPrice && (
+                                <span style={{
+                                    position: 'absolute', top: -3, right: -3,
+                                    width: 9, height: 9, borderRadius: '50%',
+                                    background: '#10b981', border: '2px solid #09101f',
+                                }} />
+                            )}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{
-                                fontSize: 10, fontWeight: 600,
-                                color: cat.color, opacity: 0.75,
-                            }}>{cat.labelTR}</span>
-                            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
-                            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
-                                {asset.amount.toLocaleString('tr-TR', { maximumFractionDigits: 6 })} adet
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Col 2: Unit price — desktop only */}
-                {!isMobile && (
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums' }}>
-                        {fmt(convert(currentPriceTRY))}
-                    </div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 1 }}>birim</div>
-                </div>
-                )}
-
-                {/* Col 3: Total value — desktop only (mobile: shown in PL block above) */}
-                {!isMobile && (
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
-                        {fmt(currentValueDisplay)}
-                    </div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 1 }}>toplam</div>
-                </div>
-                )}
-
-                {/* Col 4: P/L — on mobile: show combined value+pl in one block */}
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    {isMobile && (
-                        <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums', marginBottom: 2 }}>
-                            {fmt(currentValueDisplay)}
-                        </div>
-                    )}
-                    {pl ? (
-                        <>
-                            <div style={{
-                                fontSize: 12, fontWeight: 800, color: plColor,
-                                fontVariantNumeric: 'tabular-nums',
-                            }}>
-                                {pl.isPositive ? '+' : ''}{pl.pct.toFixed(2)}%
+                        {/* Info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {asset.name}
+                                </span>
+                                {tags.map((tag, i) => (
+                                    <span key={i} title={tag.title} style={{
+                                        fontSize: 8.5, fontWeight: 800, padding: '1px 5px', borderRadius: 4, background: tag.bg, color: tag.color, flexShrink: 0,
+                                    }}>{tag.icon}</span>
+                                ))}
                             </div>
-                            {!isMobile && <div style={{
-                                fontSize: 10, color: plColor, opacity: 0.7,
-                                fontVariantNumeric: 'tabular-nums', marginTop: 1,
-                            }}>
-                                {pl.isPositive ? '+' : ''}{fmt(pl.valDisplay)}
-                            </div>}
-                        </>
-                    ) : (
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>—</span>
-                    )}
-                </div>
-
-                {/* Col 5: Actions */}
+                            <div style={{ fontSize: 11, color: cat.color, opacity: 0.8, fontWeight: 600 }}>
+                                {cat.labelTR} · {asset.amount.toLocaleString('tr-TR', { maximumFractionDigits: 4 })} adet
+                            </div>
+                        </div>
+                        {/* Value + P/L */}
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 3, fontVariantNumeric: 'tabular-nums' }}>
+                                {fmt(currentValueDisplay)}
+                            </div>
+                            {pl ? (
+                                <div style={{
+                                    fontSize: 12, fontWeight: 700, color: plColor,
+                                    fontVariantNumeric: 'tabular-nums',
+                                }}>{pl.isPositive ? '+' : ''}{pl.pct.toFixed(2)}%</div>
+                            ) : (
+                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>—</span>
+                            )}
+                        </div>
+                        {/* Expand chevron */}
+                        <span style={{
+                            fontSize: 12, color: 'rgba(255,255,255,0.25)',
+                            transform: expanded ? 'rotate(180deg)' : 'none',
+                            transition: 'transform 0.2s', flexShrink: 0, paddingRight: 6,
+                        }}>▾</span>
+                    </div>
+                ) : (
+                /* Desktop layout: 5-col grid */
                 <div
-                    style={{ display: 'flex', gap: 3 }}
-                    onClick={e => e.stopPropagation()}
-                    onMouseEnter={() => setActionsHovered(true)}
-                    onMouseLeave={() => setActionsHovered(false)}
+                    onClick={onToggle}
+                    onMouseEnter={() => setHovered(true)}
+                    onMouseLeave={() => setHovered(false)}
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
+                        alignItems: 'center',
+                        padding: '12px 16px',
+                        borderRadius: 10,
+                        cursor: 'pointer',
+                        background: expanded
+                            ? `${cat.color}0a`
+                            : hovered ? 'rgba(255,255,255,0.03)' : 'transparent',
+                        borderBottom: isLast && !expanded ? 'none' : '1px solid rgba(255,255,255,0.04)',
+                        transition: 'background 0.15s',
+                        gap: 8,
+                    }}
                 >
-                    {[
-                        onAnalyze && { icon: '🤖', title: 'AI Analiz', onClick: () => onAnalyze!(asset), col: '#a78bfa' },
-                        { icon: '✏️', title: 'Düzenle', onClick: () => onEdit(asset), col: 'rgba(255,255,255,0.4)' },
-                        { icon: '💸', title: 'Sat', onClick: () => onSell(asset), col: '#f59e0b' },
-                        { icon: '🗑', title: 'Sil', onClick: handleDelete, col: '#ef4444' },
-                    ].filter(Boolean).map((btn: any) => (
-                        <button
-                            key={btn.title}
-                            onClick={btn.onClick}
-                            title={btn.title}
-                            style={{
+                    {/* Col 1: Asset identity */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                            background: `linear-gradient(135deg, ${cat.color}30, ${cat.color}15)`,
+                            border: `1px solid ${cat.color}30`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 18, position: 'relative',
+                        }}>
+                            {cat.icon}
+                            {asset.currentPrice && (
+                                <span style={{
+                                    position: 'absolute', top: -4, right: -4,
+                                    width: 10, height: 10, borderRadius: '50%',
+                                    background: '#10b981', border: '2px solid #0a1021',
+                                    boxShadow: '0 0 6px rgba(16,185,129,0.8)',
+                                }} />
+                            )}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.name}</span>
+                                {tags.map((tag, i) => (
+                                    <span key={i} title={tag.title} style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: tag.bg, color: tag.color, letterSpacing: 0.3, flexShrink: 0 }}>{tag.icon}</span>
+                                ))}
+                                <span style={{ fontSize: 10, transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : '', color: 'rgba(255,255,255,0.2)', lineHeight: 1 }}>▾</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: cat.color, opacity: 0.75 }}>{cat.labelTR}</span>
+                                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
+                                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{asset.amount.toLocaleString('tr-TR', { maximumFractionDigits: 6 })} adet</span>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Col 2: Unit price */}
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums' }}>{fmt(convert(currentPriceTRY))}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 1 }}>birim</div>
+                    </div>
+                    {/* Col 3: Total value */}
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{fmt(currentValueDisplay)}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 1 }}>toplam</div>
+                    </div>
+                    {/* Col 4: P/L */}
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        {pl ? (
+                            <>
+                                <div style={{ fontSize: 12, fontWeight: 800, color: plColor, fontVariantNumeric: 'tabular-nums' }}>{pl.isPositive ? '+' : ''}{pl.pct.toFixed(2)}%</div>
+                                <div style={{ fontSize: 10, color: plColor, opacity: 0.7, fontVariantNumeric: 'tabular-nums', marginTop: 1 }}>{pl.isPositive ? '+' : ''}{fmt(pl.valDisplay)}</div>
+                            </>
+                        ) : <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>—</span>}
+                    </div>
+                    {/* Col 5: Actions */}
+                    <div style={{ display: 'flex', gap: 3 }} onClick={e => e.stopPropagation()}
+                        onMouseEnter={() => setActionsHovered(true)}
+                        onMouseLeave={() => setActionsHovered(false)}>
+                        {[
+                            onAnalyze && { icon: '🤖', title: 'AI Analiz', onClick: () => onAnalyze!(asset), col: '#a78bfa' },
+                            { icon: '✏️', title: 'Düzenle', onClick: () => onEdit(asset), col: 'rgba(255,255,255,0.4)' },
+                            { icon: '💸', title: 'Sat', onClick: () => onSell(asset), col: '#f59e0b' },
+                            { icon: '🗑', title: 'Sil', onClick: handleDelete, col: '#ef4444' },
+                        ].filter(Boolean).map((btn: any) => (
+                            <button key={btn.title} onClick={btn.onClick} title={btn.title} style={{
                                 width: 28, height: 28, borderRadius: 7, fontSize: 13,
                                 cursor: 'pointer', border: 'none',
                                 background: hovered || actionsHovered ? `${btn.col}15` : 'transparent',
                                 color: hovered || actionsHovered ? btn.col : 'rgba(255,255,255,0.15)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 transition: 'all 0.15s',
-                            }}
-                        >{btn.icon}</button>
-                    ))}
+                            }}>{btn.icon}</button>
+                        ))}
+                    </div>
                 </div>
-            </div>
+                )}
 
             {/* Expanded detail panel */}
             {expanded && (

@@ -480,7 +480,7 @@ export default function Home() {
         </div>
 
         {/* Main scrollable content */}
-        <main style={isMobile ? { flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 'calc(52px + env(safe-area-inset-top) + 16px) 16px calc(90px + env(safe-area-inset-bottom)) 16px', width: '100%' } : undefined}
+        <main style={isMobile ? { flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 'calc(68px + env(safe-area-inset-top)) 16px calc(90px + env(safe-area-inset-bottom)) 16px', width: '100%' } : undefined}
           className={isMobile ? '' : 'flex-1 overflow-y-auto overflow-x-hidden p-8 max-w-full'}
         >
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Asset, getCategoryMeta } from '@/lib/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,31 +32,27 @@ const formatDate = (dateStr: string) => {
     } catch { return ''; }
 };
 
-// Queries in Turkish for relevant results
-const buildPortfolioQuery = (assets: Asset[]) => {
-    const terms: string[] = [];
-    const cats = [...new Set(assets.map(a => a.category))];
-    assets.slice(0, 6).forEach(a => terms.push(a.name));
-    if (cats.includes('gold')) terms.push('altın');
-    if (cats.includes('crypto')) terms.push('kripto bitcoin');
-    if (cats.includes('stock')) terms.push('borsa hisse senedi BIST');
-    if (cats.includes('forex')) terms.push('dolar euro kur');
-    return terms.slice(0, 8).join(' OR ');
+const buildAssetQuery = (asset: Asset) => {
+    const base = asset.name;
+    if (asset.category === 'stock') return `${base} hisse borsa`;
+    if (asset.category === 'crypto') return `${base} kripto`;
+    if (asset.category === 'gold') return `${base} altın`;
+    if (asset.category === 'forex') return `${base} kur döviz`;
+    return base;
 };
 
 const GLOBAL_QUERY = 'küresel ekonomi piyasa merkez bankası faiz döviz borsa dünya ekonomisi';
 
-// ─── Skeleton card ────────────────────────────────────────────────────────────
-function SkeletonCard({ wide = false }: { wide?: boolean }) {
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+function SkeletonCard() {
     return (
         <div style={{
             background: 'rgba(255,255,255,0.025)', borderRadius: 16,
-            border: '1px solid rgba(255,255,255,0.05)', padding: wide ? '20px' : '14px 16px',
+            border: '1px solid rgba(255,255,255,0.05)', padding: '14px 16px',
             animation: 'skPulse 1.5s ease-in-out infinite',
         }}>
-            {wide && <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.06)', width: '30%', marginBottom: 12 }} />}
             <div style={{ height: 13, borderRadius: 6, background: 'rgba(255,255,255,0.07)', width: '85%', marginBottom: 10 }} />
-            <div style={{ height: 13, borderRadius: 6, background: 'rgba(255,255,255,0.05)', width: '65%', marginBottom: 10 }} />
+            <div style={{ height: 13, borderRadius: 6, background: 'rgba(255,255,255,0.05)', width: '60%', marginBottom: 10 }} />
             <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.04)', width: '40%' }} />
             <style>{`@keyframes skPulse{0%,100%{opacity:1}50%{opacity:0.35}}`}</style>
         </div>
@@ -64,7 +60,9 @@ function SkeletonCard({ wide = false }: { wide?: boolean }) {
 }
 
 // ─── Article card ─────────────────────────────────────────────────────────────
-function ArticleCard({ article, accent = '#a78bfa', featured = false }: { article: NewsArticle; accent?: string; featured?: boolean }) {
+function ArticleCard({ article, accent = '#a78bfa', featured = false }: {
+    article: NewsArticle; accent?: string; featured?: boolean;
+}) {
     const [hovered, setHovered] = useState(false);
     return (
         <a href={article.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
@@ -72,68 +70,55 @@ function ArticleCard({ article, accent = '#a78bfa', featured = false }: { articl
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
                 style={{
-                    background: hovered ? 'rgba(255,255,255,0.06)' : (featured ? `${accent}0e` : 'rgba(255,255,255,0.025)'),
-                    borderRadius: featured ? 20 : 16,
-                    border: `1px solid ${hovered ? `${accent}55` : (featured ? `${accent}33` : 'rgba(255,255,255,0.07)')}`,
-                    padding: featured ? '18px 20px' : '13px 15px',
-                    transition: 'all 0.2s',
-                    position: 'relative', overflow: 'hidden',
+                    background: hovered ? 'rgba(255,255,255,0.06)' : (featured ? `${accent}0d` : 'rgba(255,255,255,0.025)'),
+                    borderRadius: featured ? 20 : 15,
+                    border: `1px solid ${hovered ? `${accent}55` : (featured ? `${accent}35` : 'rgba(255,255,255,0.07)')}`,
+                    padding: featured ? '16px 18px' : '12px 14px',
+                    transition: 'all 0.2s', position: 'relative', overflow: 'hidden',
                 }}
             >
-                {/* Accent bar */}
                 <div style={{
-                    position: 'absolute', left: 0, top: featured ? 20 : 14, bottom: featured ? 20 : 14,
-                    width: 3, borderRadius: '0 3px 3px 0',
+                    position: 'absolute', left: 0, top: 15, bottom: 15, width: 3,
+                    borderRadius: '0 3px 3px 0',
                     background: `linear-gradient(180deg, ${accent}, ${accent}44)`,
                 }} />
                 <div style={{ paddingLeft: 10 }}>
                     {featured && (
                         <div style={{
                             display: 'inline-flex', alignItems: 'center', gap: 5,
-                            background: `${accent}22`, border: `1px solid ${accent}44`,
-                            borderRadius: 20, padding: '3px 10px', marginBottom: 10,
+                            background: `${accent}20`, border: `1px solid ${accent}40`,
+                            borderRadius: 20, padding: '2px 9px', marginBottom: 8,
                         }}>
-                            <div style={{
-                                width: 6, height: 6, borderRadius: '50%', background: accent,
-                                animation: 'liveBlip 1.2s ease-in-out infinite',
-                            }} />
-                            <span style={{ fontSize: 9, fontWeight: 800, color: accent, letterSpacing: 0.8, textTransform: 'uppercase' }}>
-                                Öne Çıkan
-                            </span>
+                            <div style={{ width: 5, height: 5, borderRadius: '50%', background: accent, animation: 'blip 1.2s ease-in-out infinite' }} />
+                            <span style={{ fontSize: 9, fontWeight: 800, color: accent, letterSpacing: 0.8, textTransform: 'uppercase' }}>Öne Çıkan</span>
                         </div>
                     )}
                     <p style={{
-                        fontSize: featured ? 14 : 13, fontWeight: featured ? 700 : 600,
-                        color: 'rgba(255,255,255,0.9)', lineHeight: 1.55, margin: '0 0 9px',
-                        display: '-webkit-box', WebkitLineClamp: featured ? 3 : 2,
-                        WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                        fontSize: featured ? 13 : 12.5, fontWeight: featured ? 700 : 600,
+                        color: 'rgba(255,255,255,0.9)', lineHeight: 1.55, margin: '0 0 8px',
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                     }}>{article.title}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <span style={{
-                            fontSize: 10, fontWeight: 700, color: accent,
-                            background: `${accent}18`, border: `1px solid ${accent}30`,
-                            padding: '2px 9px', borderRadius: 20, lineHeight: 1.8,
+                            fontSize: 9.5, fontWeight: 700, color: accent,
+                            background: `${accent}18`, border: `1px solid ${accent}2a`,
+                            padding: '2px 8px', borderRadius: 20, lineHeight: 1.8,
                         }}>{article.source || 'Haber'}</span>
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', fontWeight: 500 }}>
-                            {formatDate(article.pubDate)}
-                        </span>
-                        <span style={{ marginLeft: 'auto', fontSize: 14, color: `${accent}66`, fontWeight: 700 }}>↗</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)' }}>{formatDate(article.pubDate)}</span>
+                        <span style={{ marginLeft: 'auto', fontSize: 13, color: `${accent}66` }}>↗</span>
                     </div>
                 </div>
-                <style>{`
-                    @keyframes liveBlip { 0%,100%{opacity:1} 50%{opacity:0.2} }
-                `}</style>
+                <style>{`@keyframes blip{0%,100%{opacity:1}50%{opacity:0.2}}`}</style>
             </div>
         </a>
     );
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
 function EmptyState({ icon, text }: { icon: string; text: string }) {
     return (
-        <div style={{ textAlign: 'center', padding: '36px 16px' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>{icon}</div>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', margin: 0, lineHeight: 1.6 }}>{text}</p>
+        <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>{icon}</div>
+            <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.25)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{text}</p>
         </div>
     );
 }
@@ -141,17 +126,29 @@ function EmptyState({ icon, text }: { icon: string; text: string }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function NewsSection({ assets }: NewsSectionProps) {
     const [tab, setTab] = useState<Tab>('portfolio');
-    const [portfolioNews, setPortfolioNews] = useState<NewsArticle[]>([]);
-    const [globalNews, setGlobalNews]  = useState<NewsArticle[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchNews, setSearchNews]   = useState<NewsArticle[]>([]);
-    const [loadingPortfolio, setLoadingPortfolio] = useState(false);
-    const [loadingGlobal, setLoadingGlobal]       = useState(false);
-    const [loadingSearch, setLoadingSearch]       = useState(false);
-    const cache = useRef<Record<string, NewsArticle[]>>({});
-    const searchInputRef = useRef<HTMLInputElement>(null);
 
-    const fetchNews = useCallback(async (q: string, setter: (a: NewsArticle[]) => void, setLoading: (b: boolean) => void) => {
+    // Portfolio tab: per-asset news
+    const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+    const [assetNews, setAssetNews]         = useState<NewsArticle[]>([]);
+    const [assetLoading, setAssetLoading]   = useState(false);
+
+    // Global tab
+    const [globalNews, setGlobalNews]       = useState<NewsArticle[]>([]);
+    const [globalLoading, setGlobalLoading] = useState(false);
+    const globalFetched = useRef(false);
+
+    // Search tab
+    const [searchQuery, setSearchQuery]     = useState('');
+    const [searchNews, setSearchNews]       = useState<NewsArticle[]>([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+
+    const cache = useRef<Record<string, NewsArticle[]>>({});
+
+    const fetchNews = useCallback(async (
+        q: string,
+        setter: (a: NewsArticle[]) => void,
+        setLoading: (b: boolean) => void,
+    ) => {
         if (!q.trim()) return;
         if (cache.current[q]) { setter(cache.current[q]); return; }
         setLoading(true);
@@ -165,25 +162,22 @@ export default function NewsSection({ assets }: NewsSectionProps) {
         finally { setLoading(false); }
     }, []);
 
-    // Fetch portfolio news on mount / asset change
-    useEffect(() => {
-        if (assets.length === 0) return;
-        const q = buildPortfolioQuery(assets);
-        fetchNews(q, setPortfolioNews, setLoadingPortfolio);
-    }, [assets, fetchNews]);
-
-    // Fetch global news on mount
-    useEffect(() => {
-        fetchNews(GLOBAL_QUERY, setGlobalNews, setLoadingGlobal);
+    // Load global news when switching to global tab
+    const handleTabChange = useCallback((t: Tab) => {
+        setTab(t);
+        if (t === 'global' && !globalFetched.current) {
+            globalFetched.current = true;
+            fetchNews(GLOBAL_QUERY, setGlobalNews, setGlobalLoading);
+        }
     }, [fetchNews]);
 
-    // Search handler
-    const handleSearch = useCallback(() => {
-        const q = searchQuery.trim();
-        if (!q) return;
-        const trQuery = `${q} haber piyasa ekonomi`;
-        fetchNews(trQuery, setSearchNews, setLoadingSearch);
-    }, [searchQuery, fetchNews]);
+    // Select an asset in portfolio tab
+    const handleSelectAsset = useCallback((asset: Asset) => {
+        if (selectedAsset?.id === asset.id) return; // already selected
+        setSelectedAsset(asset);
+        const q = buildAssetQuery(asset);
+        fetchNews(q, setAssetNews, setAssetLoading);
+    }, [selectedAsset, fetchNews]);
 
     const TABS: { key: Tab; label: string; icon: string }[] = [
         { key: 'portfolio', label: 'Portföyüm', icon: '📊' },
@@ -203,60 +197,133 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                 {TABS.map(t => {
                     const active = tab === t.key;
                     return (
-                        <button key={t.key} onClick={() => setTab(t.key)} style={{
-                            flex: 1, padding: '11px 4px', borderRadius: 14,
+                        <button key={t.key} onClick={() => handleTabChange(t.key)} style={{
+                            flex: 1, padding: '10px 4px', borderRadius: 14,
                             cursor: 'pointer', transition: 'all 0.2s',
                             background: active ? 'linear-gradient(135deg,rgba(99,102,241,0.28),rgba(139,92,246,0.16))' : 'transparent',
                             border: active ? '1px solid rgba(99,102,241,0.35)' : '1px solid transparent',
                             boxShadow: active ? '0 2px 14px rgba(99,102,241,0.18)' : 'none',
                         }}>
-                            <div style={{ fontSize: 17, marginBottom: 3 }}>{t.icon}</div>
+                            <div style={{ fontSize: 16, marginBottom: 3 }}>{t.icon}</div>
                             <div style={{
                                 fontSize: 10, fontWeight: active ? 700 : 500,
                                 color: active ? '#c4b5fd' : 'rgba(255,255,255,0.38)',
-                                letterSpacing: 0.2,
                             }}>{t.label}</div>
                         </button>
                     );
                 })}
             </div>
 
-            {/* ── PORTFOLIO tab ── */}
+            {/* ── PORTFOLIO tab: asset list + per-asset news ── */}
             {tab === 'portfolio' && (
                 <div>
-                    {/* Section header */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                        <div style={{
-                            width: 28, height: 28, borderRadius: 8, fontSize: 14,
-                            background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.25)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>📊</div>
-                        <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Portföy Haberleri</div>
-                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>varlıklarınızla ilgili son gelişmeler</div>
-                        </div>
-                    </div>
+                    {assets.length === 0 && (
+                        <EmptyState icon="📂" text="Portföy haberleri için önce varlık ekleyin." />
+                    )}
+                    {assets.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {/* Asset list */}
+                            <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.8, margin: '0 0 4px' }}>
+                                Varlık seçerek haber görüntüleyin
+                            </p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {assets.map(asset => {
+                                    const cat = getCategoryMeta(asset.category);
+                                    const isActive = selectedAsset?.id === asset.id;
+                                    return (
+                                        <button
+                                            key={asset.id}
+                                            onClick={() => handleSelectAsset(asset)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: 12,
+                                                padding: '12px 14px', borderRadius: 14,
+                                                background: isActive
+                                                    ? `linear-gradient(135deg, ${cat.color}22, ${cat.color}0a)`
+                                                    : 'rgba(255,255,255,0.03)',
+                                                border: isActive
+                                                    ? `1px solid ${cat.color}44`
+                                                    : '1px solid rgba(255,255,255,0.07)',
+                                                transition: 'all 0.2s', cursor: 'pointer',
+                                                textAlign: 'left',
+                                                boxShadow: isActive ? `0 4px 16px ${cat.color}16` : 'none',
+                                            }}
+                                        >
+                                            {/* Icon */}
+                                            <div style={{
+                                                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                                                background: `${cat.color}18`, border: `1px solid ${cat.color}30`,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: 18,
+                                            }}>{cat.icon}</div>
+                                            {/* Name + category */}
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    fontSize: 13, fontWeight: 700,
+                                                    color: isActive ? cat.color : 'rgba(255,255,255,0.85)',
+                                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                                }}>{asset.name}</div>
+                                                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+                                                    {cat.labelTR}
+                                                </div>
+                                            </div>
+                                            {/* Active indicator */}
+                                            <span style={{
+                                                fontSize: 14, color: isActive ? cat.color : 'rgba(255,255,255,0.15)',
+                                                transition: 'transform 0.2s',
+                                                transform: isActive ? 'translateX(0)' : 'translateX(-4px)',
+                                            }}>›</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
 
-                    {loadingPortfolio && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <SkeletonCard wide />
-                            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
-                        </div>
-                    )}
-                    {!loadingPortfolio && portfolioNews.length === 0 && assets.length === 0 && (
-                        <EmptyState icon="📂" text={'Portföy haberleri için önce varlık ekleyin.'} />
-                    )}
-                    {!loadingPortfolio && portfolioNews.length === 0 && assets.length > 0 && (
-                        <EmptyState icon="🔍" text={'Haberler bulunamadı. Birazdan tekrar deneyin.'} />
-                    )}
-                    {!loadingPortfolio && portfolioNews.length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {portfolioNews.slice(0, 1).map((a, i) => (
-                                <ArticleCard key={i} article={a} featured accent="#a78bfa" />
-                            ))}
-                            {portfolioNews.slice(1, 9).map((a, i) => (
-                                <ArticleCard key={i + 1} article={a} accent="#a78bfa" />
-                            ))}
+                            {/* News panel */}
+                            {selectedAsset && (
+                                <div style={{ marginTop: 8 }}>
+                                    {/* Section label */}
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
+                                        paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)',
+                                    }}>
+                                        <span style={{ fontSize: 16 }}>{getCategoryMeta(selectedAsset.category).icon}</span>
+                                        <div>
+                                            <span style={{ fontSize: 13, fontWeight: 800, color: getCategoryMeta(selectedAsset.category).color }}>
+                                                {selectedAsset.name}
+                                            </span>
+                                            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginLeft: 6 }}>
+                                                · son haberler
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {assetLoading && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                                        </div>
+                                    )}
+                                    {!assetLoading && assetNews.length === 0 && (
+                                        <EmptyState icon="😕" text={`${selectedAsset.name} için haber bulunamadı.`} />
+                                    )}
+                                    {!assetLoading && assetNews.length > 0 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                                            {assetNews.slice(0, 1).map((a, i) => (
+                                                <ArticleCard key={i} article={a} featured
+                                                    accent={getCategoryMeta(selectedAsset.category).color} />
+                                            ))}
+                                            {assetNews.slice(1).map((a, i) => (
+                                                <ArticleCard key={i + 1} article={a}
+                                                    accent={getCategoryMeta(selectedAsset.category).color} />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {!selectedAsset && (
+                                <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
+                                    Haber görmek için yukarıdan bir varlık seçin ↑
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -276,24 +343,18 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>dünya piyasalarından önemli gündem</div>
                         </div>
                     </div>
-
-                    {loadingGlobal && (
+                    {globalLoading && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <SkeletonCard wide />
-                            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                            {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
                         </div>
                     )}
-                    {!loadingGlobal && globalNews.length === 0 && (
-                        <EmptyState icon="📡" text={'Global haberler yüklenemedi. İnternet bağlantınızı kontrol edin.'} />
+                    {!globalLoading && globalNews.length === 0 && (
+                        <EmptyState icon="📡" text="Global haberler yüklenemedi." />
                     )}
-                    {!loadingGlobal && globalNews.length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {globalNews.slice(0, 1).map((a, i) => (
-                                <ArticleCard key={i} article={a} featured accent="#60a5fa" />
-                            ))}
-                            {globalNews.slice(1, 10).map((a, i) => (
-                                <ArticleCard key={i + 1} article={a} accent="#60a5fa" />
-                            ))}
+                    {!globalLoading && globalNews.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                            {globalNews.slice(0, 1).map((a, i) => <ArticleCard key={i} article={a} featured accent="#60a5fa" />)}
+                            {globalNews.slice(1).map((a, i) => <ArticleCard key={i + 1} article={a} accent="#60a5fa" />)}
                         </div>
                     )}
                 </div>
@@ -310,9 +371,7 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                         }}>🔎</div>
                         <div>
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Varlık Ara</div>
-                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>herhangi bir varlık
-
- hakkında haber bul</div>
+                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>herhangi bir varlık hakkında haber bul</div>
                         </div>
                     </div>
 
@@ -320,15 +379,18 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                     <div style={{
                         display: 'flex', gap: 8, marginBottom: 20,
                         background: 'rgba(255,255,255,0.04)', borderRadius: 14,
-                        border: '1px solid rgba(255,255,255,0.08)', padding: '4px 4px 4px 14px',
-                        transition: 'border-color 0.2s',
-                    }} onFocus={() => {}} onBlur={() => {}}>
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        padding: '4px 4px 4px 14px',
+                    }}>
                         <input
-                            ref={searchInputRef}
                             type="text"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter' && searchQuery.trim()) {
+                                    fetchNews(`${searchQuery.trim()} haber piyasa`, setSearchNews, setSearchLoading);
+                                }
+                            }}
                             placeholder="Örn: Apple, Bitcoin, Dolar, Altın..."
                             style={{
                                 flex: 1, background: 'transparent', border: 'none', outline: 'none',
@@ -336,8 +398,12 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                             }}
                         />
                         <button
-                            onClick={handleSearch}
-                            disabled={!searchQuery.trim() || loadingSearch}
+                            onClick={() => {
+                                if (searchQuery.trim()) {
+                                    fetchNews(`${searchQuery.trim()} haber piyasa`, setSearchNews, setSearchLoading);
+                                }
+                            }}
+                            disabled={!searchQuery.trim() || searchLoading}
                             style={{
                                 padding: '10px 16px', borderRadius: 10,
                                 background: searchQuery.trim()
@@ -345,77 +411,31 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                                     : 'rgba(255,255,255,0.07)',
                                 color: searchQuery.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
                                 border: 'none', cursor: searchQuery.trim() ? 'pointer' : 'not-allowed',
-                                fontSize: 12, fontWeight: 700, transition: 'all 0.2s',
-                                flexShrink: 0,
+                                fontSize: 12, fontWeight: 700, transition: 'all 0.2s', flexShrink: 0,
                             }}
-                        >
-                            {loadingSearch ? '...' : 'Ara'}
-                        </button>
+                        >{searchLoading ? '...' : 'Ara'}</button>
                     </div>
 
-                    {/* Quick asset chips — user's portfolio */}
-                    {assets.length > 0 && (
-                        <div style={{ marginBottom: 16 }}>
-                            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: 700 }}>
-                                Portföyünüzden
-                            </p>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-                                {assets.slice(0, 8).map(asset => {
-                                    const cat = getCategoryMeta(asset.category);
-                                    return (
-                                        <button
-                                            key={asset.id}
-                                            onClick={() => { setSearchQuery(asset.name); fetchNews(`${asset.name} ${asset.category === 'stock' ? 'hisse borsa' : asset.category === 'crypto' ? 'kripto' : asset.category === 'gold' ? 'altın' : 'kur'} haber`, setSearchNews, setLoadingSearch); }}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: 5,
-                                                padding: '7px 12px', borderRadius: 50,
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: `1px solid ${cat.color}44`,
-                                                color: 'rgba(255,255,255,0.7)', fontSize: 11,
-                                                fontWeight: 600, cursor: 'pointer',
-                                                transition: 'all 0.15s',
-                                            }}
-                                        >
-                                            <span style={{ fontSize: 13 }}>{cat.icon}</span>
-                                            <span style={{ maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {asset.name}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                    {!searchLoading && searchNews.length === 0 && !searchQuery && (
+                        <EmptyState icon="🔍" text={'Bir varlık adı veya anahtar kelime girin.\nÖrn: Tesla, Ethereum, Dolar...'} />
                     )}
-
-                    {/* Search results */}
-                    {loadingSearch && (
+                    {searchLoading && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
                         </div>
                     )}
-                    {!loadingSearch && searchNews.length === 0 && !searchQuery && (
-                        <EmptyState icon="🔍" text={'Bir varlık adı veya anahtar kelime girin.\nÖrn: Tesla, Ethereum, Dolar...'}/>
-                    )}
-                    {!loadingSearch && searchNews.length === 0 && searchQuery && (
-                        <EmptyState icon="😕" text={`"${searchQuery}" için haber bulunamadı.`} />
-                    )}
-                    {!loadingSearch && searchNews.length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {!searchLoading && searchNews.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                             <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{searchNews.length} sonuç:</span>
+                                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{searchNews.length} sonuç:</span>
                                 <span style={{ fontSize: 11, fontWeight: 700, color: '#34d399' }}>{searchQuery}</span>
                             </div>
-                            {searchNews.slice(0, 1).map((a, i) => (
-                                <ArticleCard key={i} article={a} featured accent="#34d399" />
-                            ))}
-                            {searchNews.slice(1, 10).map((a, i) => (
-                                <ArticleCard key={i + 1} article={a} accent="#34d399" />
-                            ))}
+                            {searchNews.slice(0, 1).map((a, i) => <ArticleCard key={i} article={a} featured accent="#34d399" />)}
+                            {searchNews.slice(1).map((a, i) => <ArticleCard key={i + 1} article={a} accent="#34d399" />)}
                         </div>
                     )}
                 </div>
             )}
-
         </div>
     );
 }
