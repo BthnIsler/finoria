@@ -9,12 +9,11 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Use Google News RSS feed as a free news source
-        // Use English + global locale for fresher, broader results
-        const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+        // Use Google News RSS with Turkish locale so results come back in Turkish
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
             .toISOString().split('T')[0];
-        const globalQuery = `${query} after:${threeDaysAgo}`;
-        const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(globalQuery)}&hl=en-US&gl=US&ceid=US:en`;
+        const trQuery = `${query} after:${sevenDaysAgo}`;
+        const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(trQuery)}&hl=tr-TR&gl=TR&ceid=TR:tr`;
         const res = await fetch(rssUrl, {
             next: { revalidate: 120 }, // Cache for 2 minutes (fresher)
         });
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest) {
         const xml = await res.text();
 
         // Parse RSS XML manually (lightweight, no dependency needed)
-        const articles = parseRSSItems(xml).slice(0, 8);
+        const articles = parseRSSItems(xml).slice(0, 12);
 
         return NextResponse.json({ articles });
     } catch (error) {

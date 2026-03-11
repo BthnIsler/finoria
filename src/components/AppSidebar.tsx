@@ -53,6 +53,8 @@ export default function AppSidebar({
     const navItems: { id: ActiveView; icon: string; label: string }[] = [
         { id: 'dashboard', icon: '◈', label: 'Özet' },
         { id: 'assets', icon: '⬡', label: 'Varlıklarım' },
+        { id: 'goals', icon: '🎯', label: 'Hedefler' },
+        { id: 'news', icon: '📰', label: 'Haberler' },
         { id: 'converter', icon: '⇌', label: 'Çevirici' },
     ];
 

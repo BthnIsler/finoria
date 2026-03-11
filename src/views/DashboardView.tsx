@@ -22,11 +22,18 @@ interface DashboardViewProps {
     isMobile?: boolean;
 }
 
-export default function DashboardView({ assets, totalWealth, totalCost, history, heroPLPeriod, setHeroPLPeriod, activeHeroPL, isMobile = false }: DashboardViewProps) {
+export default function DashboardView({
+    assets, totalWealth, totalCost, history,
+    heroPLPeriod, setHeroPLPeriod, activeHeroPL,
+    isMobile = false,
+}: DashboardViewProps) {
+    const gap = isMobile ? 16 : 24;
+
     return (
-        <div className="pb-10">
+        <div style={{ display: 'flex', flexDirection: 'column', gap, paddingBottom: 48 }}>
+
             {/* 1. Hero Wealth Card - full width */}
-            <div className="mb-6">
+            <div>
                 <HeroWealthCard
                     assets={assets}
                     totalWealth={totalWealth}
@@ -39,9 +46,17 @@ export default function DashboardView({ assets, totalWealth, totalCost, history,
                 />
             </div>
 
-            {/* 2. Charts Row — History chart left, Pie chart right */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-                <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', height: isMobile ? 320 : 420 }}>
+            {/* 2. Charts Row — History left, Pie right */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gap,
+            }}>
+                <div style={{
+                    background: 'var(--bg-elevated)', borderRadius: 16,
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    overflow: 'hidden', height: isMobile ? 320 : 420,
+                }}>
                     <WealthHistoryChart
                         history={history}
                         currentTotal={totalWealth}
@@ -49,32 +64,48 @@ export default function DashboardView({ assets, totalWealth, totalCost, history,
                         totalCost={totalCost}
                     />
                 </div>
-                {/* Pie chart */}
-                <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', height: isMobile ? 'auto' : 420 }}>
+                <div style={{
+                    background: 'var(--bg-elevated)', borderRadius: 16,
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    overflow: 'hidden', height: isMobile ? 'auto' : 420,
+                }}>
                     <WealthChart assets={assets} isMobile={isMobile} />
                 </div>
             </div>
 
-            {/* 3. Upcoming Events — shown on both web and mobile */}
-            <div className="mb-5">
+            {/* 3. Upcoming Events */}
+            <div>
                 <UpcomingEvents />
             </div>
 
-            {/* 4. News section — web only (mobile sees it in Haberler tab) */}
+            {/* 4. News — web only (mobile has Haberler tab) */}
             {!isMobile && assets.length > 0 && (
-                <div style={{ marginBottom: 24 }}>
-                    <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 17 }}>📰</span>
-                        <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: -0.3, margin: 0 }}>
-                            Portföy Haberleri
-                        </h2>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 8px' }}>
-                            varlıklarınızla ilgili haberler
-                        </span>
+                <div style={{
+                    background: 'var(--bg-elevated)', borderRadius: 20,
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    padding: '24px 28px',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: 10,
+                            background: 'linear-gradient(135deg, rgba(167,139,250,0.2), rgba(34,211,238,0.1))',
+                            border: '1px solid rgba(167,139,250,0.25)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+                        }}>📰</div>
+                        <div>
+                            <h2 style={{
+                                fontSize: 16, fontWeight: 800, color: 'var(--text-primary)',
+                                letterSpacing: -0.3, margin: '0 0 2px',
+                            }}>Portföy Haberleri</h2>
+                            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                                varlıklarınızla ilgili son haberler
+                            </p>
+                        </div>
                     </div>
                     <NewsSection assets={assets} />
                 </div>
             )}
+
         </div>
     );
 }

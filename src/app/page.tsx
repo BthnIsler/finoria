@@ -374,15 +374,17 @@ export default function Home() {
             borderBottomColor: '#8b5cf6',
             animation: 'loaderSpin 1.8s linear infinite reverse',
           }} />
-          {/* Logo center */}
+          {/* Logo center - mascot */}
           <div style={{
             position: 'absolute', inset: 16, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            background: 'linear-gradient(135deg, #4338ca, #7c3aed)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 24px rgba(99,102,241,0.5)',
             animation: 'logoPulse 2s ease-in-out infinite',
+            overflow: 'hidden',
           }}>
-            <span style={{ fontSize: 26 }}>💎</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/finoria-ai.png" alt="Finoria" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
 
@@ -744,13 +746,13 @@ export default function Home() {
             />
           )}
 
-          {/* ── PROFILE / GOALS VIEW ── */}
+          {/* ── PROFILE / GOALS VIEW (web) ── */}
           {activeView === 'goals' && (
-            <div className="pb-10">
+            <div className="pb-10" style={{ maxWidth: 720, margin: '0 auto' }}>
               <ProfileView
                 totalWealth={totalWealth}
                 fmt={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)}
-                username={undefined}
+                username={displayName || undefined}
               />
             </div>
           )}
