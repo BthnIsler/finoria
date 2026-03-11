@@ -28,7 +28,8 @@ export function calculateProfitLoss(
     purchasePrice: number,
     currentPrice: number
 ): { value: number; percentage: number } {
-    const totalCost = amount * purchasePrice;
+    const effectivePurchasePrice = purchasePrice > 0 ? purchasePrice : currentPrice;
+    const totalCost = amount * effectivePurchasePrice;
     const currentValue = amount * currentPrice;
     const value = currentValue - totalCost;
     const percentage = totalCost > 0 ? ((currentValue - totalCost) / totalCost) * 100 : 0;
@@ -47,9 +48,11 @@ export function getAssetCostInTRY(
     amount: number,
     purchasePrice: number,
     purchaseCurrency: string | undefined,
-    exchangeRates: Record<string, number>
+    exchangeRates: Record<string, number>,
+    fallbackCurrentPrice?: number
 ): number {
-    const rawCost = amount * purchasePrice;
+    const effectivePurchasePrice = purchasePrice > 0 ? purchasePrice : (fallbackCurrentPrice || 0);
+    const rawCost = amount * effectivePurchasePrice;
     const currency = purchaseCurrency || 'TRY';
 
     if (currency === 'TRY') return rawCost;

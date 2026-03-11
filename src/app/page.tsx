@@ -251,7 +251,7 @@ export default function Home() {
   const totalWealth = totalWealthBase * (1 + tickerOffset);
 
   // Cost calculation: convert purchase prices to TRY if they were entered in another currency
-  const totalCost = assets.reduce((sum, a) => sum + getAssetCostInTRY(a.amount, a.purchasePrice, a.purchaseCurrency, exchangeRates), 0);
+  const totalCost = assets.reduce((sum, a) => sum + getAssetCostInTRY(a.amount, a.purchasePrice, a.purchaseCurrency, exchangeRates, a.currentPrice ?? a.manualCurrentPrice), 0);
 
   const totalPL = totalWealth - totalCost;
   const totalPLPct = totalCost > 0 ? ((totalWealth - totalCost) / totalCost) * 100 : 0;
@@ -753,6 +753,9 @@ export default function Home() {
                 totalWealth={totalWealth}
                 fmt={(n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)}
                 username={displayName || undefined}
+                onSignOut={signOut}
+                theme={theme}
+                toggleTheme={toggleTheme}
               />
             </div>
           )}

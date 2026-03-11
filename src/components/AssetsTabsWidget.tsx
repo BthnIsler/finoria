@@ -40,7 +40,7 @@ function getSmartTags(asset: Asset, exchangeRates: Record<string, number>): Smar
     const ageDays = ageMs / (1000 * 60 * 60 * 24);
     if (ageDays > 365) tags.push({ label: 'Elmas', icon: '💎', color: '#22d3ee', bg: 'rgba(34,211,238,0.1)', title: '1 yıldan uzun süredir portföyde' });
     if (currentPriceTRY > 0 && asset.purchasePrice > 0) {
-        const unitCostTRY = getAssetCostInTRY(1, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
+        const unitCostTRY = getAssetCostInTRY(1, asset.purchasePrice, asset.purchaseCurrency, exchangeRates, currentPriceTRY);
         if (unitCostTRY > 0) {
             const pctChange = ((currentPriceTRY - unitCostTRY) / unitCostTRY) * 100;
             if (pctChange > 100) tags.push({ label: 'Rekor', icon: '🔥', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', title: 'Alış fiyatından %100+ yukarıda' });
@@ -55,7 +55,7 @@ function computePL(asset: Asset, plPeriod: PLPeriod, exchangeRates: Record<strin
     const currentValueTRY = asset.amount * currentPriceTRY;
     if (plPeriod === 'all') {
         if (asset.purchasePrice > 0) {
-            const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
+            const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates, currentPriceTRY);
             if (costTRY > 0) {
                 const plTRY = currentValueTRY - costTRY;
                 const pct = (plTRY / costTRY) * 100;
@@ -71,7 +71,7 @@ function computePL(asset: Asset, plPeriod: PLPeriod, exchangeRates: Record<strin
                 const pct = (change / pastPrice) * 100;
                 return { pct, valDisplay: convert(change * asset.amount), isPositive: change >= 0 };
             } else if (asset.purchasePrice > 0) {
-                const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
+                const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates, currentPriceTRY);
                 if (costTRY > 0) {
                     const plTRY = currentValueTRY - costTRY;
                     const pct = (plTRY / costTRY) * 100;
@@ -155,7 +155,8 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
     }, 0);
     const tabTotalCost = filteredAndSortedAssets.reduce((s, a) => {
         if (a.purchasePrice <= 0) return s;
-        return s + convert(getAssetCostInTRY(a.amount, a.purchasePrice, a.purchaseCurrency, exchangeRates));
+        const p = a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
+        return s + convert(getAssetCostInTRY(a.amount, a.purchasePrice, a.purchaseCurrency, exchangeRates, p));
     }, 0);
     const tabPL = tabTotalVal - tabTotalCost;
     const tabPLPct = tabTotalCost > 0 ? ((tabPL) / tabTotalCost) * 100 : 0;
@@ -424,7 +425,7 @@ function AssetTableRow({
     const currentValueDisplay = convert(currentValueTRY);
     const pl = computePL(asset, plPeriod, exchangeRates, convert);
     const tags = getSmartTags(asset, exchangeRates);
-    const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates);
+    const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates, currentPriceTRY);
 
     const fmt = (n: number) =>
         new Intl.NumberFormat('tr-TR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);

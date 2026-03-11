@@ -16,6 +16,9 @@ interface ProfileViewProps {
     totalWealth: number;
     fmt: (n: number) => string;
     username?: string;
+    onSignOut?: () => void;
+    theme?: string;
+    toggleTheme?: () => void;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -262,10 +265,11 @@ function AddGoalForm({ onAdd, onClose }: { onAdd: (g: Omit<Goal, 'id' | 'created
 }
 
 // ─── Main ProfileView ─────────────────────────────────────────────────────────
-export default function ProfileView({ totalWealth, fmt, username }: ProfileViewProps) {
+export default function ProfileView({ totalWealth, fmt, username, onSignOut, theme, toggleTheme }: ProfileViewProps) {
     const [goals, setGoals] = useState<Goal[]>([]);
     const [showAdd, setShowAdd] = useState(false);
     const [activeSection, setActiveSection] = useState<'goals' | 'profile'>('goals');
+    const [notificationsOn, setNotificationsOn] = useState(true);
 
     useEffect(() => { setGoals(loadGoals()); }, []);
 
@@ -457,17 +461,35 @@ export default function ProfileView({ totalWealth, fmt, username }: ProfileViewP
             {activeSection === 'profile' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {[
-                        { icon: '🌙', title: 'Tema', value: 'Koyu Mod', sub: 'Sistem varsayılanı' },
-                        { icon: '🔔', title: 'Bildirimler', value: 'Açık', sub: 'Önemli uyarılar' },
-                        { icon: '💱', title: 'Para Birimi', value: 'TRY', sub: 'Türk Lirası' },
-                        { icon: '🔒', title: 'Güvenlik', value: 'Aktif', sub: 'Uygulama kilidi' },
-                        { icon: '📊', title: 'Veri Yönetimi', value: 'Yerel', sub: 'Cihazda saklanır' },
+                        { 
+                          id: 'theme', icon: '🌙', title: 'Tema', 
+                          value: theme === 'light' ? 'Açık Mod' : 'Koyu Mod', 
+                          sub: 'Uygulama görünümü değiştin',
+                          onClick: toggleTheme 
+                        },
+                        { 
+                          id: 'notif', icon: '🔔', title: 'Bildirimler', 
+                          value: notificationsOn ? 'Açık' : 'Kapalı', 
+                          sub: 'Önemli uyarılar',
+                          onClick: () => setNotificationsOn(!notificationsOn)
+                        },
+                        { id: 'curr', icon: '💱', title: 'Para Birimi', value: 'TRY', sub: 'Türk Lirası' },
+                        { id: 'sec', icon: '🔒', title: 'Güvenlik', value: 'Aktif', sub: 'Uygulama kilidi' },
+                        { id: 'data', icon: '📊', title: 'Veri Yönetimi', value: 'Yerel', sub: 'Cihazda saklanır' },
                     ].map(item => (
-                        <div key={item.title} style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            background: 'rgba(255,255,255,0.03)', borderRadius: 16,
-                            border: '1px solid rgba(255,255,255,0.06)', padding: '16px',
-                        }}>
+                        <div 
+                          key={item.id} 
+                          onClick={item.onClick}
+                          style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              background: 'rgba(255,255,255,0.03)', borderRadius: 16,
+                              border: '1px solid rgba(255,255,255,0.06)', padding: '16px',
+                              cursor: item.onClick ? 'pointer' : 'default',
+                              transition: 'background 0.2s',
+                          }}
+                          onMouseEnter={(e) => { if(item.onClick) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                          onMouseLeave={(e) => { if(item.onClick) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                        >
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <div style={{
                                     width: 40, height: 40, borderRadius: 12, fontSize: 18,
@@ -481,10 +503,26 @@ export default function ProfileView({ totalWealth, fmt, username }: ProfileViewP
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)' }}>{item.value}</span>
-                                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 16 }}>›</span>
+                                {item.onClick && <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 16 }}>›</span>}
                             </div>
                         </div>
                     ))}
+
+                    {/* Sign-out button */}
+                    {onSignOut && (
+                        <button
+                            onClick={onSignOut}
+                            style={{
+                                marginTop: 12, padding: '16px', borderRadius: 16, border: 'none',
+                                background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444',
+                                fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            <span style={{ fontSize: 18 }}>🚪</span> Çıkış Yap
+                        </button>
+                    )}
 
                     {/* App version */}
                     <div style={{ textAlign: 'center', padding: '16px', color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>
