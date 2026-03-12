@@ -125,19 +125,26 @@ function buildHourlyData(hourly: HourlySnapshot[], period: TimePeriod, currentTo
     }
 
     if (period === '4h') {
-        // Group into 4-hour buckets
-        const bucketMs = 4 * 3600_000;
-        const grouped = new Map<number, HourlySnapshot[]>();
+        // Group into 4-hour buckets aligned to 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 (Local Time)
+        const grouped = new Map<string, HourlySnapshot[]>();
         for (const h of hourlyPlusNow) {
-            const ts = new Date(h.timestamp).getTime();
-            const bucketKey = Math.floor(ts / bucketMs) * bucketMs;
+            const d = new Date(h.timestamp);
+            const bucketHour = Math.floor(d.getHours() / 4) * 4;
+            // Key based on YYYY-MM-DD HH:00
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const hh = String(bucketHour).padStart(2, '0');
+            const bucketKey = `${yyyy}-${mm}-${dd} ${hh}:00`;
+            
             if (!grouped.has(bucketKey)) grouped.set(bucketKey, []);
             grouped.get(bucketKey)!.push(h);
         }
         
         const data: ChartPoint[] = [];
-        Array.from(grouped.entries()).sort((a,b)=>a[0]-b[0]).forEach(([ts, items]) => {
-            const label = fmtDate(new Date(ts).toISOString()) + ' ' + fmtTime(new Date(ts).toISOString());
+        Array.from(grouped.entries()).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([key, items]) => {
+            const [, time] = key.split(' ');
+            const label = time; // e.g. "04:00" or "20:00"
             const lastItem = items[items.length - 1];
             const highs = items.map(i => i.high ?? i.close);
             const lows = items.map(i => i.low ?? i.close);
