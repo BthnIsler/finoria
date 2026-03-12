@@ -9,7 +9,7 @@ import { WealthSnapshot, getHourlyHistory, HourlySnapshot } from '@/lib/storage'
 import { Asset } from '@/lib/types';
 import { useCurrency } from '@/lib/contexts';
 
-type TimePeriod = '4h' | '1w' | '1m' | '1y' | 'all';
+type TimePeriod = '4h' | '1d' | '1w' | '1m' | '1y' | 'all';
 
 interface WealthHistoryChartProps {
     history: WealthSnapshot[];
@@ -51,7 +51,7 @@ function fmtY(v: number) {
 }
 
 function filterByPeriod(data: ChartPoint[], period: TimePeriod): ChartPoint[] {
-    if (period === 'all' || period === '4h' || period === '1w') return data;
+    if (period === 'all' || period === '4h' || period === '1d' || period === '1w') return data;
     const now = new Date();
     const cutoff = period === '1m'
         ? new Date(now.getTime() - 30 * 86400_000)
@@ -87,6 +87,8 @@ function buildDailyData(history: WealthSnapshot[], currentTotal: number, period:
 function buildHourlyData(hourly: HourlySnapshot[], period: TimePeriod, currentTotal: number): ChartPoint[] {
     const cutoff = period === '4h'
         ? new Date(Date.now() - 4 * 3600_000)
+        : period === '1d'
+        ? new Date(Date.now() - 24 * 3600_000)
         : new Date(Date.now() - 7 * 86400_000);
     const filtered = hourly.filter(h => new Date(h.timestamp) >= cutoff);
     const data: ChartPoint[] = filtered.map(h => ({
@@ -100,10 +102,13 @@ function buildHourlyData(hourly: HourlySnapshot[], period: TimePeriod, currentTo
         }
     }
     // Fallback: no hourly data → flat line showing NOW
-    if (data.length < 2) return [
-        { label: period === '4h' ? '4 saat önce' : '1 hafta önce', value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal },
-        { label: 'Şimdi', value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal },
-    ];
+    if (data.length < 2) {
+        const label = period === '4h' ? '4S (Kayıt Yok)' : period === '1d' ? '1G (Kayıt Yok)' : '1H (Kayıt Yok)';
+        return [
+            { label: label, value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal },
+            { label: 'Şimdi', value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal },
+        ];
+    }
     return data;
 }
 
@@ -151,7 +156,7 @@ export default function WealthHistoryChart({
         if (!selectedAssetId) { setApiAssetHistory([]); setLastFetchKey(''); return; }
         const asset = assets.find(a => a.id === selectedAssetId);
         if (!asset?.apiId) { setApiAssetHistory([]); return; }
-        const apiPeriod = period === '1m' ? '3m' : period === 'all' ? '3y' : period === '4h' || period === '1w' ? '3m' : '1y';
+        const apiPeriod = period === '1m' ? '3m' : period === 'all' ? '3y' : period === '4h' || period === '1d' || period === '1w' ? '3m' : '1y';
         const key = `${asset.apiId}_${apiPeriod}`;
         if (key === lastFetchKey && apiAssetHistory.length > 0) return;
         let cancelled = false;
@@ -170,6 +175,7 @@ export default function WealthHistoryChart({
                 low: p.low ?? p.value * 0.999,
             }));
             if (period === '1w') pts = pts.slice(-7);
+            else if (period === '1d') pts = pts.slice(-2);
             else if (period === '1m') pts = pts.slice(-30);
             else if (period === '1y') pts = pts.slice(-365);
             setApiAssetHistory(pts);
@@ -182,7 +188,7 @@ export default function WealthHistoryChart({
     // Build chart data
     const chartData = useMemo(() => {
         if (selectedAssetId) return apiAssetHistory;
-        if (period === '4h' || period === '1w') return buildHourlyData(hourly, period, currentTotal);
+        if (period === '4h' || period === '1d' || period === '1w') return buildHourlyData(hourly, period, currentTotal);
         return buildDailyData(history, currentTotal, period);
     }, [history, currentTotal, period, hourly, selectedAssetId, apiAssetHistory]);
 
@@ -214,7 +220,7 @@ export default function WealthHistoryChart({
     const mainColor = isUp ? '#26a69a' : '#ef5350';  // TradingView green/red
     const selectedAsset = assets.find(a => a.id === selectedAssetId);
 
-    const periodLabels: Record<TimePeriod, string> = { '4h': '4S', '1w': '1H', '1m': '1A', '1y': '1Y', 'all': 'TÜM' };
+    const periodLabels: Record<TimePeriod, string> = { '4h': '4S', '1d': '1G', '1w': '1H', '1m': '1A', '1y': '1Y', 'all': 'TÜM' };
 
     return (
         <div style={{
@@ -311,8 +317,8 @@ export default function WealthHistoryChart({
                         borderBottom: '1px solid rgba(255,255,255,0.04)',
                     }}>
                         {/* Period buttons */}
-                        {(['4h', '1w', '1m', '1y', 'all'] as const).map(p => {
-                            const isHourly = p === '4h' || p === '1w';
+                        {(['4h', '1d', '1w', '1m', '1y', 'all'] as const).map(p => {
+                            const isHourly = p === '4h' || p === '1d' || p === '1w';
                             const disabled = isHourly && !!selectedAssetId;
                             return (
                                 <button key={p} onClick={() => !disabled && setPeriod(p)} disabled={disabled} style={{

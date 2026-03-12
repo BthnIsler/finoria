@@ -294,7 +294,7 @@ export default function ProfileView({ totalWealth, fmt, username, onSignOut, the
     const initials = (username ?? 'U').slice(0, 1).toUpperCase();
 
     return (
-        <div style={{ fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 120, paddingTop: 8 }}>
+        <div style={{ fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 120, paddingTop: 48 }}>
 
             {/* ── Profile hero ── */}
             <div style={{

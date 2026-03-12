@@ -54,13 +54,11 @@ function computePL(asset: Asset, plPeriod: PLPeriod, exchangeRates: Record<strin
     const currentPriceTRY = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
     const currentValueTRY = asset.amount * currentPriceTRY;
     if (plPeriod === 'all') {
-        if (asset.purchasePrice > 0) {
-            const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates, currentPriceTRY);
-            if (costTRY > 0) {
-                const plTRY = currentValueTRY - costTRY;
-                const pct = (plTRY / costTRY) * 100;
-                return { pct, valDisplay: convert(plTRY), isPositive: plTRY >= 0 };
-            }
+        const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates, currentPriceTRY);
+        if (costTRY > 0) {
+            const plTRY = currentValueTRY - costTRY;
+            const pct = (plTRY / costTRY) * 100;
+            return { pct, valDisplay: convert(plTRY), isPositive: plTRY >= 0 };
         }
     } else {
         const cutoff = getCutoffDate(plPeriod);
@@ -70,7 +68,7 @@ function computePL(asset: Asset, plPeriod: PLPeriod, exchangeRates: Record<strin
                 const change = currentPriceTRY - pastPrice;
                 const pct = (change / pastPrice) * 100;
                 return { pct, valDisplay: convert(change * asset.amount), isPositive: change >= 0 };
-            } else if (asset.purchasePrice > 0) {
+            } else {
                 const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates, currentPriceTRY);
                 if (costTRY > 0) {
                     const plTRY = currentValueTRY - costTRY;
