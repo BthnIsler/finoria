@@ -78,11 +78,11 @@ export default function WealthChart({ assets, isMobile = false }: WealthChartPro
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, boxShadow: `0 0 10px ${d.color}` }} />
-                        <span style={{ fontWeight: 700, color: '#fff', letterSpacing: -0.3 }}>{d.icon} {d.name}</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)', letterSpacing: -0.3 }}>{d.icon} {d.name}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                         <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Değer</span>
-                        <span style={{ fontWeight: 600, color: '#fff' }}>{formatCurrency(d.value)}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(d.value)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
                         <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Oran</span>

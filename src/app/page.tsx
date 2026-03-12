@@ -390,7 +390,7 @@ export default function Home() {
 
         {/* Brand name */}
         <div style={{
-          fontSize: 28, fontWeight: 900, letterSpacing: -0.8, color: '#fff',
+          fontSize: 28, fontWeight: 900, letterSpacing: -0.8, color: 'var(--text-primary)',
           marginBottom: 8, fontFamily: "'Inter', sans-serif",
         }}>Finoria</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginBottom: 36, letterSpacing: 0.3 }}>
@@ -502,7 +502,7 @@ export default function Home() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/finoria-ai.png" alt="Finoria" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
-                <span style={{ fontSize: 19, fontWeight: 900, letterSpacing: -0.4, color: '#fff' }}>Finoria</span>
+                <span style={{ fontSize: 19, fontWeight: 900, letterSpacing: -0.4, color: 'var(--text-primary)' }}>Finoria</span>
               </div>
 
               {/* Right side: add + profile */}
@@ -513,7 +513,7 @@ export default function Home() {
                     background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                     border: 'none', borderRadius: 10, width: 32, height: 32,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', fontSize: 18, color: '#fff', fontWeight: 300, flexShrink: 0,
+                    cursor: 'pointer', fontSize: 18, color: 'var(--text-primary)', fontWeight: 300, flexShrink: 0,
                     boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
                   }}
                 >+</button>
@@ -521,7 +521,7 @@ export default function Home() {
                   width: 32, height: 32, borderRadius: '50%',
                   background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', fontSize: 14, color: '#fff', fontWeight: 700,
+                  cursor: 'pointer', fontSize: 14, color: 'var(--text-primary)', fontWeight: 700,
                   border: '2px solid rgba(139,92,246,0.4)',
                   boxShadow: '0 0 12px rgba(139,92,246,0.3)',
                 }}>
@@ -685,7 +685,7 @@ export default function Home() {
                   </div>
                   
                   <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: '#a78bfa', textTransform: 'uppercase', marginBottom: 16 }}>Finoria'ya Hoş Geldin</div>
-                  <h2 style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, color: '#fff', marginBottom: 16, lineHeight: 1.1 }}>
+                  <h2 style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, color: 'var(--text-primary)', marginBottom: 16, lineHeight: 1.1 }}>
                     Servetini <span style={{ background: 'linear-gradient(135deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>inşa etmeye</span> başla
                   </h2>
                   <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, maxWidth: 460, margin: '0 auto 32px' }}>
@@ -700,7 +700,7 @@ export default function Home() {
                     ].map(f => (
                       <div key={f.title} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: '16px 12px' }}>
                         <div style={{ fontSize: 24, marginBottom: 8 }}>{f.icon}</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{f.title}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{f.title}</div>
                         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{f.desc}</div>
                       </div>
                     ))}
@@ -710,7 +710,7 @@ export default function Home() {
                     onClick={() => setShowAddForm(true)}
                     style={{
                       background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: 14,
-                      color: '#fff', fontSize: 16, fontWeight: 800, padding: '16px 36px', cursor: 'pointer',
+                      color: 'var(--text-primary)', fontSize: 16, fontWeight: 800, padding: '16px 36px', cursor: 'pointer',
                       boxShadow: '0 8px 32px rgba(99,102,241,0.4)', transition: 'all 0.2s',
                     }}
                     onMouseOver={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 40px rgba(99,102,241,0.6)'; }}
@@ -756,6 +756,7 @@ export default function Home() {
                 onSignOut={signOut}
                 theme={theme}
                 toggleTheme={toggleTheme}
+                isMobile={isMobile}
               />
             </div>
           )}
@@ -764,7 +765,7 @@ export default function Home() {
           {activeView === 'news' && (
             <div className="pb-10">
               <div style={{ marginBottom: 20 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 900, color: '#fff', margin: '0 0 4px', letterSpacing: -0.5 }}>Haberler</h1>
+                <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: -0.5 }}>Haberler</h1>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Portföyünüze özel haberler ve önemli gelişmeler</p>
               </div>
               <NewsSection assets={assets} />
@@ -779,7 +780,7 @@ export default function Home() {
             <div style={{ minHeight: 'calc(100vh - 160px)', display: 'flex', flexDirection: 'column' }}>
               {/* Header */}
               <div style={{ marginBottom: 8, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <h1 style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: -0.8, margin: '0 0 2px' }}>Asistanım</h1>
+                <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.8, margin: '0 0 2px' }}>Asistanım</h1>
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', margin: 0 }}>Finoria AI · Her zaman yanında</p>
               </div>
               <AiPortfolioChat

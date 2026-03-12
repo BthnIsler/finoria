@@ -143,8 +143,9 @@ function buildHourlyData(hourly: HourlySnapshot[], period: TimePeriod, currentTo
         
         const data: ChartPoint[] = [];
         Array.from(grouped.entries()).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([key, items]) => {
-            const [, time] = key.split(' ');
-            const label = time; // e.g. "04:00" or "20:00"
+            const [dateStr, time] = key.split(' ');
+            // Make label unique to fix Recharts overlap
+            const label = `${parseInt(dateStr.split('-')[2])} ${fmtDate(dateStr).split(' ')[1]} ${time}`; 
             const lastItem = items[items.length - 1];
             const highs = items.map(i => i.high ?? i.close);
             const lows = items.map(i => i.low ?? i.close);
@@ -270,7 +271,7 @@ export default function WealthHistoryChart({
 
     return (
         <div style={{
-            background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: 16, overflow: 'hidden', fontFamily: "'Inter', sans-serif",
         }}>
             {/* ── Body (wealth view only, what-if removed) ── */}
@@ -281,7 +282,7 @@ export default function WealthHistoryChart({
                             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
                                 {selectedAsset ? selectedAsset.name : 'Toplam Portföy'}
                             </div>
-                            <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', letterSpacing: -0.5 }}>
+                            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: -0.5 }}>
                                 {fmt(lastVal)}
                             </div>
                             <div style={{
@@ -305,7 +306,7 @@ export default function WealthHistoryChart({
                                 <button
                                     onClick={() => setShowAssetPicker(v => !v)}
                                     style={{
-                                        background: 'rgba(255,255,255,0.05)', color: selectedAssetId ? '#fff' : 'rgba(255,255,255,0.4)',
+                                        background: 'rgba(255,255,255,0.05)', color: selectedAssetId ? 'var(--text-primary)' : 'rgba(255,255,255,0.4)',
                                         border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
                                         padding: '6px 12px', fontSize: 11, fontWeight: 600,
                                         cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
@@ -322,7 +323,7 @@ export default function WealthHistoryChart({
                                 {showAssetPicker && (
                                     <div style={{
                                         position: 'absolute', top: '100%', right: 0, zIndex: 50,
-                                        background: '#1a1f2e', border: '1px solid rgba(255,255,255,0.1)',
+                                        background: 'var(--bg-elevated)', border: '1px solid rgba(255,255,255,0.1)',
                                         borderRadius: 10, overflow: 'hidden', marginTop: 4,
                                         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                                         minWidth: 180, maxHeight: 260, overflowY: 'auto',
@@ -371,7 +372,7 @@ export default function WealthHistoryChart({
                                     padding: '5px 10px', border: 'none', borderRadius: 6,
                                     fontSize: 11, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer',
                                     background: period === p ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                    color: period === p ? '#fff' : 'rgba(255,255,255,0.35)',
+                                    color: period === p ? 'var(--text-primary)' : 'rgba(255,255,255,0.35)',
                                     opacity: disabled ? 0.3 : 1, transition: 'all 0.15s', letterSpacing: 0.5,
                                 }}>
                                     {periodLabels[p]}
@@ -449,7 +450,7 @@ function TvAreaChart({ data, isUp, mainColor, fmt, costLine, width = 400, height
                 backdropFilter: 'blur(12px)',
             }}>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 6, letterSpacing: 0.5 }}>{label}</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{fmt(val)}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{fmt(val)}</div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: up ? '#26a69a' : '#ef5350' }}>
                     {up ? '▲' : '▼'} {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
                 </div>
@@ -499,7 +500,7 @@ function TvAreaChart({ data, isUp, mainColor, fmt, costLine, width = 400, height
                 stroke={mainColor} strokeWidth={1.5}
                 fill={`url(#${gradId})`}
                 dot={false}
-                activeDot={{ r: 4, fill: mainColor, stroke: '#0d1117', strokeWidth: 2 }}
+                activeDot={{ r: 4, fill: mainColor, stroke: 'var(--bg-card)', strokeWidth: 2 }}
                 isAnimationActive={true} animationDuration={400} animationEasing="ease-out"
             />
         </AreaChart>
@@ -542,7 +543,7 @@ function WhatIfView({ data, currentTotal, assets, fmt, period, setPeriod, isLoad
                 {payload.map((p: any, i: number) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 14, marginBottom: 2 }}>
                         <span style={{ fontSize: 10, color: p.stroke ?? p.color }}>{p.name}</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{fmt(p.value)}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>{fmt(p.value)}</span>
                     </div>
                 ))}
             </div>
@@ -567,7 +568,7 @@ function WhatIfView({ data, currentTotal, assets, fmt, period, setPeriod, isLoad
                         <button key={p.key} onClick={() => setPeriod(p.key)} style={{
                             padding: '4px 10px', border: 'none', borderRadius: 5, cursor: 'pointer',
                             fontSize: 10, fontWeight: 600, background: period === p.key ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            color: period === p.key ? '#fff' : 'rgba(255,255,255,0.35)', transition: 'all 0.15s',
+                            color: period === p.key ? 'var(--text-primary)' : 'rgba(255,255,255,0.35)', transition: 'all 0.15s',
                         }}>
                             {p.label}
                         </button>

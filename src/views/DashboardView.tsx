@@ -42,7 +42,18 @@ export default function DashboardView({
                     heroPLPeriod={heroPLPeriod}
                     setHeroPLPeriod={setHeroPLPeriod}
                     activeHeroPL={activeHeroPL}
-                    onShare={() => {}}
+                    onShare={() => {
+                        const shareData = {
+                            title: 'Finoria Servet Özeti',
+                            text: `Cari servetim ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(totalWealth)} seviyesinde!`,
+                            url: window.location.origin
+                        };
+                        if (navigator.share) {
+                            navigator.share(shareData).catch(console.error);
+                        } else {
+                            alert('Tarayıcınız paylaşım özelliğini desteklemiyor.');
+                        }
+                    }}
                 />
             </div>
 

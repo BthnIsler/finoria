@@ -171,7 +171,7 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
                 gap: 16, marginBottom: 20, alignItems: 'flex-start',
             }}>
                 <div>
-                    <h1 style={{ fontSize: 24, fontWeight: 900, color: '#fff', margin: '0 0 4px', letterSpacing: -0.7 }}>
+                    <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: -0.7 }}>
                         Varlıklarım
                     </h1>
                     <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0, fontWeight: 500 }}>
@@ -191,7 +191,7 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
                         style={{
                             width: '100%', padding: '9px 14px 9px 34px',
                             borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)',
-                            background: 'rgba(255,255,255,0.04)', color: '#fff',
+                            background: 'rgba(255,255,255,0.04)', color: 'var(--text-primary)',
                             fontSize: 12, outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box',
                         }}
                         onFocus={e => (e.target.style.borderColor = 'rgba(167,139,250,0.4)')}
@@ -217,7 +217,7 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
                                     padding: '10px 18px', border: 'none', cursor: 'pointer',
                                     background: 'transparent', whiteSpace: 'nowrap', flexShrink: 0,
                                     borderBottom: active ? `2px solid ${cat.color}` : '2px solid transparent',
-                                    color: active ? '#fff' : 'rgba(255,255,255,0.35)',
+                                    color: active ? 'var(--text-primary)' : 'rgba(255,255,255,0.35)',
                                     fontSize: 13, fontWeight: active ? 700 : 500,
                                     transition: 'all 0.15s', marginBottom: -1,
                                 }}
@@ -279,7 +279,7 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
                         <button key={p.key} onClick={() => setPLPeriod(p.key)} style={{
                             padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
                             background: plPeriod === p.key ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(255,255,255,0.06)',
-                            color: plPeriod === p.key ? '#fff' : 'rgba(255,255,255,0.45)',
+                            color: plPeriod === p.key ? 'var(--text-primary)' : 'rgba(255,255,255,0.45)',
                             fontSize: 12, fontWeight: 700, flexShrink: 0,
                             boxShadow: plPeriod === p.key ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
                             transition: 'all 0.2s',
@@ -297,7 +297,7 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
                                     padding: '5px 12px', fontSize: 11, fontWeight: 700, borderRadius: 6,
                                     border: 'none', cursor: 'pointer', transition: 'all 0.15s',
                                     background: plPeriod === p.key ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
-                                    color: plPeriod === p.key ? '#fff' : 'rgba(255,255,255,0.35)',
+                                    color: plPeriod === p.key ? 'var(--text-primary)' : 'rgba(255,255,255,0.35)',
                                     boxShadow: plPeriod === p.key ? '0 2px 8px rgba(99,102,241,0.4)' : 'none',
                                 }}>{p.label}</button>
                             ))}
@@ -317,7 +317,7 @@ export default function AssetsTabsWidget({ widgetId, assets, onDelete, onEdit, o
                                 padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6,
                                 border: 'none', cursor: 'pointer', transition: 'all 0.15s',
                                 background: sortKey === s.k ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                color: sortKey === s.k ? '#fff' : 'rgba(255,255,255,0.3)',
+                                color: sortKey === s.k ? 'var(--text-primary)' : 'rgba(255,255,255,0.3)',
                             }}>
                                 {s.l}{sortKey === s.k ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
                             </button>
@@ -482,7 +482,7 @@ function AssetTableRow({
                         {/* Info */}
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-                                <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {asset.name}
                                 </span>
                                 {tags.map((tag, i) => (
@@ -497,7 +497,7 @@ function AssetTableRow({
                         </div>
                         {/* Value + P/L */}
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 3, fontVariantNumeric: 'tabular-nums' }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 3, fontVariantNumeric: 'tabular-nums' }}>
                                 {fmt(currentValueDisplay)}
                             </div>
                             {pl ? (
@@ -558,7 +558,7 @@ function AssetTableRow({
                         </div>
                         <div style={{ minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.name}</span>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.name}</span>
                                 {tags.map((tag, i) => (
                                     <span key={i} title={tag.title} style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: tag.bg, color: tag.color, letterSpacing: 0.3, flexShrink: 0 }}>{tag.icon}</span>
                                 ))}
@@ -578,7 +578,7 @@ function AssetTableRow({
                     </div>
                     {/* Col 3: Total value */}
                     <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{fmt(currentValueDisplay)}</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{fmt(currentValueDisplay)}</div>
                         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 1 }}>toplam</div>
                     </div>
                     {/* Col 4: P/L */}

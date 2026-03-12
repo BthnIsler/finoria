@@ -19,6 +19,8 @@ interface ProfileViewProps {
     onSignOut?: () => void;
     theme?: string;
     toggleTheme?: () => void;
+    goals?: Goal[];
+    isMobile?: boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -78,7 +80,7 @@ function GoalCard({
                     position: 'absolute', top: 12, right: 12,
                     background: 'linear-gradient(135deg, #10b981, #34d399)',
                     borderRadius: 20, padding: '4px 12px',
-                    fontSize: 10, fontWeight: 800, color: '#fff', letterSpacing: 0.5,
+                    fontSize: 10, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: 0.5,
                 }}>✓ TAMAMLANDI</div>
             )}
 
@@ -94,7 +96,7 @@ function GoalCard({
                     fontSize: 26,
                 }}>{goal.emoji}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 4, lineHeight: 1.3 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.3 }}>
                         {goal.title}
                     </div>
                     <div style={{
@@ -165,7 +167,7 @@ function AddGoalForm({ onAdd, onClose }: { onAdd: (g: Omit<Goal, 'id' | 'created
             >
                 <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', margin: '0 auto 20px' }} />
 
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#fff', margin: '0 0 20px', textAlign: 'center' }}>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 20px', textAlign: 'center' }}>
                     Yeni Hedef Ekle 🎯
                 </h3>
 
@@ -221,7 +223,7 @@ function AddGoalForm({ onAdd, onClose }: { onAdd: (g: Omit<Goal, 'id' | 'created
                             inputMode={f.type === 'number' ? 'numeric' : 'text'}
                             style={{
                                 width: '100%', padding: '12px 16px',
-                                background: 'rgba(255,255,255,0.05)', color: '#fff',
+                                background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)',
                                 border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12,
                                 fontSize: 14, outline: 'none', boxSizing: 'border-box',
                             }}
@@ -244,7 +246,7 @@ function AddGoalForm({ onAdd, onClose }: { onAdd: (g: Omit<Goal, 'id' | 'created
                         background: canSubmit
                             ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
                             : 'rgba(255,255,255,0.07)',
-                        color: canSubmit ? '#fff' : 'rgba(255,255,255,0.3)',
+                        color: canSubmit ? 'var(--text-primary)' : 'rgba(255,255,255,0.3)',
                         fontSize: 15, fontWeight: 800, cursor: canSubmit ? 'pointer' : 'not-allowed',
                         boxShadow: canSubmit ? '0 8px 24px rgba(99,102,241,0.4)' : 'none',
                         transition: 'all 0.2s',
@@ -265,7 +267,9 @@ function AddGoalForm({ onAdd, onClose }: { onAdd: (g: Omit<Goal, 'id' | 'created
 }
 
 // ─── Main ProfileView ─────────────────────────────────────────────────────────
-export default function ProfileView({ totalWealth, fmt, username, onSignOut, theme, toggleTheme }: ProfileViewProps) {
+export default function ProfileView({
+    username, totalWealth, goals: initialGoals, fmt, onSignOut, theme, toggleTheme, isMobile = true
+}: ProfileViewProps) {
     const [goals, setGoals] = useState<Goal[]>([]);
     const [showAdd, setShowAdd] = useState(false);
     const [activeSection, setActiveSection] = useState<'goals' | 'profile'>('goals');
@@ -307,13 +311,13 @@ export default function ProfileView({ totalWealth, fmt, username, onSignOut, the
                     width: 72, height: 72, borderRadius: '50%',
                     background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 28, fontWeight: 900, color: '#fff',
+                    fontSize: 28, fontWeight: 900, color: 'var(--text-primary)',
                     margin: '0 auto 12px',
                     boxShadow: '0 8px 32px rgba(99,102,241,0.5)',
                     border: '3px solid rgba(255,255,255,0.15)',
                 }}>{initials}</div>
 
-                <h2 style={{ fontSize: 20, fontWeight: 900, color: '#fff', margin: '0 0 4px' }}>
+                <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 4px' }}>
                     {username ?? 'Kullanıcı'}
                 </h2>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 16px' }}>
@@ -376,7 +380,7 @@ export default function ProfileView({ totalWealth, fmt, username, onSignOut, the
                     {/* Header + Add button */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                         <div>
-                            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>
+                            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
                                 Finansal Hedeflerim
                             </h3>
                             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: 0 }}>
@@ -389,7 +393,7 @@ export default function ProfileView({ totalWealth, fmt, username, onSignOut, the
                                 display: 'flex', alignItems: 'center', gap: 6,
                                 padding: '10px 16px', borderRadius: 12, border: 'none',
                                 background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                color: '#fff', fontSize: 13, fontWeight: 700,
+                                color: 'var(--text-primary)', fontSize: 13, fontWeight: 700,
                                 cursor: 'pointer',
                                 boxShadow: '0 4px 16px rgba(99,102,241,0.4)',
                             }}
@@ -408,7 +412,7 @@ export default function ProfileView({ totalWealth, fmt, username, onSignOut, the
                             }}
                         >
                             <div style={{ fontSize: 52, marginBottom: 16 }}>🎯</div>
-                            <h4 style={{ fontSize: 18, fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>
+                            <h4 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px' }}>
                                 İlk hedefinizi belirleyin
                             </h4>
                             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, margin: '0 0 24px' }}>
@@ -420,7 +424,7 @@ export default function ProfileView({ totalWealth, fmt, username, onSignOut, the
                                 style={{
                                     padding: '12px 28px', borderRadius: 14, border: 'none',
                                     background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                    color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                                    color: 'var(--text-primary)', fontSize: 14, fontWeight: 800, cursor: 'pointer',
                                     boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
                                 }}
                             >🚀 İlk Hedefi Ekle</button>
@@ -473,10 +477,10 @@ export default function ProfileView({ totalWealth, fmt, username, onSignOut, the
                           sub: 'Önemli uyarılar',
                           onClick: () => setNotificationsOn(!notificationsOn)
                         },
-                        { id: 'curr', icon: '💱', title: 'Para Birimi', value: 'TRY', sub: 'Türk Lirası' },
-                        { id: 'sec', icon: '🔒', title: 'Güvenlik', value: 'Aktif', sub: 'Uygulama kilidi' },
+                        { id: 'curr', icon: '💱', title: 'Para Birimi', value: 'TRY', sub: 'Türk Lirası', hideInWeb: true },
+                        { id: 'sec', icon: '🔒', title: 'Güvenlik', value: 'Aktif', sub: 'Uygulama kilidi', hideInWeb: true },
                         { id: 'data', icon: '📊', title: 'Veri Yönetimi', value: 'Yerel', sub: 'Cihazda saklanır' },
-                    ].map(item => (
+                    ].filter(item => isMobile || !item.hideInWeb).map(item => (
                         <div 
                           key={item.id} 
                           onClick={item.onClick}
@@ -497,7 +501,7 @@ export default function ProfileView({ totalWealth, fmt, username, onSignOut, the
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 }}>{item.icon}</div>
                                 <div>
-                                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{item.title}</div>
+                                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{item.title}</div>
                                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{item.sub}</div>
                                 </div>
                             </div>

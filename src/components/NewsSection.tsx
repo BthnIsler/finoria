@@ -339,7 +339,7 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>🌍</div>
                         <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Global Ekonomi</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Global Ekonomi</div>
                             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>dünya piyasalarından önemli gündem</div>
                         </div>
                     </div>
@@ -370,7 +370,7 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>🔎</div>
                         <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Varlık Ara</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Varlık Ara</div>
                             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>herhangi bir varlık hakkında haber bul</div>
                         </div>
                     </div>
@@ -394,7 +394,7 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                             placeholder="Örn: Apple, Bitcoin, Dolar, Altın..."
                             style={{
                                 flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                                color: '#fff', fontSize: 13, padding: '8px 0',
+                                color: 'var(--text-primary)', fontSize: 13, padding: '8px 0',
                             }}
                         />
                         <button
@@ -409,7 +409,7 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                                 background: searchQuery.trim()
                                     ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
                                     : 'rgba(255,255,255,0.07)',
-                                color: searchQuery.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+                                color: searchQuery.trim() ? 'var(--text-primary)' : 'rgba(255,255,255,0.3)',
                                 border: 'none', cursor: searchQuery.trim() ? 'pointer' : 'not-allowed',
                                 fontSize: 12, fontWeight: 700, transition: 'all 0.2s', flexShrink: 0,
                             }}

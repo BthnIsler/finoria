@@ -119,7 +119,7 @@ function AssetSelector({ value, onChange }: { value: string; onChange: (id: stri
                     padding: '14px 16px', borderRadius: 14,
                     background: 'rgba(255,255,255,0.05)',
                     border: '1px solid rgba(255,255,255,0.1)',
-                    cursor: 'pointer', color: '#fff', textAlign: 'left',
+                    cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left',
                     transition: 'border-color 0.2s, background 0.2s',
                 }}
                 onMouseOver={e => (e.currentTarget.style.borderColor = 'rgba(167,139,250,0.5)')}
@@ -127,7 +127,7 @@ function AssetSelector({ value, onChange }: { value: string; onChange: (id: stri
             >
                 <span style={{ fontSize: 22 }}>{selected?.flag}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>{selected?.symbol}</div>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)' }}>{selected?.symbol}</div>
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selected?.label}</div>
                 </div>
                 <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
@@ -152,7 +152,7 @@ function AssetSelector({ value, onChange }: { value: string; onChange: (id: stri
                                 style={{
                                     width: '100%', padding: '8px 12px', borderRadius: 8,
                                     border: '1px solid rgba(255,255,255,0.1)',
-                                    background: 'rgba(255,255,255,0.05)', color: '#fff',
+                                    background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)',
                                     fontSize: 13, outline: 'none', boxSizing: 'border-box',
                                 }}
                             />
@@ -174,7 +174,7 @@ function AssetSelector({ value, onChange }: { value: string; onChange: (id: stri
                                                 width: '100%', display: 'flex', alignItems: 'center', gap: 10,
                                                 padding: '9px 14px', border: 'none',
                                                 background: value === a.id ? `${CATEGORY_COLORS[a.category]}18` : 'transparent',
-                                                cursor: 'pointer', color: '#fff', textAlign: 'left',
+                                                cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left',
                                                 transition: 'background 0.1s',
                                             }}
                                             onMouseOver={e => { if (value !== a.id) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
@@ -267,7 +267,7 @@ export default function ConverterView() {
         <div style={{ paddingBottom: 40, maxWidth: 800, margin: '0 auto' }}>
             {/* Header */}
             <div style={{ marginBottom: 28 }}>
-                <h1 style={{ fontSize: 26, fontWeight: 900, color: '#fff', marginBottom: 4, letterSpacing: -0.5 }}>
+                <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-primary)', marginBottom: 4, letterSpacing: -0.5 }}>
                     <span style={{ background: 'linear-gradient(135deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Hızlı Çevirici</span>
                 </h1>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -304,7 +304,7 @@ export default function ConverterView() {
                                     width: '100%', padding: '14px 16px', borderRadius: 14,
                                     background: 'rgba(167,139,250,0.08)',
                                     border: '1px solid rgba(167,139,250,0.3)',
-                                    color: '#fff', fontSize: 22, fontWeight: 800,
+                                    color: 'var(--text-primary)', fontSize: 22, fontWeight: 800,
                                     outline: 'none', boxSizing: 'border-box',
                                     fontFamily: 'inherit', textAlign: 'right',
                                 }}
@@ -424,7 +424,7 @@ export default function ConverterView() {
                                 onMouseOut={e => { if (!(fromId === pair.from && toId === pair.to)) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'; }}
                             >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{pair.label}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{pair.label}</span>
                                     <span style={{ fontSize: 16 }}>{fAsset?.flag}</span>
                                 </div>
                                 <div style={{ fontSize: 16, fontWeight: 800, color: '#a78bfa', fontVariantNumeric: 'tabular-nums' }}>

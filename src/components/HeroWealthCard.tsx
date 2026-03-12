@@ -376,7 +376,7 @@ export default function HeroWealthCard({
                         fontSize: 12, color: 'rgba(255,255,255,0.5)', transition: 'all 0.15s',
                         fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
                     }}
-                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
                     onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
                 >
                     📤 Paylaş

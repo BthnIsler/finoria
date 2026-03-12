@@ -125,7 +125,7 @@ export default function UpcomingEvents() {
                                 fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6,
                                 border: `1px solid ${filter === cat ? (cat === 'all' ? 'rgba(255,255,255,0.3)' : CATEGORY_COLORS[cat]) : 'rgba(255,255,255,0.08)'}`,
                                 background: filter === cat ? (cat === 'all' ? 'rgba(255,255,255,0.1)' : `${CATEGORY_COLORS[cat]}20`) : 'transparent',
-                                color: filter === cat ? (cat === 'all' ? '#fff' : CATEGORY_COLORS[cat]) : 'rgba(255,255,255,0.4)',
+                                color: filter === cat ? (cat === 'all' ? 'var(--text-primary)' : CATEGORY_COLORS[cat]) : 'rgba(255,255,255,0.4)',
                                 cursor: 'pointer', transition: 'all 0.15s', letterSpacing: 0.3,
                             }}
                         >
