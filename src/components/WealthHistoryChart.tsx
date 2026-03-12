@@ -9,7 +9,7 @@ import { WealthSnapshot, getHourlyHistory, HourlySnapshot } from '@/lib/storage'
 import { Asset } from '@/lib/types';
 import { useCurrency } from '@/lib/contexts';
 
-type TimePeriod = '4h' | '1d' | '1w' | '1m' | '1y' | 'all';
+type TimePeriod = '4h' | '1d' | '1m' | 'all';
 
 interface WealthHistoryChartProps {
     history: WealthSnapshot[];
@@ -51,65 +51,108 @@ function fmtY(v: number) {
 }
 
 function filterByPeriod(data: ChartPoint[], period: TimePeriod): ChartPoint[] {
-    if (period === 'all' || period === '4h' || period === '1d' || period === '1w') return data;
-    const now = new Date();
-    const cutoff = period === '1m'
-        ? new Date(now.getTime() - 30 * 86400_000)
-        : new Date(now.getTime() - 365 * 86400_000);
-    return data.filter(d => !d.date || new Date(d.date + 'T00:00:00') >= cutoff);
+    // We handle grouping inside the build functions now.
+    // If we wanted to cut off old data based on period, we can still do that.
+    return data;
 }
 
 function buildDailyData(history: WealthSnapshot[], currentTotal: number, period: TimePeriod): ChartPoint[] {
-    const data: ChartPoint[] = history.map(h => ({
-        date: h.date, label: fmtDate(h.date),
-        value: h.total, open: h.total, close: h.total,
-        high: h.total, low: h.total,
-    }));
-    const today = new Date().toISOString().split('T')[0];
-    const last = data[data.length - 1];
-    if (last?.date === today) {
-        last.value = currentTotal; last.close = currentTotal;
-        last.high = Math.max(last.high ?? 0, currentTotal);
-        last.low = Math.min(last.low ?? currentTotal, currentTotal);
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    // Ensure today's current total is in history
+    const historyPlusToday = [...history];
+    const last = historyPlusToday[historyPlusToday.length - 1];
+    if (last?.date === todayStr) {
+        last.total = currentTotal;
     } else {
-        data.push({ date: today, label: fmtDate(today), value: currentTotal, open: currentTotal, close: currentTotal, high: currentTotal, low: currentTotal });
+        historyPlusToday.push({ date: todayStr, total: currentTotal, breakdown: {} });
     }
-    const filtered = filterByPeriod(data, period);
-    // Ensure minimum 2 data points
-    if (filtered.length === 0) return [
-        { label: 'Başlangıç', value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal },
-        { label: 'Şimdi', value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal },
-    ];
-    if (filtered.length === 1) return [filtered[0], { ...filtered[0], label: 'Şimdi' }];
-    return filtered;
+
+    if (period === '1m') {
+        // Group by Month (1A) - one point per month
+        const grouped = new Map<string, WealthSnapshot[]>();
+        for (const h of historyPlusToday) {
+            const monthKey = h.date.substring(0, 7); // YYYY-MM
+            if (!grouped.has(monthKey)) grouped.set(monthKey, []);
+            grouped.get(monthKey)!.push(h);
+        }
+        
+        const data: ChartPoint[] = [];
+        Array.from(grouped.entries()).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([key, items]) => {
+            const dateObj = new Date(key + '-01T00:00:00');
+            const label = dateObj.toLocaleDateString('tr-TR', { month: 'short', year: 'numeric' });
+            const lastItem = items[items.length - 1];
+            const vals = items.map(i => i.total);
+            data.push({
+                date: key, label, 
+                value: lastItem.total, close: lastItem.total, open: items[0].total,
+                high: Math.max(...vals), low: Math.min(...vals)
+            });
+        });
+        if (data.length < 2) return [{ label: '1A (Kayıt Yok)', value: currentTotal, close: currentTotal }, { label: 'Şimdi', value: currentTotal, close: currentTotal }];
+        return data;
+    } 
+
+    if (period === '1d' || period === 'all') {
+        // Group by Day (1G) - one point per day
+        const grouped = new Map<string, WealthSnapshot>();
+        for (const h of historyPlusToday) {
+            grouped.set(h.date, h); // keeps the latest one for each day
+        }
+        
+        const data: ChartPoint[] = Array.from(grouped.values()).map(h => ({
+            date: h.date, label: fmtDate(h.date),
+            value: h.total, open: h.total, close: h.total, high: h.total, low: h.total,
+        }));
+        if (data.length < 2) return [{ label: period === '1d' ? '1G (Kayıt Yok)' : 'Başlangıç', value: currentTotal, close: currentTotal }, { label: 'Şimdi', value: currentTotal, close: currentTotal }];
+        return data;
+    }
+    
+    return [];
 }
 
 function buildHourlyData(hourly: HourlySnapshot[], period: TimePeriod, currentTotal: number): ChartPoint[] {
-    const cutoff = period === '4h'
-        ? new Date(Date.now() - 4 * 3600_000)
-        : period === '1d'
-        ? new Date(Date.now() - 24 * 3600_000)
-        : new Date(Date.now() - 7 * 86400_000);
-    const filtered = hourly.filter(h => new Date(h.timestamp) >= cutoff);
-    const data: ChartPoint[] = filtered.map(h => ({
-        label: fmtTime(h.timestamp),
-        value: h.close, open: h.open, close: h.close, high: h.high, low: h.low,
-    }));
-    if (data.length > 0) {
-        const last = data[data.length - 1];
+    const nowTs = Date.now();
+    const hourlyPlusNow = [...hourly];
+    
+    if (hourlyPlusNow.length > 0) {
+        const last = hourlyPlusNow[hourlyPlusNow.length - 1];
         if (last.close !== currentTotal) {
-            data.push({ label: fmtTime(new Date().toISOString()), value: currentTotal, open: currentTotal, close: currentTotal, high: currentTotal, low: currentTotal });
+            hourlyPlusNow.push({ timestamp: new Date().toISOString(), open: currentTotal, close: currentTotal, high: currentTotal, low: currentTotal, total: currentTotal });
         }
+    } else {
+        hourlyPlusNow.push({ timestamp: new Date().toISOString(), open: currentTotal, close: currentTotal, high: currentTotal, low: currentTotal, total: currentTotal });
     }
-    // Fallback: no hourly data → flat line showing NOW
-    if (data.length < 2) {
-        const label = period === '4h' ? '4S (Kayıt Yok)' : period === '1d' ? '1G (Kayıt Yok)' : '1H (Kayıt Yok)';
-        return [
-            { label: label, value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal },
-            { label: 'Şimdi', value: currentTotal, close: currentTotal, open: currentTotal, high: currentTotal, low: currentTotal },
-        ];
+
+    if (period === '4h') {
+        // Group into 4-hour buckets
+        const bucketMs = 4 * 3600_000;
+        const grouped = new Map<number, HourlySnapshot[]>();
+        for (const h of hourlyPlusNow) {
+            const ts = new Date(h.timestamp).getTime();
+            const bucketKey = Math.floor(ts / bucketMs) * bucketMs;
+            if (!grouped.has(bucketKey)) grouped.set(bucketKey, []);
+            grouped.get(bucketKey)!.push(h);
+        }
+        
+        const data: ChartPoint[] = [];
+        Array.from(grouped.entries()).sort((a,b)=>a[0]-b[0]).forEach(([ts, items]) => {
+            const label = fmtDate(new Date(ts).toISOString()) + ' ' + fmtTime(new Date(ts).toISOString());
+            const lastItem = items[items.length - 1];
+            const highs = items.map(i => i.high ?? i.close);
+            const lows = items.map(i => i.low ?? i.close);
+            data.push({
+                label, 
+                value: lastItem.close, close: lastItem.close, open: items[0].open ?? items[0].close,
+                high: Math.max(...highs), low: Math.min(...lows)
+            });
+        });
+        
+        if (data.length < 2) return [{ label: '4S (Kayıt Yok)', value: currentTotal, close: currentTotal }, { label: 'Şimdi', value: currentTotal, close: currentTotal }];
+        return data;
     }
-    return data;
+
+    return [];
 }
 
 // ─── Main Export ─────────────────────────────────────────────────────────────
@@ -156,7 +199,7 @@ export default function WealthHistoryChart({
         if (!selectedAssetId) { setApiAssetHistory([]); setLastFetchKey(''); return; }
         const asset = assets.find(a => a.id === selectedAssetId);
         if (!asset?.apiId) { setApiAssetHistory([]); return; }
-        const apiPeriod = period === '1m' ? '3m' : period === 'all' ? '3y' : period === '4h' || period === '1d' || period === '1w' ? '3m' : '1y';
+        const apiPeriod = period === '1m' ? '3m' : period === 'all' ? '3y' : period === '4h' || period === '1d' ? '3m' : '1y';
         const key = `${asset.apiId}_${apiPeriod}`;
         if (key === lastFetchKey && apiAssetHistory.length > 0) return;
         let cancelled = false;
@@ -174,10 +217,6 @@ export default function WealthHistoryChart({
                 close: p.close ?? p.value, high: p.high ?? p.value * 1.001,
                 low: p.low ?? p.value * 0.999,
             }));
-            if (period === '1w') pts = pts.slice(-7);
-            else if (period === '1d') pts = pts.slice(-2);
-            else if (period === '1m') pts = pts.slice(-30);
-            else if (period === '1y') pts = pts.slice(-365);
             setApiAssetHistory(pts);
             setLastFetchKey(key);
         }).catch(e => console.error(e)).finally(() => { if (!cancelled) setIsApiLoading(false); });
@@ -188,7 +227,7 @@ export default function WealthHistoryChart({
     // Build chart data
     const chartData = useMemo(() => {
         if (selectedAssetId) return apiAssetHistory;
-        if (period === '4h' || period === '1d' || period === '1w') return buildHourlyData(hourly, period, currentTotal);
+        if (period === '4h') return buildHourlyData(hourly, period, currentTotal);
         return buildDailyData(history, currentTotal, period);
     }, [history, currentTotal, period, hourly, selectedAssetId, apiAssetHistory]);
 
@@ -220,7 +259,7 @@ export default function WealthHistoryChart({
     const mainColor = isUp ? '#26a69a' : '#ef5350';  // TradingView green/red
     const selectedAsset = assets.find(a => a.id === selectedAssetId);
 
-    const periodLabels: Record<TimePeriod, string> = { '4h': '4S', '1d': '1G', '1w': '1H', '1m': '1A', '1y': '1Y', 'all': 'TÜM' };
+    const periodLabels: Record<TimePeriod, string> = { '4h': '4S', '1d': '1G', '1m': '1A', 'all': 'TÜM' };
 
     return (
         <div style={{
@@ -287,7 +326,7 @@ export default function WealthHistoryChart({
                                                 onClick={() => {
                                                     setSelectedAssetId(a.id);
                                                     setShowAssetPicker(false);
-                                                    if (a.id && (period === '4h' || period === '1w')) setPeriod('1m');
+                                                    if (a.id && period === '4h') setPeriod('1m');
                                                 }}
                                                 style={{
                                                     display: 'block', width: '100%', textAlign: 'left',
@@ -317,8 +356,8 @@ export default function WealthHistoryChart({
                         borderBottom: '1px solid rgba(255,255,255,0.04)',
                     }}>
                         {/* Period buttons */}
-                        {(['4h', '1d', '1w', '1m', '1y', 'all'] as const).map(p => {
-                            const isHourly = p === '4h' || p === '1d' || p === '1w';
+                        {(['4h', '1d', '1m', 'all'] as const).map(p => {
+                            const isHourly = p === '4h';
                             const disabled = isHourly && !!selectedAssetId;
                             return (
                                 <button key={p} onClick={() => !disabled && setPeriod(p)} disabled={disabled} style={{
@@ -477,7 +516,6 @@ function WhatIfView({ data, currentTotal, assets, fmt, period, setPeriod, isLoad
     }, []);
     const periodLabels = [
         { key: '1m' as const, label: '1 Ay' },
-        { key: '1y' as const, label: '1 Yıl' },
         { key: 'all' as const, label: 'Maksimum' },
     ];
 
