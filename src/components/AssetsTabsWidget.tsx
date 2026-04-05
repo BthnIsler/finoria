@@ -69,12 +69,7 @@ function computePL(asset: Asset, plPeriod: PLPeriod, exchangeRates: Record<strin
                 const pct = (change / pastPrice) * 100;
                 return { pct, valDisplay: convert(change * asset.amount), isPositive: change >= 0 };
             } else {
-                const costTRY = getAssetCostInTRY(asset.amount, asset.purchasePrice, asset.purchaseCurrency, exchangeRates, currentPriceTRY);
-                if (costTRY > 0) {
-                    const plTRY = currentValueTRY - costTRY;
-                    const pct = (plTRY / costTRY) * 100;
-                    return { pct, valDisplay: convert(plTRY), isPositive: plTRY >= 0 };
-                }
+                return null;
             }
         }
     }
@@ -485,14 +480,9 @@ function AssetTableRow({
                                 <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {asset.name}
                                 </span>
-                                {tags.map((tag, i) => (
-                                    <span key={i} title={tag.title} style={{
-                                        fontSize: 8.5, fontWeight: 800, padding: '1px 5px', borderRadius: 4, background: tag.bg, color: tag.color, flexShrink: 0,
-                                    }}>{tag.icon}</span>
-                                ))}
                             </div>
                             <div style={{ fontSize: 11, color: cat.color, opacity: 0.8, fontWeight: 600 }}>
-                                {cat.labelTR} · {asset.amount.toLocaleString('tr-TR', { maximumFractionDigits: 4 })} adet
+                                {cat.labelTR} · {asset.amount.toLocaleString('tr-TR', { maximumFractionDigits: 4 })}
                             </div>
                         </div>
                         {/* Value + P/L */}

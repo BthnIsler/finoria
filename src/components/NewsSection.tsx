@@ -33,12 +33,7 @@ const formatDate = (dateStr: string) => {
 };
 
 const buildAssetQuery = (asset: Asset) => {
-    const base = asset.name;
-    if (asset.category === 'stock') return `${base} hisse borsa`;
-    if (asset.category === 'crypto') return `${base} kripto`;
-    if (asset.category === 'gold') return `${base} altın`;
-    if (asset.category === 'forex') return `${base} kur döviz`;
-    return base;
+    return asset.name; // Sadece adını kullanarak haberlerin çıkmasını sağlıyoruz (yanına hisse borsa ekleyince arama bozuluyor)
 };
 
 const GLOBAL_QUERY = 'küresel ekonomi piyasa merkez bankası faiz döviz borsa dünya ekonomisi';
@@ -65,7 +60,14 @@ function ArticleCard({ article, accent = '#a78bfa', featured = false }: {
 }) {
     const [hovered, setHovered] = useState(false);
     return (
-        <a href={article.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
+        <a 
+            href={article.link} 
+            onClick={(e) => {
+                e.preventDefault();
+                window.open(article.link, '_blank');
+            }}
+            style={{ textDecoration: 'none', display: 'block' }}
+        >
             <div
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}

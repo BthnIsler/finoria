@@ -41,6 +41,11 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
     const stockDropdownRef = useRef<HTMLDivElement>(null);
     const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Fund-specific state
+    const [fundCode, setFundCode] = useState('');
+    const [fundError, setFundError] = useState<string | null>(null);
+    const [fundChecking, setFundChecking] = useState(false);
+
     // Local search (instant)
     useEffect(() => {
         if (category !== 'stock') return;
@@ -96,12 +101,13 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
     const getApiId = (): string | undefined => {
         if (category === 'gold') return 'gold_gram';
         if (category === 'precious_metals') return selectedPreset ? `metal_${selectedPreset}` : undefined;
+        if (category === 'fund') return fundCode.toUpperCase();
         if (needsManualName) return undefined;
         return selectedPreset || undefined;
     };
 
     // Step 1 is complete when a category item is selected
-    const step1Done = needsManualName || !!selectedPreset || (category === 'stock' && !!selectedPreset);
+    const step1Done = needsManualName || !!selectedPreset || (category === 'stock' && !!selectedPreset) || (category === 'fund' && selectedName !== '');
     const canSubmit = currentName && amount && !isSaving;
     const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -114,14 +120,70 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
         try {
             const goldType = GOLD_TYPES.find((g) => g.id === selectedPreset);
             const effectiveAmount = goldType ? parseFloat(amount) * goldType.grams : parseFloat(amount);
+            
+            let finalPurchasePrice = purchasePrice ? parseFloat(purchasePrice) : 0;
+            const apiId = getApiId();
+
+            // KULLANICI TALEBİ: "Alış fiyatı yazılmamışsa alış fiyatını o an eklenen fiyatı olarak belirle"
+            if (finalPurchasePrice === 0) {
+                if (manualCurrentPrice) {
+                    finalPurchasePrice = parseFloat(manualCurrentPrice);
+                } else if (apiId) {
+                    try {
+                        if (category === 'fund') {
+                            const res = await fetch(`/api/tefas?code=${apiId}`);
+                            const data = await res.json();
+                            if (data.price) finalPurchasePrice = data.price;
+                        } 
+                        else if (category === 'crypto') {
+                            const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${apiId}&vs_currencies=try`);
+                            const data = await res.json();
+                            if (data[apiId]?.try) finalPurchasePrice = data[apiId].try;
+                        }
+                        else if (category === 'forex') {
+                            const res = await fetch('https://api.exchangerate-api.com/v4/latest/TRY');
+                            const data = await res.json();
+                            if (data.rates?.[apiId]) finalPurchasePrice = 1 / data.rates[apiId];
+                        }
+                        else if (category === 'gold') {
+                            const res = await fetch('/api/stock-price?symbols=GC=F');
+                            const data = await res.json();
+                            if (data.prices?.['GC=F']) {
+                                const goldOunceTry = data.prices['GC=F'].price;
+                                finalPurchasePrice = goldOunceTry / 31.1035;
+                            }
+                        }
+                        else if (category === 'precious_metals') {
+                            const metalMap: Record<string, string> = { 'metal_silver': 'SI=F', 'metal_platinum': 'PL=F', 'metal_palladium': 'PA=F' };
+                            const symbol = metalMap[apiId];
+                            if (symbol) {
+                                const res = await fetch(`/api/stock-price?symbols=${symbol}`);
+                                const data = await res.json();
+                                if (data.prices?.[symbol]) {
+                                    const tryPerOz = data.prices[symbol].price;
+                                    finalPurchasePrice = tryPerOz / 31.1035;
+                                }
+                            }
+                        }
+                        else if (category === 'stock') {
+                            const res = await fetch(`/api/stock-price?symbols=${apiId}`);
+                            const data = await res.json();
+                            if (data.prices?.[apiId]) finalPurchasePrice = data.prices[apiId].price;
+                        }
+                    } catch (e) {
+                        console.warn("Anlık fiyat alınamadı, 0 olarak kaydediliyor.", e);
+                    }
+                }
+            }
+
             const newAsset = await addAsset(user.id, {
                 name: currentName,
                 category,
                 amount: effectiveAmount,
-                purchasePrice: purchasePrice ? parseFloat(purchasePrice) : 0,
+                purchasePrice: finalPurchasePrice,
                 purchaseCurrency: (category === 'stock' && stockMarket === 'NASDAQ') ? 'USD' : 'TRY',
                 manualCurrentPrice: manualCurrentPrice ? parseFloat(manualCurrentPrice) : undefined,
-                apiId: getApiId(),
+                apiId,
             });
 
             if (newAsset) {
@@ -260,7 +322,7 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
                                         <button
                                             key={cat.key} type="button"
                                             style={s.catBtn(category === cat.key, cat.color)}
-                                            onClick={() => { setCategory(cat.key); setSelectedPreset(''); setSelectedName(''); setManualName(''); setStockSearch(''); }}
+                                            onClick={() => { setCategory(cat.key); setSelectedPreset(''); setSelectedName(''); setManualName(''); setStockSearch(''); setFundCode(''); setFundError(null); }}
                                         >
                                             <span style={{ fontSize: 24 }}>{cat.icon}</span>
                                             <span style={{ fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap', letterSpacing: 0.3 }}>{cat.labelTR}</span>
@@ -336,6 +398,57 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
                                             </div>
                                         )}
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Fund Selector */}
+                            {category === 'fund' && (
+                                <div style={s.inputWrap}>
+                                    <label style={s.label}>Fon Kodu (TEFAS)</label>
+                                    <div style={{ display: 'flex', gap: 10 }}>
+                                        <input type="text" style={{...s.input, textTransform: 'uppercase'}}
+                                            placeholder="ör: MAC, TCD, YAS"
+                                            value={fundCode}
+                                            onChange={(e) => { 
+                                                const val = e.target.value.toUpperCase().slice(0, 3);
+                                                setFundCode(val);
+                                                setSelectedName('');
+                                                setFundError(null);
+                                            }}
+                                            required
+                                            maxLength={3}
+                                        />
+                                        <button type="button" 
+                                            disabled={fundCode.length !== 3 || fundChecking}
+                                            onClick={async () => {
+                                                setFundChecking(true);
+                                                setFundError(null);
+                                                try {
+                                                    const res = await fetch(`/api/tefas?code=${fundCode}`);
+                                                    const data = await res.json();
+                                                    if (!res.ok) throw new Error(data.error || 'Fon bulunamadı');
+                                                    setSelectedName(data.name);
+                                                    if (data.price) {
+                                                        setManualCurrentPrice(String(data.price));
+                                                    }
+                                                } catch(err:any) {
+                                                    setFundError(err.message);
+                                                    setSelectedName('');
+                                                } finally {
+                                                    setFundChecking(false);
+                                                }
+                                            }}
+                                            style={{
+                                                padding: '0 20px', borderRadius: 14, background: (fundCode.length === 3 && !fundChecking) ? 'var(--accent-cyan)' : 'var(--bg-elevated)',
+                                                color: (fundCode.length === 3 && !fundChecking) ? '#fff' : 'var(--text-muted)', border: 'none', fontWeight: 700, cursor: (fundCode.length === 3 && !fundChecking) ? 'pointer' : 'not-allowed',
+                                                transition: 'all 0.2s', whiteSpace: 'nowrap'
+                                            }}
+                                        >
+                                            {fundChecking ? '⏳' : 'Doğrula'}
+                                        </button>
+                                    </div>
+                                    {fundError && <p style={{color: 'var(--accent-red)', fontSize: 12, marginTop: 8}}>{fundError}</p>}
+                                    {selectedName && category === 'fund' && <p style={{color: 'var(--text-primary)', fontSize: 13, marginTop: 8, padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 8}}>✅ {selectedName}</p>}
                                 </div>
                             )}
 
@@ -427,6 +540,7 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
                                     <label style={s.label}>
                                         {category === 'gold' && selectedPreset ? 'Adet'
                                             : category === 'stock' ? 'Lot / Adet'
+                                            : category === 'fund' ? 'Pay / Adet'
                                                 : category === 'precious_metals' ? 'Gram' : 'Miktar'}
                                     </label>
                                     <input type="number" style={s.input}

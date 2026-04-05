@@ -12,7 +12,7 @@ interface AnimatedNumberProps {
 
 export default function AnimatedNumber({
     value,
-    duration = 800,
+    duration = 2000,
     formatter,
     style,
     className,

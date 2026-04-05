@@ -61,7 +61,9 @@ export async function GET(request: NextRequest) {
 
                     // If the stock is from BIST, price is already in TRY
                     // If NASDAQ, price is in USD — convert to TRY
-                    if (!symbol.startsWith('BIST:') && usdTryRate) {
+                    // Do not multiply if it's already a TRY pair (like USDTRY=X)
+                    const isTryPair = symbol.endsWith('TRY=X');
+                    if (!symbol.startsWith('BIST:') && usdTryRate && !isTryPair) {
                         price = price * usdTryRate;
                     }
 

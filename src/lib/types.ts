@@ -10,6 +10,7 @@ export type AssetCategory =
     | 'stock'
     | 'real_estate'
     | 'savings'
+    | 'fund'
     | 'other';
 
 export interface Asset {
@@ -98,6 +99,14 @@ export const CATEGORIES: CategoryMeta[] = [
         icon: '💰',
         color: '#06B6D4',
         gradient: 'from-cyan-500 to-teal-600',
+    },
+    {
+        key: 'fund',
+        label: 'Mutual Fund',
+        labelTR: 'Yatırım Fonu',
+        icon: '📊',
+        color: '#14B8A6',
+        gradient: 'from-teal-500 to-emerald-600',
     },
     {
         key: 'other',

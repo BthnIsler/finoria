@@ -9,7 +9,7 @@ import { WealthSnapshot, getHourlyHistory, HourlySnapshot } from '@/lib/storage'
 import { Asset } from '@/lib/types';
 import { useCurrency } from '@/lib/contexts';
 
-type TimePeriod = '4h' | '1d' | '1m' | 'all';
+type TimePeriod = '1d' | '1m' | 'all';
 
 interface WealthHistoryChartProps {
     history: WealthSnapshot[];
@@ -124,42 +124,6 @@ function buildHourlyData(hourly: HourlySnapshot[], period: TimePeriod, currentTo
         hourlyPlusNow.push({ timestamp: new Date().toISOString(), open: currentTotal, close: currentTotal, high: currentTotal, low: currentTotal, total: currentTotal });
     }
 
-    if (period === '4h') {
-        // Group into 4-hour buckets aligned to 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 (Local Time)
-        const grouped = new Map<string, HourlySnapshot[]>();
-        for (const h of hourlyPlusNow) {
-            const d = new Date(h.timestamp);
-            const bucketHour = Math.floor(d.getHours() / 4) * 4;
-            // Key based on YYYY-MM-DD HH:00
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            const hh = String(bucketHour).padStart(2, '0');
-            const bucketKey = `${yyyy}-${mm}-${dd} ${hh}:00`;
-            
-            if (!grouped.has(bucketKey)) grouped.set(bucketKey, []);
-            grouped.get(bucketKey)!.push(h);
-        }
-        
-        const data: ChartPoint[] = [];
-        Array.from(grouped.entries()).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([key, items]) => {
-            const [dateStr, time] = key.split(' ');
-            // Make label unique to fix Recharts overlap
-            const label = `${parseInt(dateStr.split('-')[2])} ${fmtDate(dateStr).split(' ')[1]} ${time}`; 
-            const lastItem = items[items.length - 1];
-            const highs = items.map(i => i.high ?? i.close);
-            const lows = items.map(i => i.low ?? i.close);
-            data.push({
-                label, 
-                value: lastItem.close, close: lastItem.close, open: items[0].open ?? items[0].close,
-                high: Math.max(...highs), low: Math.min(...lows)
-            });
-        });
-        
-        if (data.length < 2) return [{ label: '4S (Kayıt Yok)', value: currentTotal, close: currentTotal }, { label: 'Şimdi', value: currentTotal, close: currentTotal }];
-        return data;
-    }
-
     return [];
 }
 
@@ -169,7 +133,7 @@ export default function WealthHistoryChart({
     history, currentTotal, assets = [], totalPLPct = 0, totalCost = 0,
 }: WealthHistoryChartProps) {
     const { currency, convert } = useCurrency();
-    const [period, setPeriod] = useState<TimePeriod>('all');
+    const [period, setPeriod] = useState<TimePeriod>('1d');
     const [selectedAssetId, setSelectedAssetId] = useState('');
     const [hourly, setHourly] = useState<HourlySnapshot[]>([]);
     const [showAssetPicker, setShowAssetPicker] = useState(false);
@@ -207,7 +171,7 @@ export default function WealthHistoryChart({
         if (!selectedAssetId) { setApiAssetHistory([]); setLastFetchKey(''); return; }
         const asset = assets.find(a => a.id === selectedAssetId);
         if (!asset?.apiId) { setApiAssetHistory([]); return; }
-        const apiPeriod = period === '1m' ? '3m' : period === 'all' ? '3y' : period === '4h' || period === '1d' ? '3m' : '1y';
+        const apiPeriod = period === '1m' ? '3m' : period === 'all' ? '3y' : '3m';
         const key = `${asset.apiId}_${apiPeriod}`;
         if (key === lastFetchKey && apiAssetHistory.length > 0) return;
         let cancelled = false;
@@ -234,8 +198,6 @@ export default function WealthHistoryChart({
 
     // Build chart data
     const chartData = useMemo(() => {
-        if (selectedAssetId) return apiAssetHistory;
-        if (period === '4h') return buildHourlyData(hourly, period, currentTotal);
         return buildDailyData(history, currentTotal, period);
     }, [history, currentTotal, period, hourly, selectedAssetId, apiAssetHistory]);
 
@@ -267,7 +229,7 @@ export default function WealthHistoryChart({
     const mainColor = isUp ? '#26a69a' : '#ef5350';  // TradingView green/red
     const selectedAsset = assets.find(a => a.id === selectedAssetId);
 
-    const periodLabels: Record<TimePeriod, string> = { '4h': '4S', '1d': '1G', '1m': '1A', 'all': 'TÜM' };
+    const periodLabels: Record<TimePeriod, string> = { '1d': '1G', '1m': '1A', 'all': 'TÜM' };
 
     return (
         <div style={{
@@ -334,7 +296,6 @@ export default function WealthHistoryChart({
                                                 onClick={() => {
                                                     setSelectedAssetId(a.id);
                                                     setShowAssetPicker(false);
-                                                    if (a.id && period === '4h') setPeriod('1m');
                                                 }}
                                                 style={{
                                                     display: 'block', width: '100%', textAlign: 'left',
@@ -364,16 +325,14 @@ export default function WealthHistoryChart({
                         borderBottom: '1px solid rgba(255,255,255,0.04)',
                     }}>
                         {/* Period buttons */}
-                        {(['4h', '1d', '1m', 'all'] as const).map(p => {
-                            const isHourly = p === '4h';
-                            const disabled = isHourly && !!selectedAssetId;
+                        {(['1d', '1m', 'all'] as const).map(p => {
                             return (
-                                <button key={p} onClick={() => !disabled && setPeriod(p)} disabled={disabled} style={{
+                                <button key={p} onClick={() => setPeriod(p)} style={{
                                     padding: '5px 10px', border: 'none', borderRadius: 6,
-                                    fontSize: 11, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer',
+                                    fontSize: 11, fontWeight: 700, cursor: 'pointer',
                                     background: period === p ? 'rgba(255,255,255,0.1)' : 'transparent',
                                     color: period === p ? 'var(--text-primary)' : 'rgba(255,255,255,0.35)',
-                                    opacity: disabled ? 0.3 : 1, transition: 'all 0.15s', letterSpacing: 0.5,
+                                    transition: 'all 0.15s', letterSpacing: 0.5,
                                 }}>
                                     {periodLabels[p]}
                                 </button>

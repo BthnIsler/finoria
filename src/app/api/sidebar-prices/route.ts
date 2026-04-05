@@ -21,11 +21,24 @@ export async function GET(req: NextRequest) {
         const validCloses = closes.filter((c: number | null) => c != null) as number[];
         if (validCloses.length === 0) return NextResponse.json({ price: null, change: null });
 
-        const price = validCloses[validCloses.length - 1];
+        let price = validCloses[validCloses.length - 1];
         const prev = validCloses.length >= 2 ? validCloses[validCloses.length - 2] : null;
         const change = prev != null && prev > 0 ? ((price - prev) / prev) * 100 : null;
 
         // For GC=F (gold in USD/oz), convert to TRY gram
+        if (symbol === 'GC=F') {
+            try {
+                const fxRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDTRY=X?interval=1d&range=1d', { next: { revalidate: 300 } });
+                const fxData = await fxRes.json();
+                const rate = fxData?.chart?.result?.[0]?.meta?.regularMarketPrice;
+                if (rate) {
+                    price = (price * rate) / 31.1035;
+                }
+            } catch (e) {
+                // Ignore fx error
+            }
+        }
+        
         // For USDTRY/EURTRY — price is already in TRY
         return NextResponse.json({ price, change });
     } catch {

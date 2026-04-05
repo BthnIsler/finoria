@@ -41,7 +41,6 @@ export default function Home() {
   const [history, setHistory] = useState<WealthSnapshot[]>([]);
   const [mobilePreview, setMobilePreview] = useState(false);
   const [analyzingAsset, setAnalyzingAsset] = useState<Asset | null>(null);
-  const [tickerOffset, setTickerOffset] = useState(0);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [heroPLPeriod, setHeroPLPeriod] = useState<'1d' | '1w' | '1m' | 'all'>('1d');
 
@@ -167,10 +166,12 @@ export default function Home() {
       const dbAssets = await getAssets(user.id);
       
       // 2. Prepare API parameters for external price fetching
+      // 2. Prepare API parameters for external price fetching
       const cryptoIds: string[] = [];
       const forexCurrencies: string[] = [];
       const stockSymbols: string[] = [];
       const metalIds: string[] = [];
+      const fundCodes: string[] = [];
       let hasGold = false;
 
       dbAssets.forEach(a => {
@@ -180,6 +181,7 @@ export default function Home() {
         else if (a.category === 'stock') stockSymbols.push(a.apiId);
         else if (a.category === 'gold') hasGold = true;
         else if (a.category === 'precious_metals') metalIds.push(a.apiId.replace('metal_', ''));
+        else if (a.category === 'fund') fundCodes.push(a.apiId);
       });
 
       // 3. Fetch real prices from external networks (cache handles rate limits)
@@ -188,6 +190,7 @@ export default function Home() {
         forexCurrencies: [...new Set(forexCurrencies)],
         stockSymbols: [...new Set(stockSymbols)],
         metalIds: [...new Set(metalIds)],
+        fundCodes: [...new Set(fundCodes)],
         hasGold,
       });
 
@@ -199,7 +202,11 @@ export default function Home() {
         
         let newPrice = priceMap[a.apiId];
         // special hack for gold
-        if (a.category === 'gold' && priceMap['gold_gram']) newPrice = priceMap['gold_gram'];
+        if (a.category === 'gold' && priceMap['gold_gram']) {
+            const goldMeta = GOLD_TYPES.find(g => g.id === a.apiId);
+            const multiplier = goldMeta ? goldMeta.grams : 1;
+            newPrice = priceMap['gold_gram'] * multiplier;
+        }
         
         if (newPrice && typeof newPrice === 'number' && newPrice !== a.currentPrice) {
           hasUpdates = true;
@@ -233,22 +240,10 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assets.length]);
 
-  // 1-second live ticker micro-fluctuations (disabled in finans/minimal themes)
-  useEffect(() => {
-    if (assets.length === 0) return;
-    if (theme === 'light') {
-      setTickerOffset(0);
-      return;
-    }
-    tickerRef.current = setInterval(() => {
-      setTickerOffset((Math.random() - 0.5) * 0.0004); // ±0.02%
-    }, 1000);
-    return () => { if (tickerRef.current) clearInterval(tickerRef.current); };
-  }, [assets.length, theme]);
+  // Ticker removed – wealth updates only on real API data refresh (~30s)
 
   const getPrice = (a: Asset) => a.currentPrice ?? a.manualCurrentPrice ?? a.purchasePrice;
-  const totalWealthBase = assets.reduce((s, a) => s + a.amount * getPrice(a), 0);
-  const totalWealth = totalWealthBase * (1 + tickerOffset);
+  const totalWealth = assets.reduce((s, a) => s + a.amount * getPrice(a), 0);
 
   // Cost calculation: convert purchase prices to TRY if they were entered in another currency
   const totalCost = assets.reduce((sum, a) => sum + getAssetCostInTRY(a.amount, a.purchasePrice, a.purchaseCurrency, exchangeRates, a.currentPrice ?? a.manualCurrentPrice), 0);

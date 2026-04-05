@@ -105,7 +105,7 @@ function OdometerNumber({
         // animate from current → target
         const start = displayed;
         const end = value;
-        const duration = 800;
+        const duration = 2500;
         const startTime = performance.now();
 
         const tick = (now: number) => {
@@ -320,7 +320,7 @@ export default function HeroWealthCard({
     // P/L period config
     const periods = [
         { key: '1d' as PLPeriod, label: '1G' },
-        { key: '1w' as PLPeriod, label: '1H' },
+        { key: '1w' as PLPeriod, label: '1 Hafta' },
         { key: '1m' as PLPeriod, label: '1A' },
         { key: 'all' as PLPeriod, label: 'Tümü' },
     ];

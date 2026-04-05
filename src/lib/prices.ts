@@ -111,7 +111,7 @@ export async function fetchForexRates(
 }
 
 // -----------------------------------------------
-// Gold Price (via exchange rate + global gold price)
+// Gold Price (via Yahoo Finance GC=F + USDTRY)
 // -----------------------------------------------
 export async function fetchGoldPrice(): Promise<PriceData | null> {
     if (isCacheValid('gold_gram')) {
@@ -119,35 +119,13 @@ export async function fetchGoldPrice(): Promise<PriceData | null> {
     }
 
     try {
-        // Primary: CoinGecko tether-gold (free, no key needed)
-        const res = await fetch(
-            'https://api.coingecko.com/api/v3/simple/price?ids=tether-gold&vs_currencies=try'
-        );
+        const res = await fetch('/api/stock-price?symbols=GC=F');
         if (res.ok) {
             const data = await res.json();
-            if (data['tether-gold']?.try) {
-                // XAUT is roughly 1 troy ounce of gold
-                const gramPrice = data['tether-gold'].try / 31.1035;
-                const priceData: PriceData = {
-                    price: gramPrice,
-                    currency: 'TRY',
-                    lastUpdated: new Date().toISOString(),
-                };
-                priceCache['gold_gram'] = { data: priceData, timestamp: Date.now() };
-                return priceData;
-            }
-        }
+            const goldOunceTry = data.prices?.['GC=F']?.price;
 
-        // Fallback: MetalPriceAPI
-        const fallbackRes = await fetch(
-            'https://api.metalpriceapi.com/v1/latest?api_key=demo&base=XAU&currencies=TRY'
-        );
-
-        if (fallbackRes.ok) {
-            const fallbackData = await fallbackRes.json();
-            if (fallbackData.rates && fallbackData.rates.TRY) {
-                // XAU is per troy ounce, convert to gram (1 troy oz = 31.1035 grams)
-                const gramPrice = fallbackData.rates.TRY / 31.1035;
+            if (goldOunceTry) {
+                const gramPrice = goldOunceTry / 31.1035;
                 const priceData: PriceData = {
                     price: gramPrice,
                     currency: 'TRY',
@@ -242,20 +220,13 @@ export async function fetchMetalPrices(
         if (!res.ok) return results;
         const data = await res.json();
 
-        // Get USD->TRY rate for conversion (metals are priced in USD)
-        const usdRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-        let usdToTry = 34; // fallback
-        if (usdRes.ok) {
-            const usdData = await usdRes.json();
-            if (usdData.rates?.TRY) usdToTry = usdData.rates.TRY;
-        }
-
         for (const id of uncached) {
             const symbol = metalMap[id];
             if (symbol && data.prices?.[symbol]) {
-                // Convert from USD per troy ounce to TRY per gram
-                const usdPerOz = data.prices[symbol].price;
-                const tryPerGram = (usdPerOz * usdToTry) / 31.1035;
+                // The API automatically converts non-BIST symbols to TRY.
+                // So the API returns price in TRY per Troy Ounce.
+                const tryPerOz = data.prices[symbol].price;
+                const tryPerGram = tryPerOz / 31.1035;
                 const priceData: PriceData = {
                     price: tryPerGram,
                     currency: 'TRY',
@@ -273,6 +244,49 @@ export async function fetchMetalPrices(
 }
 
 // -----------------------------------------------
+// Fund Prices (via TEFAS API)
+// -----------------------------------------------
+export async function fetchFundPrices(
+    codes: string[]
+): Promise<Record<string, PriceData>> {
+    if (codes.length === 0) return {};
+
+    const results: Record<string, PriceData> = {};
+    const uncached = codes.filter((c) => !isCacheValid(`fund_${c}`));
+
+    for (const c of codes) {
+        if (isCacheValid(`fund_${c}`)) {
+            results[c] = priceCache[`fund_${c}`].data;
+        }
+    }
+
+    if (uncached.length === 0) return results;
+
+    // Fetch each fund code individually from our Next.js API
+    await Promise.allSettled(uncached.map(async (code) => {
+        try {
+            const res = await fetch(`/api/tefas?code=${encodeURIComponent(code)}`);
+            if (!res.ok) throw new Error(`Status ${res.status}`);
+            const data = await res.json();
+            
+            if (data.price) {
+                const priceData: PriceData = {
+                    price: data.price,
+                    currency: 'TRY',
+                    lastUpdated: new Date().toISOString(),
+                };
+                results[code] = priceData;
+                priceCache[`fund_${code}`] = { data: priceData, timestamp: Date.now() };
+            }
+        } catch (error) {
+            console.error(`${code} fon fiyatı alınamadı:`, error);
+        }
+    }));
+
+    return results;
+}
+
+// -----------------------------------------------
 // Fetch all prices for a set of assets
 // -----------------------------------------------
 export async function fetchAllPrices(assets: {
@@ -280,15 +294,17 @@ export async function fetchAllPrices(assets: {
     forexCurrencies: string[];
     stockSymbols: string[];
     metalIds: string[];
+    fundCodes?: string[];
     hasGold: boolean;
 }): Promise<Record<string, number>> {
     const priceMap: Record<string, number> = {};
 
-    const [cryptoPrices, forexRates, stockPrices, metalPrices, goldPrice] = await Promise.all([
+    const [cryptoPrices, forexRates, stockPrices, metalPrices, fundPrices, goldPrice] = await Promise.all([
         fetchCryptoPrices(assets.cryptoIds),
         fetchForexRates(assets.forexCurrencies),
         fetchStockPrices(assets.stockSymbols),
         fetchMetalPrices(assets.metalIds),
+        fetchFundPrices(assets.fundCodes || []),
         assets.hasGold ? fetchGoldPrice() : Promise.resolve(null),
     ]);
 
@@ -310,6 +326,11 @@ export async function fetchAllPrices(assets: {
     // Precious Metals
     for (const [id, data] of Object.entries(metalPrices)) {
         priceMap[id] = data.price;
+    }
+
+    // Funds
+    for (const [code, data] of Object.entries(fundPrices)) {
+        priceMap[code] = data.price;
     }
 
     // Gold
