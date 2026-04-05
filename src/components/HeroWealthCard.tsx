@@ -31,103 +31,7 @@ interface HeroWealthCardProps {
     onShare?: () => void;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   1. Odometer Digit – each digit rolls like a slot reel
-───────────────────────────────────────────────────────────── */
-function OdometerDigit({ char }: { char: string }) {
-    const [displayed, setDisplayed] = useState(char);
-    const [rolling, setRolling] = useState(false);
-    const prev = useRef(char);
-
-    useEffect(() => {
-        if (char !== prev.current) {
-            setRolling(true);
-            const t = setTimeout(() => {
-                setDisplayed(char);
-                prev.current = char;
-                setRolling(false);
-            }, 280);
-            return () => clearTimeout(t);
-        }
-    }, [char]);
-
-    const isNumeric = /\d/.test(char);
-
-    if (!isNumeric) {
-        return (
-            <span style={{ display: 'inline-block' }}>{char}</span>
-        );
-    }
-
-    return (
-        <span
-            style={{
-                display: 'inline-block',
-                overflow: 'hidden',
-                verticalAlign: 'bottom',
-                lineHeight: '1em',
-                position: 'relative',
-            }}
-        >
-            <span
-                style={{
-                    display: 'inline-block',
-                    animation: rolling ? 'odometerRoll 0.28s cubic-bezier(0.4,0,0.2,1) forwards' : 'none',
-                }}
-            >
-                {displayed}
-            </span>
-            <style>{`
-                @keyframes odometerRoll {
-                    0%   { transform: translateY(0); opacity: 1; }
-                    45%  { transform: translateY(-60%); opacity: 0; }
-                    55%  { transform: translateY(60%); opacity: 0; }
-                    100% { transform: translateY(0); opacity: 1; }
-                }
-            `}</style>
-        </span>
-    );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   2. Odometer Number – formats and splits into digit spans
-───────────────────────────────────────────────────────────── */
-function OdometerNumber({
-    value,
-    formatter,
-}: {
-    value: number;
-    formatter: (n: number) => string;
-}) {
-    const [displayed, setDisplayed] = useState(value);
-
-    useEffect(() => {
-        // animate from current → target
-        const start = displayed;
-        const end = value;
-        const duration = 2500;
-        const startTime = performance.now();
-
-        const tick = (now: number) => {
-            const t = Math.min((now - startTime) / duration, 1);
-            const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-            setDisplayed(start + (end - start) * eased);
-            if (t < 1) requestAnimationFrame(tick);
-            else setDisplayed(end);
-        };
-        requestAnimationFrame(tick);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value]);
-
-    const str = formatter(displayed);
-    return (
-        <span>
-            {str.split('').map((ch, i) => (
-                <OdometerDigit key={i} char={ch} />
-            ))}
-        </span>
-    );
-}
+import AnimatedNumber from './AnimatedNumber';
 
 /* ─────────────────────────────────────────────────────────────
    3. Sparkline SVG (drawn as a silhouette beneath the number)
@@ -428,9 +332,10 @@ export default function HeroWealthCard({
                     }}
                 >
                     {hasData ? (
-                        <OdometerNumber
+                        <AnimatedNumber
                             value={convert(totalWealth)}
                             formatter={fmt}
+                            duration={2000}
                         />
                     ) : `${symbol}0,00`}
                 </h2>
@@ -451,7 +356,7 @@ export default function HeroWealthCard({
                                 Maliyet
                             </p>
                             <p style={{ fontWeight: 700, fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>
-                                <OdometerNumber value={convert(totalCost)} formatter={fmtShort} />
+                                <AnimatedNumber value={convert(totalCost)} formatter={fmtShort} duration={2000} />
                             </p>
                         </div>
 
@@ -468,7 +373,7 @@ export default function HeroWealthCard({
                                 marginBottom: 4,
                             }}>
                                 {isUp ? '▲ ' : '▼ '}
-                                <OdometerNumber value={Math.abs(convert(activeHeroPL.pl))} formatter={fmtShort} />
+                                <AnimatedNumber value={Math.abs(convert(activeHeroPL.pl))} formatter={fmtShort} duration={2000} />
                                 <span style={{ fontSize: 11, marginLeft: 4, opacity: 0.8 }}>
                                     ({activeHeroPL.pct >= 0 ? '+' : ''}{activeHeroPL.pct.toFixed(1)}%)
                                 </span>

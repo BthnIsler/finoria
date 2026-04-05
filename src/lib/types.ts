@@ -155,9 +155,9 @@ export const GOLD_TYPES = [
     { id: 'ata', name: 'Ata Altın', grams: 7.216 },
     { id: 'resat', name: 'Reşat Altın', grams: 7.216 },
     { id: 'hamit', name: 'Hamit Altın', grams: 7.216 },
-    { id: '22ayar', name: '22 Ayar Bilezik (gr)', grams: 1 },
-    { id: '18ayar', name: '18 Ayar (gr)', grams: 1 },
-    { id: '14ayar', name: '14 Ayar (gr)', grams: 1 },
+    { id: '22ayar', name: '22 Ayar Bilezik (gr)', grams: 0.916 },
+    { id: '18ayar', name: '18 Ayar (gr)', grams: 0.750 },
+    { id: '14ayar', name: '14 Ayar (gr)', grams: 0.583 },
 ];
 
 // Değerli madenler

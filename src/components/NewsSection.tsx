@@ -233,9 +233,9 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                                     const cat = getCategoryMeta(asset.category);
                                     const isActive = selectedAsset?.id === asset.id;
                                     return (
-                                        <button
-                                            key={asset.id}
-                                            onClick={() => handleSelectAsset(asset)}
+                                        <div key={asset.id}>
+                                            <button
+                                                onClick={() => handleSelectAsset(asset)}
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: 12,
                                                 padding: '12px 14px', borderRadius: 14,
@@ -274,58 +274,48 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                                                 transition: 'transform 0.2s',
                                                 transform: isActive ? 'translateX(0)' : 'translateX(-4px)',
                                             }}>›</span>
-                                        </button>
+                                            </button>
+                                            
+                                            {/* Accordion Content for Active Asset */}
+                                            {isActive && (
+                                                <div style={{ marginTop: 8, padding: '12px', background: 'rgba(0,0,0,0.15)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.03)' }}>
+                                                    {/* Section label */}
+                                                    <div style={{
+                                                        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12
+                                                    }}>
+                                                        <span style={{ fontSize: 16 }}>{cat.icon}</span>
+                                                        <div>
+                                                            <span style={{ fontSize: 13, fontWeight: 800, color: cat.color }}>
+                                                                {asset.name}
+                                                            </span>
+                                                            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginLeft: 6 }}>
+                                                                · son haberler
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {assetLoading && (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                                            {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+                                                        </div>
+                                                    )}
+                                                    {!assetLoading && assetNews.length === 0 && (
+                                                        <EmptyState icon="😕" text={`${asset.name} için haber bulunamadı.`} />
+                                                    )}
+                                                    {!assetLoading && assetNews.length > 0 && (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                                                            {assetNews.slice(0, 1).map((a, i) => (
+                                                                <ArticleCard key={i} article={a} featured accent={cat.color} />
+                                                            ))}
+                                                            {assetNews.slice(1).map((a, i) => (
+                                                                <ArticleCard key={i + 1} article={a} accent={cat.color} />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                        </div>
                                     );
                                 })}
                             </div>
-
-                            {/* News panel */}
-                            {selectedAsset && (
-                                <div style={{ marginTop: 8 }}>
-                                    {/* Section label */}
-                                    <div style={{
-                                        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
-                                        paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)',
-                                    }}>
-                                        <span style={{ fontSize: 16 }}>{getCategoryMeta(selectedAsset.category).icon}</span>
-                                        <div>
-                                            <span style={{ fontSize: 13, fontWeight: 800, color: getCategoryMeta(selectedAsset.category).color }}>
-                                                {selectedAsset.name}
-                                            </span>
-                                            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginLeft: 6 }}>
-                                                · son haberler
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {assetLoading && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
-                                        </div>
-                                    )}
-                                    {!assetLoading && assetNews.length === 0 && (
-                                        <EmptyState icon="😕" text={`${selectedAsset.name} için haber bulunamadı.`} />
-                                    )}
-                                    {!assetLoading && assetNews.length > 0 && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                                            {assetNews.slice(0, 1).map((a, i) => (
-                                                <ArticleCard key={i} article={a} featured
-                                                    accent={getCategoryMeta(selectedAsset.category).color} />
-                                            ))}
-                                            {assetNews.slice(1).map((a, i) => (
-                                                <ArticleCard key={i + 1} article={a}
-                                                    accent={getCategoryMeta(selectedAsset.category).color} />
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {!selectedAsset && (
-                                <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
-                                    Haber görmek için yukarıdan bir varlık seçin ↑
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
