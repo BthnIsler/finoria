@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Asset, CATEGORIES, getCategoryMeta } from '@/lib/types';
+import { Asset, CATEGORIES, getCategoryMeta, GOLD_TYPES } from '@/lib/types';
 import { useCurrency } from '@/lib/contexts';
 import { getAssetCostInTRY, formatPercentage } from '@/lib/utils';
 import { deleteAsset } from '@/lib/db';
@@ -32,12 +32,12 @@ function getCutoffDate(period: PLPeriod): Date | null {
 }
 
 // Returns the correct "per piece" unit price for display.
-// For gold, currentPrice is always stored as gram price.
-// We multiply by grams to get the true per-Adet price.
-import { GOLD_TYPES } from '@/lib/types';
+// For gold, currentPrice is always stored as gram price (per gram).
+// We multiply by the gold type's gram weight to get the true per-PIECE price.
 function getDisplayUnitPrice(asset: Asset): number {
     const raw = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
     if (asset.category === 'gold') {
+        // Try matching by apiId first, then fall back to name matching
         const goldMeta = GOLD_TYPES.find(g => g.id === asset.apiId)
             ?? GOLD_TYPES.find(g => asset.name.toLowerCase().includes(g.name.toLowerCase()) || g.name.toLowerCase().includes(asset.name.toLowerCase()));
         if (goldMeta && goldMeta.grams !== 1) {
