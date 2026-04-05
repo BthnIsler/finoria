@@ -32,12 +32,10 @@ function getCutoffDate(period: PLPeriod): Date | null {
 }
 
 // Returns the correct "per piece" unit price for display.
-// For gold, currentPrice is always stored as gram price (per gram).
-// We multiply by the gold type's gram weight to get the true per-PIECE price.
+// currentPrice stored as gram price. Multiply by grams = per-ADET price.
 function getDisplayUnitPrice(asset: Asset): number {
     const raw = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
     if (asset.category === 'gold') {
-        // Try matching by apiId first, then fall back to name matching
         const goldMeta = GOLD_TYPES.find(g => g.id === asset.apiId)
             ?? GOLD_TYPES.find(g => asset.name.toLowerCase().includes(g.name.toLowerCase()) || g.name.toLowerCase().includes(asset.name.toLowerCase()));
         if (goldMeta && goldMeta.grams !== 1) {
@@ -45,6 +43,24 @@ function getDisplayUnitPrice(asset: Asset): number {
         }
     }
     return raw;
+}
+
+// Returns the correct ADET (piece count) for display.
+// DB stores amount as grams for legacy data; we divide back to get true piece count.
+function getDisplayAmount(asset: Asset): number {
+    if (asset.category === 'gold') {
+        const goldMeta = GOLD_TYPES.find(g => g.id === asset.apiId)
+            ?? GOLD_TYPES.find(g => asset.name.toLowerCase().includes(g.name.toLowerCase()) || g.name.toLowerCase().includes(asset.name.toLowerCase()));
+        if (goldMeta && goldMeta.grams !== 1) {
+            // If amount is stored as grams (legacy), divide to get adet
+            // Heuristic: if amount is approximately a multiple of grams, it was stored as grams
+            const adet = asset.amount / goldMeta.grams;
+            if (Math.abs(adet - Math.round(adet)) < 0.01 || adet < 100) {
+                return parseFloat(adet.toFixed(6));
+            }
+        }
+    }
+    return asset.amount;
 }
 
 interface SmartTag { label: string; icon: string; color: string; bg: string; title: string; }
@@ -498,7 +514,7 @@ function AssetTableRow({
                                 </span>
                             </div>
                             <div style={{ fontSize: 11, color: cat.color, opacity: 0.8, fontWeight: 600 }}>
-                                {cat.labelTR} · {asset.amount.toLocaleString('tr-TR', { maximumFractionDigits: 4 })}
+                                {cat.labelTR} · {getDisplayAmount(asset).toLocaleString('tr-TR', { maximumFractionDigits: 4 })} adet
                             </div>
                         </div>
                         {/* Value + P/L */}
@@ -573,7 +589,7 @@ function AssetTableRow({
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <span style={{ fontSize: 10, fontWeight: 600, color: cat.color, opacity: 0.75 }}>{cat.labelTR}</span>
                                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
-                                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{asset.amount.toLocaleString('tr-TR', { maximumFractionDigits: 6 })} adet</span>
+                                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{getDisplayAmount(asset).toLocaleString('tr-TR', { maximumFractionDigits: 6 })} adet</span>
                             </div>
                         </div>
                     </div>

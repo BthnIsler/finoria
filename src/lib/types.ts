@@ -146,11 +146,12 @@ export const POPULAR_FOREX = [
 ];
 
 // Altın çeşitleri (gram cinsinden ağırlıkları)
+// NOT: amount her zaman ADET cinsinden tutulur.
+// currentPrice = gram_fiyatı × grams → per-ADET fiyat
 export const GOLD_TYPES = [
     { id: 'gram', name: 'Gram Altın', grams: 1 },
     { id: 'ceyrek', name: 'Çeyrek Altın', grams: 1.75 },
     { id: 'yarim', name: 'Yarım Altın', grams: 3.5 },
-    { id: 'tam', name: 'Tam Altın', grams: 7.0 },
     { id: 'cumhuriyet', name: 'Cumhuriyet Altını', grams: 7.216 },
     { id: 'ata', name: 'Ata Altın', grams: 7.216 },
     { id: 'resat', name: 'Reşat Altın', grams: 7.216 },

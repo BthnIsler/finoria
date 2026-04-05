@@ -199,42 +199,54 @@ export default function Home() {
       const updated = dbAssets.map(a => {
         // If it's a manual asset or has no apiId, trust the DB price
         if (!a.apiId || a.manualCurrentPrice) return a;
-        
-        let newPrice = priceMap[a.apiId];
-        // special hack for gold
+
+        // ── GOLD LOGIC ──────────────────────────────────────────────────────
+        // Rule: amount is stored as ADET (pieces). currentPrice = per-PIECE price.
+        // per-PIECE price = gram_price × goldType.grams
         if (a.category === 'gold' && priceMap['gold_gram']) {
+            const gramPrice = priceMap['gold_gram'];
+
+            // Find the gold type: first by apiId, then by name match
             let goldMeta = GOLD_TYPES.find(g => g.id === a.apiId);
-            
-            // Fallback for corrupted database items where apiId is just 'gold_gram' or incorrect:
-            if (!goldMeta || a.apiId === 'gold_gram') {
-                goldMeta = GOLD_TYPES.find(g => a.name.toLowerCase().includes(g.name.toLowerCase()) || g.name.toLowerCase().includes(a.name.toLowerCase()));
-                
-                // If it was corrupted to 'gold_gram', its amount was multiplied by grams in AssetForm.
-                // Revert the amount to true Adet, and fix the apiId so this block never runs again!
-                if (goldMeta && goldMeta.grams !== 1) {
-                    a.apiId = goldMeta.id;
-                    a.amount = a.amount / goldMeta.grams;
-                    hasUpdates = true;
-                }
+            if (!goldMeta) {
+                // Legacy data has apiId='gold_gram' — look up by name
+                goldMeta = GOLD_TYPES.find(g =>
+                    a.name.toLowerCase().includes(g.name.toLowerCase()) ||
+                    g.name.toLowerCase().includes(a.name.toLowerCase())
+                );
             }
-            
-            const multiplier = goldMeta ? goldMeta.grams : 1;
-            newPrice = priceMap['gold_gram'] * multiplier;
+
+            const grams = goldMeta ? goldMeta.grams : 1;
+            const perPiecePrice = gramPrice * grams;
+
+            // Check if amount is stored as grams (legacy bug) and fix it.
+            // If apiId is missing/wrong AND amount ≈ grams multiple, it was stored as grams.
+            let newAmount = a.amount;
+            let newApiId = a.apiId;
+            const amountIsGrams = (!GOLD_TYPES.find(g => g.id === a.apiId) || a.apiId === 'gold_gram') && goldMeta && grams !== 1;
+            if (amountIsGrams) {
+                newAmount = a.amount / grams;  // Convert grams → adet
+                newApiId = goldMeta!.id;
+            }
+
+            const needsUpdate = perPiecePrice !== a.currentPrice || newAmount !== a.amount || newApiId !== a.apiId;
+            if (needsUpdate) {
+                hasUpdates = true;
+                // If amount/apiId changed, persist to DB immediately (fire-and-forget)
+                if (newAmount !== a.amount || newApiId !== a.apiId) {
+                    updateAsset(a.id, { apiId: newApiId, amount: newAmount, currentPrice: perPiecePrice }, user.id);
+                }
+                return { ...a, apiId: newApiId, amount: newAmount, currentPrice: perPiecePrice };
+            }
+            return { ...a, currentPrice: perPiecePrice };
         }
-        
+        // ── END GOLD LOGIC ───────────────────────────────────────────────────
+
+        const newPrice = priceMap[a.apiId];
         if (newPrice && typeof newPrice === 'number' && newPrice !== a.currentPrice) {
           hasUpdates = true;
-          a.currentPrice = newPrice;
+          return { ...a, currentPrice: newPrice };
         }
-        
-        // If the asset was just migrated (a.apiId or a.amount was changed from what's in DB), save it to DB!
-        // We know we migrated if we hit the goldMeta fix block. To keep it simple, we just call updateAsset!
-        // Actually, we can check if it differs from the original to save an API call.
-        const original = dbAssets.find(orig => orig.id === a.id);
-        if (original && (original.apiId !== a.apiId || original.amount !== a.amount)) {
-            updateAsset(a.id, { apiId: a.apiId, amount: a.amount });
-        }
-        
         return a;
       });
 
