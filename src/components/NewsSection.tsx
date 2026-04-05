@@ -312,6 +312,8 @@ export default function NewsSection({ assets }: NewsSectionProps) {
                                                             ))}
                                                         </div>
                                                     )}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
