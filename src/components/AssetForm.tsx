@@ -99,7 +99,8 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
     const currentName = needsManualName ? manualName : selectedName;
 
     const getApiId = (): string | undefined => {
-        if (category === 'gold') return 'gold_gram';
+        // Gold types MUST keep their specific id (e.g. 'ceyrek') so multiplier matching works later.
+        if (category === 'gold') return selectedPreset || 'gold_gram';
         if (category === 'precious_metals') return selectedPreset ? `metal_${selectedPreset}` : undefined;
         if (category === 'fund') return fundCode.toUpperCase();
         if (needsManualName) return undefined;

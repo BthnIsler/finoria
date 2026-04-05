@@ -119,13 +119,21 @@ export async function fetchGoldPrice(): Promise<PriceData | null> {
     }
 
     try {
-        const res = await fetch('/api/stock-price?symbols=GC=F');
-        if (res.ok) {
-            const data = await res.json();
-            const goldOunceTry = data.prices?.['GC=F']?.price;
+        // Fetch directly from Yahoo to avoid relative URL crashes in SSR
+        const [fxRes, gRes] = await Promise.all([
+            fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDTRY=X?interval=1d&range=1d', { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+            fetch('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=1d', { headers: { 'User-Agent': 'Mozilla/5.0' } })
+        ]);
+        
+        if (fxRes.ok && gRes.ok) {
+            const fxData = await fxRes.json();
+            const gData = await gRes.json();
+            
+            const usdTry = fxData?.chart?.result?.[0]?.meta?.regularMarketPrice || 36.5;
+            const goldUsd = gData?.chart?.result?.[0]?.meta?.regularMarketPrice;
 
-            if (goldOunceTry) {
-                const gramPrice = goldOunceTry / 31.1035;
+            if (goldUsd && usdTry) {
+                const gramPrice = (goldUsd * usdTry) / 31.1035;
                 const priceData: PriceData = {
                     price: gramPrice,
                     currency: 'TRY',
@@ -136,7 +144,7 @@ export async function fetchGoldPrice(): Promise<PriceData | null> {
             }
         }
     } catch (error) {
-        console.error('Altın fiyatı alınamadı:', error);
+        console.error('Altın fiyatı doğrudan alınamadı:', error);
     }
 
     return null;

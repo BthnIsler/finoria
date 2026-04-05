@@ -203,7 +203,11 @@ export default function Home() {
         let newPrice = priceMap[a.apiId];
         // special hack for gold
         if (a.category === 'gold' && priceMap['gold_gram']) {
-            const goldMeta = GOLD_TYPES.find(g => g.id === a.apiId);
+            let goldMeta = GOLD_TYPES.find(g => g.id === a.apiId);
+            // Fallback for corrupted database items where apiId is just 'gold_gram' or incorrect:
+            if (!goldMeta || a.apiId === 'gold_gram') {
+                goldMeta = GOLD_TYPES.find(g => a.name.toLowerCase().includes(g.name.toLowerCase()) || g.name.toLowerCase().includes(a.name.toLowerCase()));
+            }
             const multiplier = goldMeta ? goldMeta.grams : 1;
             newPrice = priceMap['gold_gram'] * multiplier;
         }
