@@ -31,6 +31,22 @@ function getCutoffDate(period: PLPeriod): Date | null {
     }
 }
 
+// Returns the correct "per piece" unit price for display.
+// For gold, currentPrice is always stored as gram price.
+// We multiply by grams to get the true per-Adet price.
+import { GOLD_TYPES } from '@/lib/types';
+function getDisplayUnitPrice(asset: Asset): number {
+    const raw = asset.currentPrice ?? asset.manualCurrentPrice ?? asset.purchasePrice;
+    if (asset.category === 'gold') {
+        const goldMeta = GOLD_TYPES.find(g => g.id === asset.apiId)
+            ?? GOLD_TYPES.find(g => asset.name.toLowerCase().includes(g.name.toLowerCase()) || g.name.toLowerCase().includes(asset.name.toLowerCase()));
+        if (goldMeta && goldMeta.grams !== 1) {
+            return raw * goldMeta.grams;
+        }
+    }
+    return raw;
+}
+
 interface SmartTag { label: string; icon: string; color: string; bg: string; title: string; }
 
 function getSmartTags(asset: Asset, exchangeRates: Record<string, number>): SmartTag[] {
@@ -563,7 +579,7 @@ function AssetTableRow({
                     </div>
                     {/* Col 2: Unit price */}
                     <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums' }}>{fmt(convert(currentPriceTRY))}</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums' }}>{fmt(convert(getDisplayUnitPrice(asset)))}</div>
                         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 1 }}>birim</div>
                     </div>
                     {/* Col 3: Total value */}

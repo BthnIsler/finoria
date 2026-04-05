@@ -120,7 +120,8 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
 
         try {
             const goldType = GOLD_TYPES.find((g) => g.id === selectedPreset);
-            const effectiveAmount = goldType ? parseFloat(amount) * goldType.grams : parseFloat(amount);
+            // DO NOT multiply amount by grams anymore. We keep it as pure count ('Adet').
+            const effectiveAmount = parseFloat(amount);
             
             let finalPurchasePrice = purchasePrice ? parseFloat(purchasePrice) : 0;
             const apiId = getApiId();
@@ -151,7 +152,8 @@ export default function AssetForm({ onClose, onAdd }: AssetFormProps) {
                             const data = await res.json();
                             if (data.prices?.['GC=F']) {
                                 const goldOunceTry = data.prices['GC=F'].price;
-                                finalPurchasePrice = goldOunceTry / 31.1035;
+                                const gramPrice = goldOunceTry / 31.1035;
+                                finalPurchasePrice = gramPrice * (goldType ? goldType.grams : 1);
                             }
                         }
                         else if (category === 'precious_metals') {

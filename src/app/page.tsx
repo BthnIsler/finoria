@@ -204,18 +204,37 @@ export default function Home() {
         // special hack for gold
         if (a.category === 'gold' && priceMap['gold_gram']) {
             let goldMeta = GOLD_TYPES.find(g => g.id === a.apiId);
+            
             // Fallback for corrupted database items where apiId is just 'gold_gram' or incorrect:
             if (!goldMeta || a.apiId === 'gold_gram') {
                 goldMeta = GOLD_TYPES.find(g => a.name.toLowerCase().includes(g.name.toLowerCase()) || g.name.toLowerCase().includes(a.name.toLowerCase()));
+                
+                // If it was corrupted to 'gold_gram', its amount was multiplied by grams in AssetForm.
+                // Revert the amount to true Adet, and fix the apiId so this block never runs again!
+                if (goldMeta && goldMeta.grams !== 1) {
+                    a.apiId = goldMeta.id;
+                    a.amount = a.amount / goldMeta.grams;
+                    hasUpdates = true;
+                }
             }
+            
             const multiplier = goldMeta ? goldMeta.grams : 1;
             newPrice = priceMap['gold_gram'] * multiplier;
         }
         
         if (newPrice && typeof newPrice === 'number' && newPrice !== a.currentPrice) {
           hasUpdates = true;
-          return { ...a, currentPrice: newPrice };
+          a.currentPrice = newPrice;
         }
+        
+        // If the asset was just migrated (a.apiId or a.amount was changed from what's in DB), save it to DB!
+        // We know we migrated if we hit the goldMeta fix block. To keep it simple, we just call updateAsset!
+        // Actually, we can check if it differs from the original to save an API call.
+        const original = dbAssets.find(orig => orig.id === a.id);
+        if (original && (original.apiId !== a.apiId || original.amount !== a.amount)) {
+            updateAsset(a.id, { apiId: a.apiId, amount: a.amount });
+        }
+        
         return a;
       });
 

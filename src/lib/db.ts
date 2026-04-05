@@ -148,6 +148,7 @@ export async function updateAsset(id: string, updates: Partial<Asset>, userId?: 
     if (updates.purchasePrice !== undefined) payload.purchase_price = updates.purchasePrice;
     if (updates.currentPrice !== undefined) payload.current_price = updates.currentPrice;
     if (updates.manualCurrentPrice !== undefined) payload.manual_current_price = updates.manualCurrentPrice;
+    if (updates.apiId !== undefined) payload.api_id = updates.apiId;
 
     const { error } = await supabase.from('assets').update(payload).eq('id', id);
 
